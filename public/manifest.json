@@ -1,0 +1,17 @@
+{
+  "name": "Yokus Orme ERP",
+  "short_name": "Orme ERP",
+  "description": "Fason orme kumas fabrikalari icin modern ERP",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/globe.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}
