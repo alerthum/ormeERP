@@ -1,5 +1,5 @@
 CREATE TABLE "settings_colors" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"is_active" boolean DEFAULT true NOT NULL
 );
@@ -12,20 +12,20 @@ CREATE TABLE "counters" (
 );
 --> statement-breakpoint
 CREATE TABLE "settings_fabric_types" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"is_active" boolean DEFAULT true NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "orders" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
 	"order_no" text NOT NULL,
 	"customer_name" text NOT NULL,
 	"order_date" date NOT NULL,
 	"due_date" date NOT NULL,
-	"fabric_type_id" uuid NOT NULL,
-	"color_id" uuid NOT NULL,
-	"yarn_count_id" uuid NOT NULL,
+	"fabric_type_id" text NOT NULL,
+	"color_id" text NOT NULL,
+	"yarn_count_id" text NOT NULL,
 	"has_polyester" boolean DEFAULT false NOT NULL,
 	"has_lycra" boolean DEFAULT false NOT NULL,
 	"raw_width" integer NOT NULL,
@@ -33,8 +33,8 @@ CREATE TABLE "orders" (
 	"finish_width" integer NOT NULL,
 	"finish_gsm" integer NOT NULL,
 	"quantity_kg" numeric(14, 3) NOT NULL,
-	"ym_stock_id" uuid,
-	"mm_stock_id" uuid,
+	"ym_stock_id" text,
+	"mm_stock_id" text,
 	"status" text NOT NULL,
 	"process_type_ids" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"description" text DEFAULT '' NOT NULL,
@@ -44,11 +44,11 @@ CREATE TABLE "orders" (
 );
 --> statement-breakpoint
 CREATE TABLE "parties" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
 	"party_no" text NOT NULL,
-	"order_id" uuid NOT NULL,
-	"ym_stock_id" uuid NOT NULL,
-	"mm_stock_id" uuid NOT NULL,
+	"order_id" text NOT NULL,
+	"ym_stock_id" text NOT NULL,
+	"mm_stock_id" text NOT NULL,
 	"status" text NOT NULL,
 	"raw_produced_kg" numeric(14, 3) DEFAULT '0' NOT NULL,
 	"raw_consumed_kg" numeric(14, 3) DEFAULT '0' NOT NULL,
@@ -58,7 +58,7 @@ CREATE TABLE "parties" (
 	"finished_kg" numeric(14, 3) DEFAULT '0' NOT NULL,
 	"dyehouse_waste_kg" numeric(14, 3) DEFAULT '0' NOT NULL,
 	"dyehouse_waste_percent" numeric(8, 3) DEFAULT '0' NOT NULL,
-	"current_warehouse_id" uuid,
+	"current_warehouse_id" text,
 	"timeline" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -66,7 +66,7 @@ CREATE TABLE "parties" (
 );
 --> statement-breakpoint
 CREATE TABLE "partners" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"type" text NOT NULL,
 	"risk_score" integer DEFAULT 0,
@@ -74,21 +74,21 @@ CREATE TABLE "partners" (
 );
 --> statement-breakpoint
 CREATE TABLE "settings_process_types" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"is_active" boolean DEFAULT true NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "production_dyehouse" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
 	"date" date NOT NULL,
-	"order_id" uuid NOT NULL,
-	"party_id" uuid NOT NULL,
-	"dyehouse_partner_id" uuid NOT NULL,
-	"input_warehouse_id" uuid NOT NULL,
-	"output_warehouse_id" uuid NOT NULL,
-	"ym_stock_id" uuid NOT NULL,
-	"mm_stock_id" uuid NOT NULL,
+	"order_id" text NOT NULL,
+	"party_id" text NOT NULL,
+	"dyehouse_partner_id" text NOT NULL,
+	"input_warehouse_id" text NOT NULL,
+	"output_warehouse_id" text NOT NULL,
+	"ym_stock_id" text NOT NULL,
+	"mm_stock_id" text NOT NULL,
 	"input_raw_kg" numeric(14, 3) NOT NULL,
 	"finished_kg" numeric(14, 3) NOT NULL,
 	"waste_kg" numeric(14, 3) NOT NULL,
@@ -101,13 +101,13 @@ CREATE TABLE "production_dyehouse" (
 );
 --> statement-breakpoint
 CREATE TABLE "production_raw" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
 	"date" date NOT NULL,
-	"order_id" uuid NOT NULL,
-	"party_id" uuid NOT NULL,
-	"knitter_partner_id" uuid NOT NULL,
-	"warehouse_id" uuid NOT NULL,
-	"ym_stock_id" uuid NOT NULL,
+	"order_id" text NOT NULL,
+	"party_id" text NOT NULL,
+	"knitter_partner_id" text NOT NULL,
+	"warehouse_id" text NOT NULL,
+	"ym_stock_id" text NOT NULL,
 	"produced_raw_kg" numeric(14, 3) NOT NULL,
 	"consumed_items" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"waste_kg" numeric(14, 3) NOT NULL,
@@ -117,9 +117,9 @@ CREATE TABLE "production_raw" (
 );
 --> statement-breakpoint
 CREATE TABLE "purchase_orders" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
 	"purchase_order_no" text NOT NULL,
-	"supplier_id" uuid NOT NULL,
+	"supplier_id" text NOT NULL,
 	"order_date" date NOT NULL,
 	"due_date" date NOT NULL,
 	"status" text NOT NULL,
@@ -134,27 +134,27 @@ CREATE TABLE "purchase_orders" (
 );
 --> statement-breakpoint
 CREATE TABLE "purchase_receipts" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"purchase_order_id" uuid NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
+	"purchase_order_id" text NOT NULL,
 	"receipt_no" text NOT NULL,
 	"receipt_date" date NOT NULL,
-	"warehouse_id" uuid NOT NULL,
-	"supplier_id" uuid NOT NULL,
+	"warehouse_id" text NOT NULL,
+	"supplier_id" text NOT NULL,
 	"items" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"description" text DEFAULT '' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"created_by" uuid,
+	"created_by" text,
 	CONSTRAINT "purchase_receipts_receipt_no_unique" UNIQUE("receipt_no")
 );
 --> statement-breakpoint
 CREATE TABLE "stock_cards" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
 	"code" text NOT NULL,
 	"type" text NOT NULL,
 	"name" text NOT NULL,
-	"fabric_type_id" uuid,
-	"color_id" uuid,
-	"yarn_count_id" uuid,
+	"fabric_type_id" text,
+	"color_id" text,
+	"yarn_count_id" text,
 	"has_polyester" boolean DEFAULT false NOT NULL,
 	"has_lycra" boolean DEFAULT false NOT NULL,
 	"raw_width" integer,
@@ -171,12 +171,12 @@ CREATE TABLE "stock_cards" (
 );
 --> statement-breakpoint
 CREATE TABLE "stock_movements" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
 	"date" date NOT NULL,
-	"stock_id" uuid NOT NULL,
-	"warehouse_id" uuid NOT NULL,
-	"party_id" uuid,
-	"order_id" uuid,
+	"stock_id" text NOT NULL,
+	"warehouse_id" text NOT NULL,
+	"party_id" text,
+	"order_id" text,
 	"movement_type" text NOT NULL,
 	"direction" text NOT NULL,
 	"quantity" numeric(14, 3) NOT NULL,
@@ -185,37 +185,37 @@ CREATE TABLE "stock_movements" (
 	"reference_type" text NOT NULL,
 	"reference_id" text NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"created_by" uuid
+	"created_by" text
 );
 --> statement-breakpoint
 CREATE TABLE "transfers" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
 	"date" date NOT NULL,
-	"from_warehouse_id" uuid NOT NULL,
-	"to_warehouse_id" uuid NOT NULL,
+	"from_warehouse_id" text NOT NULL,
+	"to_warehouse_id" text NOT NULL,
 	"items" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"description" text DEFAULT '' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "warehouse_balances" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"stock_id" uuid NOT NULL,
-	"warehouse_id" uuid NOT NULL,
-	"party_id" uuid,
+	"id" text PRIMARY KEY NOT NULL,
+	"stock_id" text NOT NULL,
+	"warehouse_id" text NOT NULL,
+	"party_id" text,
 	"quantity" numeric(14, 3) DEFAULT '0' NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "warehouses" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"kind" text NOT NULL,
 	"is_active" boolean DEFAULT true NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "settings_yarn_counts" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"is_active" boolean DEFAULT true NOT NULL
 );

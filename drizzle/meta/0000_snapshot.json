@@ -1,5 +1,5 @@
 {
-  "id": "b777715a-c1c1-457a-a985-1aaa721dfc5d",
+  "id": "f7091e9e-70fe-4f67-a2c1-bbc408a6383a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -10,10 +10,9 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
+          "notNull": true
         },
         "name": {
           "name": "name",
@@ -82,10 +81,9 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
+          "notNull": true
         },
         "name": {
           "name": "name",
@@ -115,10 +113,9 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
+          "notNull": true
         },
         "order_no": {
           "name": "order_no",
@@ -146,19 +143,19 @@
         },
         "fabric_type_id": {
           "name": "fabric_type_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "color_id": {
           "name": "color_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "yarn_count_id": {
           "name": "yarn_count_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -208,13 +205,13 @@
         },
         "ym_stock_id": {
           "name": "ym_stock_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
         "mm_stock_id": {
           "name": "mm_stock_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -275,10 +272,9 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
+          "notNull": true
         },
         "party_no": {
           "name": "party_no",
@@ -288,19 +284,19 @@
         },
         "order_id": {
           "name": "order_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "ym_stock_id": {
           "name": "ym_stock_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "mm_stock_id": {
           "name": "mm_stock_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -368,7 +364,7 @@
         },
         "current_warehouse_id": {
           "name": "current_warehouse_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -416,10 +412,9 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
+          "notNull": true
         },
         "name": {
           "name": "name",
@@ -462,10 +457,9 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
+          "notNull": true
         },
         "name": {
           "name": "name",
@@ -495,10 +489,9 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
+          "notNull": true
         },
         "date": {
           "name": "date",
@@ -508,43 +501,43 @@
         },
         "order_id": {
           "name": "order_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "party_id": {
           "name": "party_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "dyehouse_partner_id": {
           "name": "dyehouse_partner_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "input_warehouse_id": {
           "name": "input_warehouse_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "output_warehouse_id": {
           "name": "output_warehouse_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "ym_stock_id": {
           "name": "ym_stock_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "mm_stock_id": {
           "name": "mm_stock_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -620,10 +613,9 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
+          "notNull": true
         },
         "date": {
           "name": "date",
@@ -633,31 +625,31 @@
         },
         "order_id": {
           "name": "order_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "party_id": {
           "name": "party_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "knitter_partner_id": {
           "name": "knitter_partner_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "warehouse_id": {
           "name": "warehouse_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "ym_stock_id": {
           "name": "ym_stock_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -715,10 +707,9 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
+          "notNull": true
         },
         "purchase_order_no": {
           "name": "purchase_order_no",
@@ -728,7 +719,7 @@
         },
         "supplier_id": {
           "name": "supplier_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -819,14 +810,13 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
+          "notNull": true
         },
         "purchase_order_id": {
           "name": "purchase_order_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -844,13 +834,13 @@
         },
         "warehouse_id": {
           "name": "warehouse_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "supplier_id": {
           "name": "supplier_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -877,7 +867,7 @@
         },
         "created_by": {
           "name": "created_by",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         }
@@ -904,10 +894,9 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
+          "notNull": true
         },
         "code": {
           "name": "code",
@@ -929,19 +918,19 @@
         },
         "fabric_type_id": {
           "name": "fabric_type_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
         "color_id": {
           "name": "color_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
         "yarn_count_id": {
           "name": "yarn_count_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -1048,10 +1037,9 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
+          "notNull": true
         },
         "date": {
           "name": "date",
@@ -1061,25 +1049,25 @@
         },
         "stock_id": {
           "name": "stock_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "warehouse_id": {
           "name": "warehouse_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "party_id": {
           "name": "party_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
         "order_id": {
           "name": "order_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -1136,7 +1124,7 @@
         },
         "created_by": {
           "name": "created_by",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         }
@@ -1155,10 +1143,9 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
+          "notNull": true
         },
         "date": {
           "name": "date",
@@ -1168,13 +1155,13 @@
         },
         "from_warehouse_id": {
           "name": "from_warehouse_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "to_warehouse_id": {
           "name": "to_warehouse_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -1214,26 +1201,25 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
+          "notNull": true
         },
         "stock_id": {
           "name": "stock_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "warehouse_id": {
           "name": "warehouse_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "party_id": {
           "name": "party_id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -1266,10 +1252,9 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
+          "notNull": true
         },
         "name": {
           "name": "name",
@@ -1305,10 +1290,9 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
+          "notNull": true
         },
         "name": {
           "name": "name",
