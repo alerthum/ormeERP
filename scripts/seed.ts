@@ -4,6 +4,20 @@ import { erpSeed } from "../src/data/seed";
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+function toSnakeCase(value: string) {
+  return value.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+}
+
+function toDbValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map((item) => toDbValue(item));
+  if (value && typeof value === "object" && !(value instanceof Date)) {
+    return Object.fromEntries(
+      Object.entries(value).map(([entryKey, entryValue]) => [toSnakeCase(entryKey), toDbValue(entryValue)]),
+    );
+  }
+  return value;
+}
+
 async function main() {
   if (!url || !key) {
     console.log("Seed demo data is bundled in src/data/seed.ts.");
@@ -42,7 +56,8 @@ async function main() {
   ] as const;
 
   for (const [table, rows] of tables) {
-    const { error } = await supabase.from(table).upsert(rows);
+    const dbRows = rows.map((row) => toDbValue(row));
+    const { error } = await supabase.from(table).upsert(dbRows);
     if (error) throw new Error(`${table}: ${error.message}`);
     console.log(`Seeded ${rows.length} rows into ${table}`);
   }
