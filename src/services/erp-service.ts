@@ -1,8 +1,8 @@
-import { erpSeed } from "@/data/seed";
+import { emptyErpData } from "@/data/empty";
 import type { ErpData, Order, PurchaseOrder, StockCard, StockType } from "@/types/erp";
 
 export function getErpData(): ErpData {
-  return erpSeed;
+  return emptyErpData;
 }
 
 export function getById<T extends { id: string }>(items: T[], id: string): T | undefined {
@@ -93,8 +93,8 @@ export function getDashboardMetrics(data: ErpData) {
   const monthlyProductionKg = data.parties.reduce((sum, party) => sum + party.rawProducedKg + party.finishedKg, 0);
   const rawWasteKg = data.parties.reduce((sum, party) => sum + party.rawWasteKg, 0);
   const dyeWasteKg = data.parties.reduce((sum, party) => sum + party.dyehouseWasteKg, 0);
-  const avgRawWaste = data.parties.reduce((sum, party) => sum + party.rawWastePercent, 0) / data.parties.length;
-  const avgDyeWaste = data.parties.reduce((sum, party) => sum + party.dyehouseWastePercent, 0) / data.parties.length;
+  const avgRawWaste = data.parties.length > 0 ? data.parties.reduce((sum, party) => sum + party.rawWastePercent, 0) / data.parties.length : 0;
+  const avgDyeWaste = data.parties.length > 0 ? data.parties.reduce((sum, party) => sum + party.dyehouseWastePercent, 0) / data.parties.length : 0;
   const openPurchaseOrders = data.purchaseOrders.filter((order) => order.status !== "Tamamlandı" && order.status !== "İptal");
   return {
     activeOrders,

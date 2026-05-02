@@ -7,6 +7,18 @@ export interface Column<T> {
 }
 
 export function DataTable<T extends { id: string }>({ rows, columns }: { rows: T[]; columns: Column<T>[] }) {
+  if (rows.length === 0) {
+    return (
+      <div className="premium-card rounded-2xl p-8 text-center">
+        <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-blue-50 text-blue-600">
+          <span className="text-2xl font-semibold">+</span>
+        </div>
+        <h3 className="mt-4 text-lg font-semibold text-slate-950">Henüz kayıt yok</h3>
+        <p className="mt-2 text-sm text-slate-500">Başlamak için önce Ayarlar bölümünden temel tanımları girin, ardından ilgili modülde ilk kaydı oluşturun.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="premium-card overflow-hidden rounded-2xl">
       <div className="hidden overflow-x-auto md:block">

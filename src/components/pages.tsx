@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BarChart3, Boxes, Factory, PackagePlus, Plus, Settings, ShoppingCart, Truck, Users, Warehouse } from "lucide-react";
+import { BarChart3, BookOpen, Boxes, CheckCircle2, Factory, KeyRound, PackagePlus, Plus, Settings, ShoppingCart, SlidersHorizontal, Truck, Users, Warehouse } from "lucide-react";
 import { useState } from "react";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { PageHeader } from "@/components/ui/page-header";
@@ -243,6 +243,143 @@ export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "
         { header: "Ad", cell: (row) => row.name },
         { header: "Durum", cell: () => <StatusBadge tone="green">Aktif</StatusBadge> },
       ]} />
+    </div>
+  );
+}
+
+const settingGroups = [
+  {
+    href: "/settings/fabric-types",
+    title: "Kumaş cinsleri",
+    description: "Süprem, iki iplik, üç iplik, kaşkorse, ribana gibi üretim aileleri.",
+    items: ["Süprem", "İki iplik", "Üç iplik", "Kaşkorse", "Ribana"],
+  },
+  {
+    href: "/settings/colors",
+    title: "Renkler",
+    description: "Sipariş, stok kartı ve boyahane final kartlarında kullanılacak renk kataloğu.",
+    items: ["Ekru", "Siyah", "Lacivert", "Gri melanj"],
+  },
+  {
+    href: "/settings/yarn-counts",
+    title: "Ne numaraları",
+    description: "YM kartından MM karta taşınacak iplik numarası standardı.",
+    items: ["20/1", "24/1", "30/1", "36/1", "40/1"],
+  },
+  {
+    href: "/settings/process-types",
+    title: "Boyahane işlem türleri",
+    description: "Reaktif boya, şardon, sanfor, apre, yıkama gibi proses tanımları.",
+    items: ["Reaktif boya", "Şardon", "Sanfor", "Apre"],
+  },
+  {
+    href: "/settings/warehouses",
+    title: "Depolar",
+    description: "Merkez iplik, fasoncu, ham kumaş, boyahane, mamül, satış ve fire depoları.",
+    items: ["Merkez iplik", "Fasoncu", "Ham kumaş", "Mamül"],
+  },
+  {
+    href: "/partners",
+    title: "Cari ve üretim ortakları",
+    description: "Fason örmeci, boyahane, satıcı/tedarikçi ve müşteri kartları.",
+    items: ["Fason örmeci", "Boyahane", "Satıcı", "Müşteri"],
+  },
+  {
+    href: "/settings",
+    title: "Prefix ve sayaçlar",
+    description: "YM, MM, IP, LYC, POLY, sipariş no ve parti no otomatik sayaçları.",
+    items: ["YM", "MM", "IP", "LYC", "POLY"],
+  },
+  {
+    href: "/settings",
+    title: "Roller ve güvenlik",
+    description: "Admin, üretim, depo, satın alma, satış ve raporlama yetki altyapısı.",
+    items: ["Admin", "Üretim", "Depo", "Satın alma"],
+  },
+];
+
+const startSteps = [
+  "Kumaş cinsi, renk, Ne numarası ve boyahane işlem türlerini tanımla.",
+  "Depoları ve cari kartları aç: fason örmeci, boyahane, satıcı ve müşteri.",
+  "IP, LYC ve POLY hammadde stok kartlarını oluştur.",
+  "Satıcı siparişi gir ve gelen hammaddeler için mal kabul yap.",
+  "Müşteri siparişi oluştur; sistem YM/MM stok eşleşmesini hazırlar.",
+  "Ham üretim, boyahane, transfer ve satış akışını parti üzerinden takip et.",
+];
+
+export function SettingsGuidePage({ section }: { section?: "fabric-types" | "colors" | "yarn-counts" | "process-types" | "warehouses" }) {
+  const activeGroup = section
+    ? settingGroups.find((group) => group.href.endsWith(section))
+    : undefined;
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Ayarlar"
+        title={activeGroup?.title ?? "Kurulum ve Tanım Merkezi"}
+        description={activeGroup?.description ?? "Boş ERP kurulumunda önce temel tanımları tamamlayın; sipariş, stok, üretim ve rapor ekranları bu sözlükleri kullanır."}
+        icon={Settings}
+        action={<Link className={primaryButton} href="/orders/new"><Plus className="size-4" />İlk siparişi aç</Link>}
+      />
+
+      {!activeGroup ? (
+        <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
+          <div className="premium-card rounded-2xl p-5">
+            <div className="flex items-center gap-3">
+              <div className="grid size-11 place-items-center rounded-2xl bg-blue-600 text-white">
+                <BookOpen className="size-5" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-slate-950">Projeye nereden başlamalı?</h2>
+                <p className="text-sm text-slate-500">Önerilen canlıya geçiş sırası</p>
+              </div>
+            </div>
+            <div className="mt-5 space-y-3">
+              {startSteps.map((step, index) => (
+                <div key={step} className="flex gap-3 rounded-2xl bg-slate-50 p-4">
+                  <div className="grid size-8 shrink-0 place-items-center rounded-full bg-white text-sm font-bold text-blue-700 shadow-sm">{index + 1}</div>
+                  <p className="text-sm leading-6 text-slate-600">{step}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <StatCard title="Zorunlu tanımlar" value="8 grup" helper="Siparişten önce tamamlanmalı" icon={SlidersHorizontal} />
+            <StatCard title="Kod sistemi" value="YM/MM/IP" helper="Sayaçlar transaction mantığıyla tasarlandı" icon={KeyRound} tone="green" />
+            <StatCard title="Boş veri" value="Hazır" helper="Demo kayıtlar temizlendi" icon={CheckCircle2} tone="green" />
+            <StatCard title="Yetki altyapısı" value="Planlandı" helper="Supabase Auth ile genişletilecek" icon={Users} tone="amber" />
+          </div>
+        </div>
+      ) : null}
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {(activeGroup ? [activeGroup] : settingGroups).map((group) => (
+          <Link key={group.title} href={group.href} className="premium-card rounded-2xl p-5 transition hover:-translate-y-0.5 hover:shadow-xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="font-semibold text-slate-950">{group.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-500">{group.description}</p>
+              </div>
+              <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-600">
+                <Settings className="size-4" />
+              </div>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {group.items.map((item) => (
+                <StatusBadge key={item} tone="blue">{item}</StatusBadge>
+              ))}
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      <div className="premium-card rounded-2xl p-5">
+        <h2 className="font-semibold text-slate-950">Kullanım notu</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-500">
+          Önce ayar sözlüklerini girin. Sonra hammadde stok kartlarını ve satıcı siparişlerini açın. Müşteri siparişinde aynı özelliklerde YM/MM stok yoksa sistem yeni kod üretim mantığıyla kart açacak şekilde kurgulandı. Ham üretim ilk parti numarasını oluşturur; boyahane, transfer ve satış hareketleri bu parti üzerinden izlenir.
+        </p>
+      </div>
     </div>
   );
 }
