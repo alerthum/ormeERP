@@ -612,6 +612,61 @@ export async function createTransfer(payload: Record<string, unknown>) {
   });
 }
 
+export async function cancelTransfer(recordId: string) {
+  return sql.begin(async (tx) => {
+    const existingCancel = await tx`select id from stock_movements where reference_type = 'transfer_cancel' and reference_id = ${recordId} limit 1`;
+    if (existingCancel[0]) return { id: recordId, status: "İptal" };
+
+    const rows = await tx`
+      select id, date, from_warehouse_id, to_warehouse_id, items, description
+      from transfers
+      where id = ${recordId}
+      limit 1
+    `;
+    const transfer = rows[0];
+    if (!transfer) throw new Error("Transfer kaydı bulunamadı.");
+
+    const cancelDate = new Date().toISOString().slice(0, 10);
+    const items = (Array.isArray(transfer.items) ? transfer.items : []) as Array<Record<string, unknown>>;
+    for (const item of items) {
+      const stockId = requireString(item.stockId, "Stok");
+      const partyId = optionalString(item.partyId);
+      const quantity = numberValue(item.quantity, "Miktar");
+      await addMovement(tx, {
+        date: cancelDate,
+        stockId,
+        warehouseId: String(transfer.to_warehouse_id),
+        partyId,
+        movementType: "Düzeltme",
+        direction: "OUT",
+        quantity,
+        description: "Transfer iptal çıkışı",
+        referenceType: "transfer_cancel",
+        referenceId: recordId,
+      });
+      await addMovement(tx, {
+        date: cancelDate,
+        stockId,
+        warehouseId: String(transfer.from_warehouse_id),
+        partyId,
+        movementType: "Düzeltme",
+        direction: "IN",
+        quantity,
+        description: "Transfer iptal iadesi",
+        referenceType: "transfer_cancel",
+        referenceId: recordId,
+      });
+    }
+
+    await tx`
+      update transfers
+      set description = trim(concat(coalesce(description, ''), ' [İPTAL: ', ${cancelDate}, ']'))
+      where id = ${recordId}
+    `;
+    return { id: recordId, status: "İptal" };
+  });
+}
+
 export async function createRawProduction(payload: Record<string, unknown>) {
   return sql.begin(async (tx) => {
     const productionId = id("raw");
@@ -691,6 +746,79 @@ export async function createRawProduction(payload: Record<string, unknown>) {
   });
 }
 
+export async function cancelRawProduction(recordId: string) {
+  return sql.begin(async (tx) => {
+    const existingCancel = await tx`select id from stock_movements where reference_type = 'production_raw_cancel' and reference_id = ${recordId} limit 1`;
+    if (existingCancel[0]) return { id: recordId, status: "İptal" };
+
+    const rows = await tx`
+      select id, date, order_id, party_id, warehouse_id, ym_stock_id, produced_raw_kg, consumed_items, waste_kg, description
+      from production_raw
+      where id = ${recordId}
+      limit 1
+    `;
+    const production = rows[0];
+    if (!production) throw new Error("Ham üretim kaydı bulunamadı.");
+
+    const cancelDate = new Date().toISOString().slice(0, 10);
+    const orderId = String(production.order_id);
+    const partyId = String(production.party_id);
+    const producedRawKg = Number(production.produced_raw_kg);
+    const wasteKg = Number(production.waste_kg);
+    const consumedItems = (Array.isArray(production.consumed_items) ? production.consumed_items : []) as Array<Record<string, unknown>>;
+    const consumedKg = consumedItems.reduce((sum, item) => sum + numberValue(item.quantityKg, "Tüketim kg"), 0);
+
+    await addMovement(tx, {
+      date: cancelDate,
+      stockId: String(production.ym_stock_id),
+      warehouseId: String(production.warehouse_id),
+      partyId,
+      orderId,
+      movementType: "Düzeltme",
+      direction: "OUT",
+      quantity: producedRawKg,
+      description: "Ham üretim iptal çıkışı",
+      referenceType: "production_raw_cancel",
+      referenceId: recordId,
+    });
+
+    for (const item of consumedItems) {
+      await addMovement(tx, {
+        date: cancelDate,
+        stockId: requireString(item.stockId, "Tüketilen stok"),
+        warehouseId: requireString(item.warehouseId, "Tüketim deposu"),
+        partyId,
+        orderId,
+        movementType: "Düzeltme",
+        direction: "IN",
+        quantity: numberValue(item.quantityKg, "Tüketim kg"),
+        description: "Ham üretim iptal iplik iadesi",
+        referenceType: "production_raw_cancel",
+        referenceId: recordId,
+      });
+    }
+
+    await tx`
+      update parties
+      set raw_produced_kg = greatest(raw_produced_kg - ${producedRawKg}, 0),
+          raw_consumed_kg = greatest(raw_consumed_kg - ${consumedKg}, 0),
+          raw_waste_kg = greatest(raw_waste_kg - ${wasteKg}, 0),
+          raw_waste_percent = case when greatest(raw_consumed_kg - ${consumedKg}, 0) > 0 then (greatest(raw_waste_kg - ${wasteKg}, 0) / greatest(raw_consumed_kg - ${consumedKg}, 0)) * 100 else 0 end,
+          status = case when greatest(raw_produced_kg - ${producedRawKg}, 0) > 0 then status else 'Onaylandı' end,
+          timeline = timeline || ${JSON.stringify([{ date: cancelDate, title: "Ham üretim iptal", description: `${producedRawKg} kg ham üretim ters hareketle iptal edildi.`, tone: "red" }])}::jsonb,
+          updated_at = now()
+      where id = ${partyId}
+    `;
+    await tx`update orders set status = 'Onaylandı', updated_at = now() where id = ${orderId}`;
+    await tx`
+      update production_raw
+      set description = trim(concat(coalesce(description, ''), ' [İPTAL: ', ${cancelDate}, ']'))
+      where id = ${recordId}
+    `;
+    return { id: recordId, status: "İptal" };
+  });
+}
+
 export async function createDyehouseProduction(payload: Record<string, unknown>) {
   return sql.begin(async (tx) => {
     const productionId = id("dye");
@@ -729,6 +857,75 @@ export async function createDyehouseProduction(payload: Record<string, unknown>)
     `;
     await tx`update orders set status = 'Mamül Hazır', updated_at = now() where id = ${String(partyRows[0].order_id)}`;
     return { id: productionId, waste };
+  });
+}
+
+export async function cancelDyehouseProduction(recordId: string) {
+  return sql.begin(async (tx) => {
+    const existingCancel = await tx`select id from stock_movements where reference_type = 'production_dyehouse_cancel' and reference_id = ${recordId} limit 1`;
+    if (existingCancel[0]) return { id: recordId, status: "İptal" };
+
+    const rows = await tx`
+      select id, order_id, party_id, input_warehouse_id, output_warehouse_id, ym_stock_id, mm_stock_id, input_raw_kg, finished_kg, waste_kg, description
+      from production_dyehouse
+      where id = ${recordId}
+      limit 1
+    `;
+    const production = rows[0];
+    if (!production) throw new Error("Boyahane üretim kaydı bulunamadı.");
+
+    const cancelDate = new Date().toISOString().slice(0, 10);
+    const orderId = String(production.order_id);
+    const partyId = String(production.party_id);
+    const inputRawKg = Number(production.input_raw_kg);
+    const finishedKg = Number(production.finished_kg);
+    const wasteKg = Number(production.waste_kg);
+
+    await addMovement(tx, {
+      date: cancelDate,
+      stockId: String(production.mm_stock_id),
+      warehouseId: String(production.output_warehouse_id),
+      partyId,
+      orderId,
+      movementType: "Düzeltme",
+      direction: "OUT",
+      quantity: finishedKg,
+      description: "Boyahane üretim iptal mamül çıkışı",
+      referenceType: "production_dyehouse_cancel",
+      referenceId: recordId,
+    });
+    await addMovement(tx, {
+      date: cancelDate,
+      stockId: String(production.ym_stock_id),
+      warehouseId: String(production.input_warehouse_id),
+      partyId,
+      orderId,
+      movementType: "Düzeltme",
+      direction: "IN",
+      quantity: inputRawKg,
+      description: "Boyahane üretim iptal ham iadesi",
+      referenceType: "production_dyehouse_cancel",
+      referenceId: recordId,
+    });
+
+    await tx`
+      update parties
+      set dyehouse_input_kg = greatest(dyehouse_input_kg - ${inputRawKg}, 0),
+          finished_kg = greatest(finished_kg - ${finishedKg}, 0),
+          dyehouse_waste_kg = greatest(dyehouse_waste_kg - ${wasteKg}, 0),
+          dyehouse_waste_percent = case when greatest(dyehouse_input_kg - ${inputRawKg}, 0) > 0 then (greatest(dyehouse_waste_kg - ${wasteKg}, 0) / greatest(dyehouse_input_kg - ${inputRawKg}, 0)) * 100 else 0 end,
+          status = case when greatest(finished_kg - ${finishedKg}, 0) > 0 then status else 'Ham Geldi' end,
+          timeline = timeline || ${JSON.stringify([{ date: cancelDate, title: "Boyahane iptal", description: `${finishedKg} kg mamül girişi ters hareketle iptal edildi.`, tone: "red" }])}::jsonb,
+          updated_at = now()
+      where id = ${partyId}
+    `;
+    await tx`update orders set status = 'Ham Geldi', updated_at = now() where id = ${orderId}`;
+    await tx`
+      update production_dyehouse
+      set description = trim(concat(coalesce(description, ''), ' [İPTAL: ', ${cancelDate}, ']'))
+      where id = ${recordId}
+    `;
+    return { id: recordId, status: "İptal" };
   });
 }
 

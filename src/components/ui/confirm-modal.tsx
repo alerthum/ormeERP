@@ -6,12 +6,16 @@ export function ConfirmModal({
   open,
   title,
   description,
+  confirmLabel = "Onayla",
+  tone = "default",
   onClose,
   onConfirm,
 }: {
   open: boolean;
   title: string;
   description: string;
+  confirmLabel?: string;
+  tone?: "default" | "danger";
   onClose: () => void;
   onConfirm: () => void;
 }) {
@@ -32,8 +36,12 @@ export function ConfirmModal({
           <button className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700" onClick={onClose} type="button">
             Vazgeç
           </button>
-          <button className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-100" onClick={onConfirm} type="button">
-            Onayla
+          <button
+            className={`rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-lg ${tone === "danger" ? "bg-rose-600 shadow-rose-100" : "bg-blue-600 shadow-blue-100"}`}
+            onClick={onConfirm}
+            type="button"
+          >
+            {confirmLabel}
           </button>
         </div>
       </div>

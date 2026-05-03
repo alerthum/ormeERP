@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { BarChart3, BookOpen, Boxes, CheckCircle2, Download, Factory, KeyRound, PackagePlus, Plus, Settings, ShoppingCart, SlidersHorizontal, Truck, Users, Warehouse } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { PageHeader } from "@/components/ui/page-header";
@@ -14,7 +14,7 @@ import { DyehouseProductionForm, OrderEditForm, OrderForm, PurchaseOrderEditForm
 import { PartyTimeline } from "@/components/party-timeline";
 import { useErpData } from "@/components/erp-data-provider";
 import { getDashboardMetrics, getName, getPurchaseProgress } from "@/services/erp-service";
-import type { ErpData, NamedEntity, Order, Partner, Party, PurchaseOrder, Role, Sale, StockCard, StockMovement, UserProfile, Warehouse as WarehouseEntity } from "@/types/erp";
+import type { DyehouseProduction, ErpData, NamedEntity, Order, Partner, Party, PurchaseOrder, RawProduction, Role, Sale, StockCard, StockMovement, Transfer, UserProfile, Warehouse as WarehouseEntity } from "@/types/erp";
 import { formatDate, formatKg, formatPercent, wasteTone } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 
@@ -33,6 +33,20 @@ function refreshInBackground(refresh: () => Promise<void>) {
 
 type SettingEntity = "fabricTypes" | "colors" | "yarnCounts" | "processTypes" | "warehouses" | "partners";
 type EditableSetting = { id: string; name: string; kind?: WarehouseEntity["kind"]; type?: Partner["type"] };
+type OrderFilters = {
+  status: string;
+  customer: string;
+  fabricTypeId: string;
+  colorId: string;
+  yarnCountId: string;
+  ymStockId: string;
+  mmStockId: string;
+  dateFrom: string;
+  dateTo: string;
+  dueFrom: string;
+  dueTo: string;
+  smart: string;
+};
 
 const warehouseKindLabels: Record<WarehouseEntity["kind"], string> = {
   YARN: "İplik deposu",
@@ -66,6 +80,48 @@ function replaceSettingInData(current: ErpData, entity: SettingEntity, row: Edit
   return { ...current, [entity]: current[entity].map((item) => (item.id === row.id ? base : item)) };
 }
 
+const emptyOrderFilters: OrderFilters = {
+  status: "ALL",
+  customer: "",
+  fabricTypeId: "ALL",
+  colorId: "ALL",
+  yarnCountId: "ALL",
+  ymStockId: "ALL",
+  mmStockId: "ALL",
+  dateFrom: "",
+  dateTo: "",
+  dueFrom: "",
+  dueTo: "",
+  smart: "",
+};
+
+function includesTr(value: string, query: string) {
+  return value.toLocaleLowerCase("tr-TR").includes(query.toLocaleLowerCase("tr-TR"));
+}
+
+function applySmartOrderFilter(order: Order, data: ErpData, smart: string) {
+  const query = smart.trim();
+  if (!query) return true;
+  const haystack = [
+    order.orderNo,
+    order.customerName,
+    order.status,
+    getName(data.fabricTypes, order.fabricTypeId),
+    getName(data.colors, order.colorId),
+    getName(data.yarnCounts, order.yarnCountId),
+    getName(data.stockCards, order.ymStockId),
+    getName(data.stockCards, order.mmStockId),
+  ].join(" ");
+  const normalized = query.toLocaleLowerCase("tr-TR");
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  const keywordMatch = tokens.every((token) => includesTr(haystack, token));
+  const overdueMatch = normalized.includes("geciken") ? new Date(order.dueDate) < new Date() && !["Kapandı", "İptal", "Sevk Edildi"].includes(order.status) : true;
+  const openMatch = normalized.includes("bekleyen") || normalized.includes("açık") ? !["Kapandı", "İptal", "Sevk Edildi"].includes(order.status) : true;
+  const dyehouseMatch = normalized.includes("boyahanede") ? order.status === "Boyahanede" : true;
+  const knittingMatch = normalized.includes("örmede") || normalized.includes("ormede") ? order.status === "Örmede" : true;
+  return keywordMatch && overdueMatch && openMatch && dyehouseMatch && knittingMatch;
+}
+
 async function apiDelete(endpoint: string) {
   const session = await supabase.auth.getSession();
   const token = session.data.session?.access_token;
@@ -92,6 +148,29 @@ export function OrdersPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Order | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Order | null>(null);
+  const [filters, setFilters] = useState<OrderFilters>(emptyOrderFilters);
+  const ymStocks = data.stockCards.filter((stock) => stock.type === "YM");
+  const mmStocks = data.stockCards.filter((stock) => stock.type === "MM");
+  const customerNames = [...new Set(data.orders.map((order) => order.customerName).filter(Boolean))].sort((a, b) => a.localeCompare(b, "tr"));
+  const filteredOrders = useMemo(
+    () =>
+      data.orders.filter((order) => {
+        if (filters.status !== "ALL" && order.status !== filters.status) return false;
+        if (filters.customer && order.customerName !== filters.customer) return false;
+        if (filters.fabricTypeId !== "ALL" && order.fabricTypeId !== filters.fabricTypeId) return false;
+        if (filters.colorId !== "ALL" && order.colorId !== filters.colorId) return false;
+        if (filters.yarnCountId !== "ALL" && order.yarnCountId !== filters.yarnCountId) return false;
+        if (filters.ymStockId !== "ALL" && order.ymStockId !== filters.ymStockId) return false;
+        if (filters.mmStockId !== "ALL" && order.mmStockId !== filters.mmStockId) return false;
+        if (filters.dateFrom && order.orderDate < filters.dateFrom) return false;
+        if (filters.dateTo && order.orderDate > filters.dateTo) return false;
+        if (filters.dueFrom && order.dueDate < filters.dueFrom) return false;
+        if (filters.dueTo && order.dueDate > filters.dueTo) return false;
+        return applySmartOrderFilter(order, data, filters.smart);
+      }),
+    [data, filters],
+  );
+  const setOrderFilter = (key: keyof OrderFilters, value: string) => setFilters((current) => ({ ...current, [key]: value }));
   async function deleteOrder() {
     if (!deleteTarget) return;
     try {
@@ -116,7 +195,70 @@ export function OrdersPage() {
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Siparişler" title="Müşteri Siparişleri" description="Kumaş üretim talepleri, otomatik YM/MM stok eşleşmesi ve üretim durum takibi." icon={ShoppingCart} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Yeni sipariş</button>} />
-      <DataTable rows={data.orders} columns={columns} searchPlaceholder="Sipariş, müşteri, durum, kumaş veya renkte ara" getSearchText={(row) => [row.orderNo, row.customerName, row.status, getName(data.fabricTypes, row.fabricTypeId), getName(data.colors, row.colorId), row.quantityKg].join(" ")} />
+      <div className="premium-card rounded-2xl p-5">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="font-semibold text-slate-950">Sipariş filtreleri</h2>
+            <p className="mt-1 text-sm text-slate-500">Durum, tarih, müşteri, stok ve akıllı ifade ile daralt.</p>
+          </div>
+          <button className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600" onClick={() => setFilters(emptyOrderFilters)} type="button">
+            Filtreleri temizle
+          </button>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-4">
+          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.status} onChange={(event) => setOrderFilter("status", event.target.value)}>
+            <option value="ALL">Tüm durumlar</option>
+            {["Taslak", "Onaylandı", "İplik Bekliyor", "Örmede", "Ham Geldi", "Boyahanede", "Mamül Hazır", "Sevk Edildi", "Kapandı", "İptal"].map((status) => <option key={status}>{status}</option>)}
+          </select>
+          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.customer} onChange={(event) => setOrderFilter("customer", event.target.value)}>
+            <option value="">Tüm müşteriler</option>
+            {customerNames.map((customer) => <option key={customer}>{customer}</option>)}
+          </select>
+          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.fabricTypeId} onChange={(event) => setOrderFilter("fabricTypeId", event.target.value)}>
+            <option value="ALL">Tüm kumaşlar</option>
+            {data.fabricTypes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.colorId} onChange={(event) => setOrderFilter("colorId", event.target.value)}>
+            <option value="ALL">Tüm renkler</option>
+            {data.colors.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.yarnCountId} onChange={(event) => setOrderFilter("yarnCountId", event.target.value)}>
+            <option value="ALL">Tüm Ne numaraları</option>
+            {data.yarnCounts.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.ymStockId} onChange={(event) => setOrderFilter("ymStockId", event.target.value)}>
+            <option value="ALL">Tüm YM stokları</option>
+            {ymStocks.map((stock) => <option key={stock.id} value={stock.id}>{stock.code} - {stock.name}</option>)}
+          </select>
+          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.mmStockId} onChange={(event) => setOrderFilter("mmStockId", event.target.value)}>
+            <option value="ALL">Tüm MM stokları</option>
+            {mmStocks.map((stock) => <option key={stock.id} value={stock.id}>{stock.code} - {stock.name}</option>)}
+          </select>
+          <input className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" placeholder="Akıllı filtre: bekleyen boyahanede lacivert" value={filters.smart} onChange={(event) => setOrderFilter("smart", event.target.value)} />
+          <label className="space-y-1 text-xs font-semibold text-slate-400">
+            Sipariş başlangıç
+            <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dateFrom} onChange={(event) => setOrderFilter("dateFrom", event.target.value)} />
+          </label>
+          <label className="space-y-1 text-xs font-semibold text-slate-400">
+            Sipariş bitiş
+            <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dateTo} onChange={(event) => setOrderFilter("dateTo", event.target.value)} />
+          </label>
+          <label className="space-y-1 text-xs font-semibold text-slate-400">
+            Termin başlangıç
+            <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dueFrom} onChange={(event) => setOrderFilter("dueFrom", event.target.value)} />
+          </label>
+          <label className="space-y-1 text-xs font-semibold text-slate-400">
+            Termin bitiş
+            <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dueTo} onChange={(event) => setOrderFilter("dueTo", event.target.value)} />
+          </label>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-slate-500">
+          <StatusBadge tone="blue">{filteredOrders.length} sipariş</StatusBadge>
+          <StatusBadge tone="amber">Akıllı örnek: bekleyen boyahanede lacivert</StatusBadge>
+          <StatusBadge tone="green">Çoklu filtre aktif</StatusBadge>
+        </div>
+      </div>
+      <DataTable rows={filteredOrders} columns={columns} searchPlaceholder="Liste içinde hızlı ara" getSearchText={(row) => [row.orderNo, row.customerName, row.status, getName(data.fabricTypes, row.fabricTypeId), getName(data.colors, row.colorId), row.quantityKg].join(" ")} />
       <FormDrawer open={open} title="Yeni müşteri siparişi" onClose={() => setOpen(false)}><OrderForm /></FormDrawer>
       <FormDrawer open={Boolean(editing)} title="Sipariş düzenle" onClose={() => setEditing(null)}>{editing ? <OrderEditForm order={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
       <ConfirmModal
@@ -317,22 +459,84 @@ export function PartyDetailPage({ id }: { id: string }) {
 }
 
 export function ProductionPage({ type }: { type: "raw" | "dyehouse" }) {
+  const { data, refresh } = useErpData();
   const [open, setOpen] = useState(false);
+  const [cancelTarget, setCancelTarget] = useState<RawProduction | DyehouseProduction | null>(null);
   const isRaw = type === "raw";
+  const cancelledIds = new Set(data.stockMovements.filter((movement) => movement.referenceType === (isRaw ? "production_raw_cancel" : "production_dyehouse_cancel")).map((movement) => movement.referenceId));
+  async function cancelProduction() {
+    if (!cancelTarget) return;
+    try {
+      await apiDelete(`/api/production/${isRaw ? "raw" : "dyehouse"}/${cancelTarget.id}`);
+      refreshInBackground(refresh);
+      toast.success(isRaw ? "Ham üretim iptal edildi ve stoklar geri alındı." : "Boyahane üretimi iptal edildi ve stoklar geri alındı.");
+      setCancelTarget(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Üretim kaydı iptal edilemedi.");
+    }
+  }
+  const rawColumns: Column<RawProduction>[] = [
+    { header: "Tarih", cell: (row) => formatDate(row.date) },
+    { header: "Sipariş", cell: (row) => data.orders.find((order) => order.id === row.orderId)?.orderNo ?? "-" },
+    { header: "Parti", cell: (row) => data.parties.find((party) => party.id === row.partyId)?.partyNo ?? "-" },
+    { header: "Fasoncu", cell: (row) => getName(data.partners, row.knitterPartnerId) },
+    { header: "Ham kg", cell: (row) => formatKg(row.producedRawKg) },
+    { header: "Fire", cell: (row) => <StatusBadge tone={wasteTone(row.wastePercent)}>{formatPercent(row.wastePercent)}</StatusBadge> },
+    { header: "Durum", cell: (row) => <StatusBadge tone={cancelledIds.has(row.id) ? "red" : "green"}>{cancelledIds.has(row.id) ? "İptal" : "Aktif"}</StatusBadge> },
+    { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end"><button className={dangerButton} disabled={cancelledIds.has(row.id)} onClick={() => setCancelTarget(row)} type="button">{cancelledIds.has(row.id) ? "İptal edildi" : "İptal et"}</button></div> },
+  ];
+  const dyehouseColumns: Column<DyehouseProduction>[] = [
+    { header: "Tarih", cell: (row) => formatDate(row.date) },
+    { header: "Sipariş", cell: (row) => data.orders.find((order) => order.id === row.orderId)?.orderNo ?? "-" },
+    { header: "Parti", cell: (row) => data.parties.find((party) => party.id === row.partyId)?.partyNo ?? "-" },
+    { header: "Boyahane", cell: (row) => getName(data.partners, row.dyehousePartnerId) },
+    { header: "Giden", cell: (row) => formatKg(row.inputRawKg) },
+    { header: "Dönen", cell: (row) => formatKg(row.finishedKg) },
+    { header: "Fire", cell: (row) => <StatusBadge tone={wasteTone(row.wastePercent)}>{formatPercent(row.wastePercent)}</StatusBadge> },
+    { header: "Durum", cell: (row) => <StatusBadge tone={cancelledIds.has(row.id) ? "red" : "green"}>{cancelledIds.has(row.id) ? "İptal" : "Aktif"}</StatusBadge> },
+    { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end"><button className={dangerButton} disabled={cancelledIds.has(row.id)} onClick={() => setCancelTarget(row)} type="button">{cancelledIds.has(row.id) ? "İptal edildi" : "İptal et"}</button></div> },
+  ];
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Üretim" title={isRaw ? "Ham Kumaş Üretimi" : "Boyahane Üretimi"} description={isRaw ? "İplik tüketimi, ham kumaş girişi, fire ve fasoncu depo kapanış mutabakatı." : "Ham çıkışı, mamül girişi, finish özellikleri ve boyahane fire hesaplama."} icon={Factory} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Yeni kayıt</button>} />
       <div className="premium-card rounded-2xl p-5">
         {isRaw ? <RawProductionForm /> : <DyehouseProductionForm />}
       </div>
+      {isRaw ? (
+        <DataTable rows={data.productionRaw} columns={rawColumns} searchPlaceholder="Sipariş, parti, fasoncu veya açıklamada ara" getSearchText={(row) => [data.orders.find((order) => order.id === row.orderId)?.orderNo, data.parties.find((party) => party.id === row.partyId)?.partyNo, getName(data.partners, row.knitterPartnerId), row.description].join(" ")} />
+      ) : (
+        <DataTable rows={data.productionDyehouse} columns={dyehouseColumns} searchPlaceholder="Sipariş, parti, boyahane veya açıklamada ara" getSearchText={(row) => [data.orders.find((order) => order.id === row.orderId)?.orderNo, data.parties.find((party) => party.id === row.partyId)?.partyNo, getName(data.partners, row.dyehousePartnerId), row.description].join(" ")} />
+      )}
       <FormDrawer open={open} title={isRaw ? "Ham üretim kaydı" : "Boyahane üretim kaydı"} onClose={() => setOpen(false)}>{isRaw ? <RawProductionForm /> : <DyehouseProductionForm />}</FormDrawer>
+      <ConfirmModal
+        open={Boolean(cancelTarget)}
+        title={isRaw ? "Ham üretim iptal edilsin mi?" : "Boyahane üretimi iptal edilsin mi?"}
+        description="Bu işlem stok hareketlerini ters kayıtla geri alır. İlgili stok başka işlemle tüketildiyse iptal engellenir."
+        confirmLabel="İptal et"
+        tone="danger"
+        onClose={() => setCancelTarget(null)}
+        onConfirm={cancelProduction}
+      />
     </div>
   );
 }
 
 export function TransfersPage() {
-  const { data } = useErpData();
+  const { data, refresh } = useErpData();
   const [confirm, setConfirm] = useState(false);
+  const [cancelTarget, setCancelTarget] = useState<Transfer | null>(null);
+  const cancelledTransferIds = new Set(data.stockMovements.filter((movement) => movement.referenceType === "transfer_cancel").map((movement) => movement.referenceId));
+  async function cancelTransferRecord() {
+    if (!cancelTarget) return;
+    try {
+      await apiDelete(`/api/transfers/${cancelTarget.id}`);
+      refreshInBackground(refresh);
+      toast.success("Transfer iptal edildi ve stoklar kaynak depoya iade edildi.");
+      setCancelTarget(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Transfer iptal edilemedi.");
+    }
+  }
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Depo" title="Depolar Arası Transfer" description="Her depodan her depoya çift taraflı stok hareketi; negatif stok kontrolüne hazır altyapı." icon={Truck} action={<button className={primaryButton} onClick={() => setConfirm(true)}><Plus className="size-4" />Onaylı transfer</button>} />
@@ -342,8 +546,19 @@ export function TransfersPage() {
         { header: "Kaynak", cell: (row) => getName(data.warehouses, row.fromWarehouseId) },
         { header: "Hedef", cell: (row) => getName(data.warehouses, row.toWarehouseId) },
         { header: "Miktar", cell: (row) => formatKg(row.items.reduce((sum, item) => sum + item.quantity, 0)) },
-      ]} />
+        { header: "Durum", cell: (row) => <StatusBadge tone={cancelledTransferIds.has(row.id) ? "red" : "green"}>{cancelledTransferIds.has(row.id) ? "İptal" : "Aktif"}</StatusBadge> },
+        { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end"><button className={dangerButton} disabled={cancelledTransferIds.has(row.id)} onClick={() => setCancelTarget(row)} type="button">{cancelledTransferIds.has(row.id) ? "İptal edildi" : "İptal et"}</button></div> },
+      ]} searchPlaceholder="Kaynak depo, hedef depo veya açıklamada ara" getSearchText={(row) => [getName(data.warehouses, row.fromWarehouseId), getName(data.warehouses, row.toWarehouseId), row.description].join(" ")} />
       <ConfirmModal open={confirm} title="Transfer onayı" description="Bu işlem kaynak depodan çıkış ve hedef depoya giriş hareketi oluşturur." onClose={() => setConfirm(false)} onConfirm={() => setConfirm(false)} />
+      <ConfirmModal
+        open={Boolean(cancelTarget)}
+        title="Transfer iptal edilsin mi?"
+        description="Bu işlem hedef depodan çıkış, kaynak depoya giriş ters hareketi oluşturur. Hedef depoda yeterli stok yoksa işlem yapılmaz."
+        confirmLabel="İptal et"
+        tone="danger"
+        onClose={() => setCancelTarget(null)}
+        onConfirm={cancelTransferRecord}
+      />
     </div>
   );
 }
