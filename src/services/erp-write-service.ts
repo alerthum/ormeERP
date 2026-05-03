@@ -589,6 +589,79 @@ export async function createPurchaseReceipt(payload: Record<string, unknown>) {
   });
 }
 
+export async function createDirectRawMaterialPurchase(payload: Record<string, unknown>) {
+  return sql.begin(async (tx) => {
+    const stockId = requireString(payload.stockId, "Hammadde stok kartı");
+    const stockRows = await tx`
+      select id, code, name, type, yarn_count_id, color_id
+      from stock_cards
+      where id = ${stockId}
+      limit 1
+    `;
+    const stock = stockRows[0];
+    if (!stock) throw new Error("Hammadde stok kartı bulunamadı.");
+    const stockType = String(stock.type) as StockType;
+    if (!["IP", "LYC", "POLY"].includes(stockType)) throw new Error("Doğrudan alış yalnızca IP, LYC veya POLY stokları için yapılır.");
+
+    const quantityKg = numberValue(payload.quantityKg, "Gelen kg");
+    const supplierId = requireString(payload.supplierId, "Satıcı");
+    const warehouseId = requireString(payload.warehouseId, "Depo");
+    const date = requireString(payload.receiptDate ?? new Date().toISOString().slice(0, 10), "Alış tarihi");
+    const purchaseOrderId = id("po");
+    const purchaseOrderNo = await nextBusinessNo(tx, "purchaseOrder");
+    const receiptId = id("receipt");
+    const receiptNo = await nextBusinessNo(tx, "receipt");
+    const purchaseOrderItemId = id("poi");
+    const item = {
+      id: purchaseOrderItemId,
+      stockId,
+      stockCode: String(stock.code),
+      stockName: String(stock.name),
+      stockType,
+      yarnCountId: stock.yarn_count_id ? String(stock.yarn_count_id) : null,
+      colorId: stock.color_id ? String(stock.color_id) : null,
+      orderedKg: quantityKg,
+      receivedKg: quantityKg,
+      remainingKg: 0,
+      unitPrice: payload.unitPrice ? numberValue(payload.unitPrice, "Birim fiyat") : null,
+      currency: optionalString(payload.currency) ?? "TRY",
+      description: optionalString(payload.description) ?? "Siparişsiz hızlı hammadde alışı",
+    };
+
+    await tx`
+      insert into purchase_orders (
+        id, purchase_order_no, supplier_id, order_date, due_date, status, items,
+        total_ordered_kg, total_received_kg, total_remaining_kg, description, created_at, updated_at
+      )
+      values (
+        ${purchaseOrderId}, ${purchaseOrderNo}, ${supplierId}, ${date}, ${date}, 'Tamamlandı',
+        ${JSON.stringify([item])}, ${quantityKg}, ${quantityKg}, 0,
+        ${optionalString(payload.description) ?? "Siparişsiz hızlı hammadde alışı"}, now(), now()
+      )
+    `;
+    await tx`
+      insert into purchase_receipts (id, purchase_order_id, receipt_no, receipt_date, warehouse_id, supplier_id, items, description, created_at, created_by)
+      values (
+        ${receiptId}, ${purchaseOrderId}, ${receiptNo}, ${date}, ${warehouseId}, ${supplierId},
+        ${JSON.stringify([{ purchaseOrderItemId, stockId, receivedKg: quantityKg, lotNo: optionalString(payload.lotNo), description: optionalString(payload.description) }])},
+        ${optionalString(payload.description) ?? "Siparişsiz hızlı hammadde alışı"}, now(), 'system'
+      )
+    `;
+    await addMovement(tx, {
+      date,
+      stockId,
+      warehouseId,
+      movementType: "Giriş",
+      direction: "IN",
+      quantity: quantityKg,
+      description: "Siparişsiz hammadde alışı",
+      referenceType: "direct_purchase_receipt",
+      referenceId: receiptId,
+    });
+    return { id: receiptId, receiptNo, purchaseOrderId, purchaseOrderNo };
+  });
+}
+
 export async function createTransfer(payload: Record<string, unknown>) {
   return sql.begin(async (tx) => {
     const transferId = id("transfer");

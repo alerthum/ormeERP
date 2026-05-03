@@ -513,6 +513,57 @@ export function PurchaseReceiptForm() {
   );
 }
 
+export function DirectPurchaseForm() {
+  const { data, refresh } = useErpData();
+  const [loading, setLoading] = useState(false);
+  const rawMaterialStocks = data.stockCards.filter((item) => ["IP", "LYC", "POLY"].includes(item.type));
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    try {
+      await postJson("/api/direct-purchases", {
+        supplierId: form.get("supplierId"),
+        stockId: form.get("stockId"),
+        receiptDate: form.get("receiptDate"),
+        warehouseId: form.get("warehouseId"),
+        quantityKg: form.get("quantityKg"),
+        unitPrice: form.get("unitPrice"),
+        currency: form.get("currency"),
+        lotNo: form.get("lotNo"),
+        description: form.get("description"),
+      });
+      formElement.reset();
+      refreshInBackground(refresh);
+      toast.success("Hammadde alışı kaydedildi ve stok girişi işlendi.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Hammadde alışı kaydedilemedi.");
+    } finally {
+      setLoading(false);
+    }
+  }
+  return (
+    <form className="grid gap-4" onSubmit={submit}>
+      <div className="rounded-2xl bg-blue-50 p-4 text-sm text-blue-800">
+        Bu ekran müşteri siparişinden bağımsız IP, LYC ve POLY alışı içindir. Kaydettiğinde sistem tamamlanmış satıcı siparişi, mal kabul ve stok giriş hareketini birlikte oluşturur.
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Satıcı"><select className={inputClass} name="supplierId" required>{data.partners.filter((item) => item.type === "SUPPLIER").map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
+        <Field label="Hammadde"><select className={inputClass} name="stockId" required>{rawMaterialStocks.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}</select></Field>
+        <Field label="Alış tarihi"><input className={inputClass} name="receiptDate" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required /></Field>
+        <Field label="Giriş deposu"><select className={inputClass} name="warehouseId" required>{data.warehouses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
+        <Field label="Gelen kg"><input className={inputClass} name="quantityKg" type="number" required /></Field>
+        <Field label="Birim fiyat"><input className={inputClass} name="unitPrice" type="number" step="0.01" /></Field>
+        <Field label="Para birimi"><select className={inputClass} name="currency" defaultValue="TRY"><option>TRY</option><option>USD</option><option>EUR</option></select></Field>
+        <Field label="Lot no"><input className={inputClass} name="lotNo" /></Field>
+      </div>
+      <Field label="Açıklama"><textarea className={inputClass} name="description" rows={3} /></Field>
+      <FormButton loading={loading}>Hammadde alışını kaydet</FormButton>
+    </form>
+  );
+}
+
 export function TransferForm() {
   const { data, refresh } = useErpData();
   const [loading, setLoading] = useState(false);
