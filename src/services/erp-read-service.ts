@@ -57,51 +57,29 @@ function normalizeObject(row: Row) {
   );
 }
 
-async function table<T>(name: string): Promise<T[]> {
-  const rows = await sql`select * from ${sql(name)} order by id`;
-  return rows.map((row) => normalizeObject(row as Row) as T);
-}
-
 export async function getErpDataFromDb(): Promise<ErpData> {
-  const fabricTypes = await table<ErpData["fabricTypes"][number]>("settings_fabric_types");
-  const colors = await table<ErpData["colors"][number]>("settings_colors");
-  const yarnCounts = await table<ErpData["yarnCounts"][number]>("settings_yarn_counts");
-  const processTypes = await table<ErpData["processTypes"][number]>("settings_process_types");
-  const warehouses = await table<ErpData["warehouses"][number]>("warehouses");
-  const partners = await table<ErpData["partners"][number]>("partners");
-  const stockCards = await table<ErpData["stockCards"][number]>("stock_cards");
-  const stockMovements = await table<ErpData["stockMovements"][number]>("stock_movements");
-  const warehouseBalances = await table<ErpData["warehouseBalances"][number]>("warehouse_balances");
-  const orders = await table<ErpData["orders"][number]>("orders");
-  const parties = await table<ErpData["parties"][number]>("parties");
-  const productionRaw = await table<ErpData["productionRaw"][number]>("production_raw");
-  const productionDyehouse = await table<ErpData["productionDyehouse"][number]>("production_dyehouse");
-  const transfers = await table<ErpData["transfers"][number]>("transfers");
-  const purchaseOrders = await table<ErpData["purchaseOrders"][number]>("purchase_orders");
-  const purchaseReceipts = await table<ErpData["purchaseReceipts"][number]>("purchase_receipts");
-  const sales = await table<ErpData["sales"][number]>("sales");
-  const roles = await table<ErpData["roles"][number]>("roles");
-  const userProfiles = await table<ErpData["userProfiles"][number]>("user_profiles");
+  const rows = await sql`
+    select
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from settings_fabric_types t), '[]'::jsonb) as fabric_types,
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from settings_colors t), '[]'::jsonb) as colors,
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from settings_yarn_counts t), '[]'::jsonb) as yarn_counts,
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from settings_process_types t), '[]'::jsonb) as process_types,
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from warehouses t), '[]'::jsonb) as warehouses,
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from partners t), '[]'::jsonb) as partners,
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from stock_cards t), '[]'::jsonb) as stock_cards,
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from stock_movements t), '[]'::jsonb) as stock_movements,
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from warehouse_balances t), '[]'::jsonb) as warehouse_balances,
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from orders t), '[]'::jsonb) as orders,
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from parties t), '[]'::jsonb) as parties,
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from production_raw t), '[]'::jsonb) as production_raw,
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from production_dyehouse t), '[]'::jsonb) as production_dyehouse,
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from transfers t), '[]'::jsonb) as transfers,
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from purchase_orders t), '[]'::jsonb) as purchase_orders,
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from purchase_receipts t), '[]'::jsonb) as purchase_receipts,
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from sales t), '[]'::jsonb) as sales,
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from roles t), '[]'::jsonb) as roles,
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from user_profiles t), '[]'::jsonb) as user_profiles
+  `;
 
-  return {
-    fabricTypes,
-    colors,
-    yarnCounts,
-    processTypes,
-    warehouses,
-    partners,
-    stockCards,
-    stockMovements,
-    warehouseBalances,
-    orders,
-    parties,
-    productionRaw,
-    productionDyehouse,
-    transfers,
-    purchaseOrders,
-    purchaseReceipts,
-    sales,
-    roles,
-    userProfiles,
-  };
+  return normalizeObject(rows[0] as Row) as unknown as ErpData;
 }

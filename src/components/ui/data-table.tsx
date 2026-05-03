@@ -1,4 +1,7 @@
+"use client";
+
 import { cn } from "@/lib/utils";
+import { useErpData } from "@/components/erp-data-provider";
 
 export interface Column<T> {
   header: string;
@@ -6,7 +9,31 @@ export interface Column<T> {
   className?: string;
 }
 
+function TableSkeleton() {
+  return (
+    <div className="premium-card overflow-hidden rounded-2xl">
+      <div className="space-y-3 p-5">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <div key={index} className="grid gap-3 md:grid-cols-4">
+            <div className="h-4 rounded-full bg-slate-100" />
+            <div className="h-4 rounded-full bg-slate-100" />
+            <div className="h-4 rounded-full bg-slate-100" />
+            <div className="h-4 rounded-full bg-slate-100" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function DataTable<T extends { id: string }>({ rows, columns }: { rows: T[]; columns: Column<T>[] }) {
+  const { loading } = useErpData();
+  const mobileColumns = columns.length > 4 ? [...columns.slice(0, 3), columns[columns.length - 1]] : columns;
+
+  if (rows.length === 0 && loading) {
+    return <TableSkeleton />;
+  }
+
   if (rows.length === 0) {
     return (
       <div className="premium-card rounded-2xl p-8 text-center">
@@ -48,7 +75,7 @@ export function DataTable<T extends { id: string }>({ rows, columns }: { rows: T
       <div className="divide-y divide-slate-100 md:hidden">
         {rows.map((row) => (
           <div key={row.id} className="space-y-3 bg-white p-4">
-            {columns.slice(0, 4).map((column) => (
+            {mobileColumns.map((column) => (
               <div key={column.header} className="flex items-center justify-between gap-4">
                 <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">{column.header}</span>
                 <div className="text-right text-sm font-medium text-slate-800">{column.cell(row)}</div>

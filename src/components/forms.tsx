@@ -191,10 +191,11 @@ export function StockCardForm() {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     try {
       await postJson("/api/stocks", Object.fromEntries(form.entries()));
-      event.currentTarget.reset();
+      formElement.reset();
       refreshInBackground(refresh);
       toast.success("Stok kartı kaydedildi.");
     } catch (error) {
@@ -233,7 +234,8 @@ export function StockCardEditForm({ stock, onDone }: { stock: StockCard; onDone:
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     try {
       await patchJson(`/api/stocks/${stock.id}`, {
         ...Object.fromEntries(form.entries()),
@@ -279,7 +281,8 @@ export function OrderForm() {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     try {
       await postJson("/api/orders", {
         customerName: form.get("customerName"),
@@ -297,7 +300,7 @@ export function OrderForm() {
         quantityKg: form.get("quantityKg"),
         description: form.get("description"),
       });
-      event.currentTarget.reset();
+      formElement.reset();
       refreshInBackground(refresh);
       toast.success("Sipariş kaydedildi; YM/MM stok eşleşmesi tamamlandı.");
     } catch (error) {
@@ -342,7 +345,8 @@ export function OrderEditForm({ order, onDone }: { order: Order; onDone: () => v
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     try {
       await patchJson(`/api/orders/${order.id}`, Object.fromEntries(form.entries()));
       refreshInBackground(refresh);
@@ -377,7 +381,8 @@ export function PurchaseOrderForm() {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const stock = data.stockCards.find((item) => item.id === form.get("stockId"));
     try {
       if (!stock) throw new Error("Hammadde stok kartı seçilmelidir.");
@@ -398,7 +403,7 @@ export function PurchaseOrderForm() {
           currency: form.get("currency"),
         },
       });
-      event.currentTarget.reset();
+      formElement.reset();
       refreshInBackground(refresh);
       toast.success("Satıcı siparişi kaydedildi.");
     } catch (error) {
@@ -431,7 +436,8 @@ export function PurchaseOrderEditForm({ order, onDone }: { order: PurchaseOrder;
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     try {
       await patchJson(`/api/purchase-orders/${order.id}`, Object.fromEntries(form.entries()));
       refreshInBackground(refresh);
@@ -467,7 +473,8 @@ export function PurchaseReceiptForm() {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const order = data.purchaseOrders.find((item) => item.id === form.get("purchaseOrderId"));
     const item = order?.items[0];
     try {
@@ -482,7 +489,7 @@ export function PurchaseReceiptForm() {
         lotNo: form.get("lotNo"),
         description: form.get("description"),
       });
-      event.currentTarget.reset();
+      formElement.reset();
       refreshInBackground(refresh);
       toast.success("Mal kabul kaydedildi.");
     } catch (error) {
@@ -512,7 +519,8 @@ export function TransferForm() {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     try {
       await postJson("/api/transfers", {
         date: form.get("date"),
@@ -521,7 +529,7 @@ export function TransferForm() {
         description: form.get("description"),
         items: [{ stockId: form.get("stockId"), partyId: form.get("partyId") || null, quantity: form.get("quantity") }],
       });
-      event.currentTarget.reset();
+      formElement.reset();
       refreshInBackground(refresh);
       toast.success("Transfer kaydedildi.");
     } catch (error) {
@@ -553,7 +561,8 @@ export function RawProductionForm() {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     try {
       await postJson("/api/production/raw", {
         date: form.get("date"),
@@ -565,7 +574,7 @@ export function RawProductionForm() {
         consumedItems: [{ stockId: form.get("consumedStockId"), warehouseId: form.get("consumedWarehouseId"), quantityKg: form.get("consumedKg") }],
         description: form.get("description"),
       });
-      event.currentTarget.reset();
+      formElement.reset();
       refreshInBackground(refresh);
       toast.success("Ham üretim kaydedildi.");
     } catch (error) {
@@ -603,7 +612,8 @@ export function DyehouseProductionForm() {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     try {
       await postJson("/api/production/dyehouse", {
         date: form.get("date"),
@@ -617,7 +627,7 @@ export function DyehouseProductionForm() {
         finishGsm: form.get("finishGsm"),
         description: form.get("description"),
       });
-      event.currentTarget.reset();
+      formElement.reset();
       refreshInBackground(refresh);
       toast.success("Boyahane üretimi kaydedildi.");
     } catch (error) {
@@ -656,7 +666,8 @@ export function SaleForm() {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const party = data.parties.find((item) => item.id === form.get("partyId"));
     try {
       await postJson("/api/sales", {
@@ -671,7 +682,7 @@ export function SaleForm() {
         currency: form.get("currency"),
         description: form.get("description"),
       });
-      event.currentTarget.reset();
+      formElement.reset();
       refreshInBackground(refresh);
       toast.success("Satış / sevkiyat kaydedildi.");
     } catch (error) {
@@ -717,14 +728,15 @@ export function RoleForm() {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     try {
       await postJson("/api/roles", {
         name: form.get("name"),
         description: form.get("description"),
         permissions: form.getAll("permissions"),
       });
-      event.currentTarget.reset();
+      formElement.reset();
       refreshInBackground(refresh);
       toast.success("Rol kaydedildi.");
     } catch (error) {
@@ -758,14 +770,15 @@ export function UserProfileForm() {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     try {
       await postJson("/api/users", {
         email: form.get("email"),
         fullName: form.get("fullName"),
         roleId: form.get("roleId"),
       });
-      event.currentTarget.reset();
+      formElement.reset();
       refreshInBackground(refresh);
       toast.success("Kullanıcı profili kaydedildi.");
     } catch (error) {

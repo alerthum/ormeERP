@@ -847,16 +847,18 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
                     <p className="font-semibold text-slate-950">{row.name}</p>
                     {"kind" in row ? <p className="text-xs text-slate-400">{warehouseKindLabels[row.kind as WarehouseEntity["kind"]]}</p> : null}
                   </div>
-                  <button
-                    className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700"
-                    onClick={() => setEditing({ id: row.id, name: row.name, kind: "kind" in row ? row.kind : undefined })}
-                    type="button"
-                  >
-                    Düzenle
-                  </button>
-                  <button className="ml-2 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700" onClick={() => setDeleteTarget({ id: row.id, name: row.name })} type="button">
-                    Sil
-                  </button>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700"
+                      onClick={() => setEditing({ id: row.id, name: row.name, kind: "kind" in row ? row.kind : undefined })}
+                      type="button"
+                    >
+                      Düzenle
+                    </button>
+                    <button className="rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700" onClick={() => setDeleteTarget({ id: row.id, name: row.name })} type="button">
+                      Sil
+                    </button>
+                  </div>
                 </div>
               ))
             )}
