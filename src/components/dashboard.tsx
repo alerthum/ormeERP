@@ -5,7 +5,8 @@ import { AlertTriangle, Boxes, Factory, PackageCheck, ShoppingCart, Timer, Trend
 import { useSyncExternalStore } from "react";
 import { StatCard } from "@/components/ui/stat-card";
 import { StatusBadge, statusTone } from "@/components/ui/status-badge";
-import { getDashboardMetrics, getErpData, getName, getPurchaseProgress } from "@/services/erp-service";
+import { useErpData } from "@/components/erp-data-provider";
+import { getDashboardMetrics, getName, getPurchaseProgress } from "@/services/erp-service";
 import { formatKg, formatPercent, wasteTone } from "@/lib/utils";
 
 export function Dashboard() {
@@ -14,7 +15,7 @@ export function Dashboard() {
     () => true,
     () => false,
   );
-  const data = getErpData();
+  const { data } = useErpData();
   const metrics = getDashboardMetrics(data);
   const productionTrend = [
     { month: "Oca", kg: 11800, fire: 4.8 },

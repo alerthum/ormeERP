@@ -17,6 +17,7 @@ import {
   Warehouse,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ErpDataProvider } from "@/components/erp-data-provider";
 
 const navigation = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
@@ -45,6 +46,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
+    <ErpDataProvider>
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#eff6ff,transparent_32%),#f8fafc]">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 border-r border-slate-200/80 bg-white/90 p-4 backdrop-blur-xl lg:block">
         <Link href="/dashboard" className="flex items-center gap-3 rounded-2xl bg-blue-600 p-3 text-white shadow-lg shadow-blue-100">
@@ -113,5 +115,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </nav>
     </div>
+    </ErpDataProvider>
   );
 }

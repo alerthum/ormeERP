@@ -10,7 +10,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "seed": "tsx scripts/seed.ts",
-    "reset:data": "tsx scripts/reset-data.ts"
+    "reset:data": "tsx scripts/reset-data.ts",
+    "realtime:setup": "tsx scripts/setup-realtime.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.1",

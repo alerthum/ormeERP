@@ -219,6 +219,32 @@ export async function createSetting(entity: SettingEntity, payload: Record<strin
   return { id: recordId, name };
 }
 
+export async function updateSetting(entity: SettingEntity, recordId: string, payload: Record<string, unknown>) {
+  const table = tableMap[entity];
+  const name = requireString(payload.name, "Ad");
+
+  if (entity === "warehouses") {
+    const kind = requireString(payload.kind ?? "RAW", "Depo tipi");
+    await sql`update ${sql(table)} set name = ${name}, kind = ${kind} where id = ${recordId}`;
+    return { id: recordId, name, kind };
+  }
+
+  if (entity === "partners") {
+    const type = requireString(payload.type ?? "SUPPLIER", "Cari tipi");
+    await sql`update ${sql(table)} set name = ${name}, type = ${type} where id = ${recordId}`;
+    return { id: recordId, name, type };
+  }
+
+  await sql`update ${sql(table)} set name = ${name} where id = ${recordId}`;
+  return { id: recordId, name };
+}
+
+export async function deleteSetting(entity: SettingEntity, recordId: string) {
+  const table = tableMap[entity];
+  await sql`delete from ${sql(table)} where id = ${recordId}`;
+  return { id: recordId };
+}
+
 export async function createStockCard(payload: Record<string, unknown>) {
   const type = requireString(payload.type, "Stok tipi") as StockType;
   if (!["YM", "MM", "IP", "LYC", "POLY"].includes(type)) throw new Error("Geçersiz stok tipi.");
