@@ -341,4 +341,5 @@ export const erpSeed: ErpData = {
     { id: "role-production", name: "Uretim", description: "Uretim ve parti sureci.", permissions: ["dashboard:read", "production:write", "stocks:write"], isActive: true, createdAt: now, updatedAt: now },
   ],
   userProfiles: [],
+  counters: [],
 };

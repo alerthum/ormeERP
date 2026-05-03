@@ -261,6 +261,13 @@ export interface UserProfile {
   updatedAt: string;
 }
 
+export interface Counter {
+  key: string;
+  prefix: string;
+  currentValue: number;
+  updatedAt: string;
+}
+
 export interface ErpData {
   fabricTypes: NamedEntity[];
   colors: NamedEntity[];
@@ -281,4 +288,5 @@ export interface ErpData {
   sales: Sale[];
   roles: Role[];
   userProfiles: UserProfile[];
+  counters: Counter[];
 }

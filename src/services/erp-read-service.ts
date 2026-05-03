@@ -78,7 +78,8 @@ export async function getErpDataFromDb(): Promise<ErpData> {
       coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from purchase_receipts t), '[]'::jsonb) as purchase_receipts,
       coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from sales t), '[]'::jsonb) as sales,
       coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from roles t), '[]'::jsonb) as roles,
-      coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from user_profiles t), '[]'::jsonb) as user_profiles
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from user_profiles t), '[]'::jsonb) as user_profiles,
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.key) from counters t), '[]'::jsonb) as counters
   `;
 
   return normalizeObject(rows[0] as Row) as unknown as ErpData;

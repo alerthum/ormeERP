@@ -20,4 +20,5 @@ export const emptyErpData: ErpData = {
   sales: [],
   roles: [],
   userProfiles: [],
+  counters: [],
 };

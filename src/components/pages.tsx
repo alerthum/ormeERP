@@ -1027,7 +1027,7 @@ const settingGroups = [
     items: ["Fason örmeci", "Boyahane", "Satıcı", "Müşteri"],
   },
   {
-    href: "/settings",
+    href: "/settings/prefix-counters",
     title: "Prefix ve sayaçlar",
     description: "YM, MM, IP, LYC, POLY, sipariş no ve parti no otomatik sayaçları.",
     items: ["YM", "MM", "IP", "LYC", "POLY"],
@@ -1054,6 +1054,113 @@ const startSteps = [
   "Müşteri siparişi oluştur; sistem YM/MM stok eşleşmesini hazırlar.",
   "Ham üretim, boyahane, transfer ve satış akışını parti üzerinden takip et.",
 ];
+
+const defaultCounterDefinitions = [
+  { key: "stock:YM", prefix: "YM", title: "Ham kumaş stok kodu", sample: "YM-000001" },
+  { key: "stock:MM", prefix: "MM", title: "Mamül kumaş stok kodu", sample: "MM-000001" },
+  { key: "stock:IP", prefix: "IP", title: "İplik stok kodu", sample: "IP-000001" },
+  { key: "stock:LYC", prefix: "LYC", title: "Likra stok kodu", sample: "LYC-000001" },
+  { key: "stock:POLY", prefix: "POLY", title: "Polyester stok kodu", sample: "POLY-000001" },
+  { key: `order:${new Date().getFullYear()}`, prefix: "MS", title: "Müşteri sipariş no", sample: "MS-260001" },
+  { key: `purchaseOrder:${new Date().getFullYear()}`, prefix: "SS", title: "Satıcı sipariş no", sample: "SS-260001" },
+  { key: `party:${new Date().getFullYear()}`, prefix: String(new Date().getFullYear()).slice(-2), title: "Parti no", sample: "260001" },
+];
+
+export function PrefixCountersPage() {
+  const { data } = useErpData();
+  const counters = defaultCounterDefinitions.map((definition) => {
+    const current = data.counters.find((counter) => counter.key === definition.key || counter.prefix === definition.prefix);
+    return {
+      ...definition,
+      currentValue: current?.currentValue ?? 0,
+      updatedAt: current?.updatedAt,
+    };
+  });
+  const rawMaterialStocks = data.stockCards.filter((stock) => ["IP", "LYC", "POLY"].includes(stock.type));
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Ayarlar"
+        title="Prefix ve Sayaçlar"
+        description="Stok kodları, sipariş numaraları ve parti numaraları transaction-safe sayaç sistemiyle otomatik üretilir."
+        icon={KeyRound}
+        action={<Link className={primaryButton} href="/stocks"><Plus className="size-4" />Hammadde stok kartı aç</Link>}
+      />
+      <div className="grid gap-4 md:grid-cols-4">
+        <StatCard title="Aktif sayaç" value={String(data.counters.length)} helper="Kullanıldıkça oluşur" icon={KeyRound} />
+        <StatCard title="Hammadde kartı" value={String(rawMaterialStocks.length)} helper="IP/LYC/POLY alış için gerekli" icon={Boxes} tone="green" />
+        <StatCard title="Kod kuralı" value="Otomatik" helper="Manuel kod girişi gerekmez" icon={CheckCircle2} tone="blue" />
+        <StatCard title="Alış ekranı" value="Hazır" helper="Hızlı alış veya mal kabul" icon={PackageCheck} tone="amber" />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {counters.map((counter) => (
+          <div key={counter.key} className="premium-card rounded-2xl p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{counter.prefix}</p>
+                <h2 className="mt-2 font-semibold text-slate-950">{counter.title}</h2>
+              </div>
+              <StatusBadge tone={counter.currentValue > 0 ? "green" : "slate"}>{counter.currentValue > 0 ? "Aktif" : "Bekliyor"}</StatusBadge>
+            </div>
+            <div className="mt-5 rounded-2xl bg-slate-50 p-4">
+              <p className="text-xs font-semibold text-slate-400">Son sıra</p>
+              <p className="mt-1 text-2xl font-bold text-slate-950">{counter.currentValue}</p>
+              <p className="mt-2 text-xs text-slate-500">Örnek: {counter.sample}</p>
+            </div>
+            <p className="mt-3 text-xs leading-5 text-slate-500">
+              {counter.updatedAt ? `Son güncelleme: ${formatDate(counter.updatedAt)}` : "İlk kayıt açıldığında sayaç otomatik oluşur."}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="premium-card rounded-2xl p-5">
+          <h2 className="font-semibold text-slate-950">Hammadde girişi nasıl yapılır?</h2>
+          <div className="mt-4 space-y-3">
+            {[
+              "Önce Stok Kartları ekranında IP, LYC veya POLY tipinde hammadde stok kartı aç.",
+              "Stok kodunu sistem otomatik üretir; prefix veya sıra numarası elle yazılmaz.",
+              "Sonra Alış İşlemleri ekranında Hızlı alış ile siparişsiz giriş yap veya Satıcı Siparişleri üzerinden açık sipariş oluşturup Mal kabul gir.",
+              "Gelen kg seçilen depoya stok hareketi olarak işlenir ve tüm kullanıcılarda realtime yenilenir.",
+            ].map((step, index) => (
+              <div key={step} className="flex gap-3 rounded-2xl bg-slate-50 p-4">
+                <div className="grid size-8 shrink-0 place-items-center rounded-full bg-white text-sm font-bold text-blue-700 shadow-sm">{index + 1}</div>
+                <p className="text-sm leading-6 text-slate-600">{step}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Link className={primaryButton} href="/stocks"><Plus className="size-4" />Stok kartı aç</Link>
+            <Link className={primaryButton} href="/purchases"><PackageCheck className="size-4" />Alış işlemlerine git</Link>
+          </div>
+        </div>
+
+        <div className="premium-card rounded-2xl p-5">
+          <h2 className="font-semibold text-slate-950">Mevcut hammadde stok kartları</h2>
+          <div className="mt-4 divide-y divide-slate-100">
+            {rawMaterialStocks.length === 0 ? (
+              <div className="rounded-2xl bg-amber-50 p-4 text-sm leading-6 text-amber-800">
+                Henüz IP/LYC/POLY stok kartı yok. Hammadde alışı yapabilmek için önce stok kartı açılmalı.
+              </div>
+            ) : (
+              rawMaterialStocks.map((stock) => (
+                <div key={stock.id} className="flex items-center justify-between gap-3 py-3">
+                  <div>
+                    <p className="font-semibold text-slate-950">{stock.code}</p>
+                    <p className="text-sm text-slate-500">{stock.name}</p>
+                  </div>
+                  <StatusBadge tone="blue">{stock.type}</StatusBadge>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const developmentTimeline = [
   {
