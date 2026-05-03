@@ -10,7 +10,11 @@ if (!databaseUrl) {
 
 export const sql = postgres(databaseUrl, {
   ssl: "require",
-  max: 5,
+  // Supabase transaction/session poolers can move requests between backend sessions.
+  // Prepared statements are session scoped, so keep them off to avoid
+  // "prepared statement ... does not exist" errors in Vercel/serverless.
+  prepare: false,
+  max: 3,
   idle_timeout: 20,
   connect_timeout: 15,
 });

@@ -17,6 +17,12 @@ interface ApiResponse<T = unknown> {
   error?: string;
 }
 
+function requestSignal(ms = 20000) {
+  const controller = new AbortController();
+  window.setTimeout(() => controller.abort(), ms);
+  return controller.signal;
+}
+
 async function postJson(endpoint: string, payload: Record<string, unknown>) {
   const session = await supabase.auth.getSession();
   const token = session.data.session?.access_token;
@@ -24,6 +30,7 @@ async function postJson(endpoint: string, payload: Record<string, unknown>) {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     body: JSON.stringify(payload),
+    signal: requestSignal(),
   });
   const result = (await response.json()) as ApiResponse;
   if (!response.ok || !result.ok) throw new Error(result.error ?? "Kayıt tamamlanamadı.");
@@ -37,6 +44,7 @@ async function patchJson(endpoint: string, payload: Record<string, unknown>) {
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     body: JSON.stringify(payload),
+    signal: requestSignal(),
   });
   const result = (await response.json()) as ApiResponse;
   if (!response.ok || !result.ok) throw new Error(result.error ?? "Güncelleme tamamlanamadı.");
