@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { BarChart3, BookOpen, Boxes, CheckCircle2, Download, Factory, KeyRound, PackageCheck, PackagePlus, Plus, Settings, ShoppingCart, SlidersHorizontal, Truck, Users, Warehouse } from "lucide-react";
@@ -15,7 +15,7 @@ import { PartyTimeline } from "@/components/party-timeline";
 import { useErpData } from "@/components/erp-data-provider";
 import { getDashboardMetrics, getName, getPurchaseProgress } from "@/services/erp-service";
 import type { DyehouseProduction, ErpData, NamedEntity, Order, Partner, Party, PurchaseOrder, PurchaseReceipt, RawProduction, Role, Sale, StockCard, StockMovement, Transfer, UserProfile, Warehouse as WarehouseEntity } from "@/types/erp";
-import { formatDate, formatKg, formatPercent, wasteTone } from "@/lib/utils";
+import { formatDate, formatKg, formatPercent, wasteTone, normalizeItems } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 
 const primaryButton = "inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-100";
@@ -373,7 +373,7 @@ export function PurchaseOrdersPage() {
           </div>
         ))}
       </div>
-      <DataTable rows={data.purchaseOrders} columns={columns} searchPlaceholder="Satıcı siparişi, tedarikçi, durum veya stokta ara" getSearchText={(row) => [row.purchaseOrderNo, getName(data.partners, row.supplierId), row.status, row.items.map((item) => `${item.stockCode} ${item.stockName}`).join(" ")].join(" ")} />
+      <DataTable rows={data.purchaseOrders} columns={columns} searchPlaceholder="Satıcı siparişi, tedarikçi, durum veya stokta ara" getSearchText={(row) => [row.purchaseOrderNo, getName(data.partners, row.supplierId), row.status, normalizeItems(row.items).map((item) => `${item.stockCode} ${item.stockName}`).join(" ")].join(" ")} />
       <FormDrawer open={orderOpen} title="Yeni satıcı siparişi" onClose={() => setOrderOpen(false)}><PurchaseOrderForm /></FormDrawer>
       <FormDrawer open={Boolean(editing)} title="Satıcı siparişi düzenle" onClose={() => setEditing(null)}>{editing ? <PurchaseOrderEditForm order={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
       <ConfirmModal
@@ -398,8 +398,8 @@ export function PurchasesPage() {
     { header: "Tarih", cell: (row) => formatDate(row.receiptDate) },
     { header: "Satıcı", cell: (row) => getName(data.partners, row.supplierId) },
     { header: "Depo", cell: (row) => getName(data.warehouses, row.warehouseId) },
-    { header: "Stok", cell: (row) => row.items.map((item) => getName(data.stockCards, item.stockId)).join(", ") },
-    { header: "Kg", cell: (row) => formatKg(row.items.reduce((sum, item) => sum + item.receivedKg, 0)) },
+    { header: "Stok", cell: (row) => normalizeItems(row.items).map((item) => getName(data.stockCards, item.stockId)).join(", ") },
+    { header: "Kg", cell: (row) => formatKg(normalizeItems(row.items).reduce((sum, item) => sum + (item.receivedKg || 0), 0)) },
     { header: "Tür", cell: (row) => <StatusBadge tone={directReceiptIds.has(row.id) ? "blue" : "green"}>{directReceiptIds.has(row.id) ? "Hızlı alış" : "Siparişe bağlı"}</StatusBadge> },
   ];
   return (
@@ -414,7 +414,7 @@ export function PurchasesPage() {
       <div className="grid gap-4 md:grid-cols-4">
         <StatCard title="Açık sipariş" value={String(openOrders.length)} helper="Mal kabul bekleyen" icon={PackagePlus} tone="amber" />
         <StatCard title="Bekleyen kg" value={formatKg(openOrders.reduce((sum, order) => sum + order.totalRemainingKg, 0))} helper="Satıcı siparişlerinden" icon={Truck} tone="amber" />
-        <StatCard title="Toplam gelen" value={formatKg(data.purchaseReceipts.reduce((sum, receipt) => sum + receipt.items.reduce((itemSum, item) => itemSum + item.receivedKg, 0), 0))} helper="Tüm alış fişleri" icon={PackageCheck} tone="green" />
+        <StatCard title="Toplam gelen" value={formatKg(data.purchaseReceipts.reduce((sum, receipt) => sum + normalizeItems(receipt.items).reduce((itemSum, item) => itemSum + (item.receivedKg || 0), 0), 0))} helper="Tüm alış fişleri" icon={PackageCheck} tone="green" />
         <StatCard title="Hızlı alış" value={String(data.purchaseReceipts.filter((receipt) => directReceiptIds.has(receipt.id)).length)} helper="Siparişsiz giriş" icon={CheckCircle2} tone="blue" />
       </div>
       <div className="grid gap-4 md:grid-cols-2">
@@ -433,7 +433,7 @@ export function PurchasesPage() {
         rows={data.purchaseReceipts}
         columns={receiptColumns}
         searchPlaceholder="Fiş, satıcı, depo veya stokta ara"
-        getSearchText={(row) => [row.receiptNo, getName(data.partners, row.supplierId), getName(data.warehouses, row.warehouseId), row.items.map((item) => getName(data.stockCards, item.stockId)).join(" "), row.description].join(" ")}
+        getSearchText={(row) => [row.receiptNo, getName(data.partners, row.supplierId), getName(data.warehouses, row.warehouseId), normalizeItems(row.items).map((item) => getName(data.stockCards, item.stockId)).join(" "), row.description].join(" ")}
       />
       <FormDrawer open={directOpen} title="Hızlı hammadde alışı" onClose={() => setDirectOpen(false)}><DirectPurchaseForm /></FormDrawer>
       <FormDrawer open={receiptOpen} title="Siparişe bağlı mal kabul" onClose={() => setReceiptOpen(false)}><PurchaseReceiptForm /></FormDrawer>
@@ -486,7 +486,7 @@ export function StockDetailPage({ id }: { id: string }) {
   const stock = data.stockCards.find((item) => item.id === id);
   if (!stock) return <DataTable rows={[]} columns={[]} />;
   const movements = data.stockMovements.filter((item) => item.stockId === stock.id);
-  const purchaseItems = data.purchaseOrders.flatMap((order) => order.items.filter((item) => item.stockId === stock.id).map((item) => ({ ...item, id: `${order.id}-${item.id}`, orderNo: order.purchaseOrderNo, status: order.status })));
+  const purchaseItems = data.purchaseOrders.flatMap((order) => normalizeItems(order.items).filter((item) => item.stockId === stock.id).map((item) => ({ ...item, id: `${order.id}-${item.id}`, orderNo: order.purchaseOrderNo, status: order.status })));
   return (
     <div className="space-y-6">
       <PageHeader eyebrow={stock.code} title={stock.name} description="Genel, bakiye, hareketler, satıcı siparişleri ve üretim kullanımı tek kartta." icon={Boxes} action={<StatusBadge tone={stock.type === "MM" ? "green" : "blue"}>{stock.type}</StatusBadge>} />
@@ -631,7 +631,7 @@ export function TransfersPage() {
         { header: "Tarih", cell: (row) => formatDate(row.date) },
         { header: "Kaynak", cell: (row) => getName(data.warehouses, row.fromWarehouseId) },
         { header: "Hedef", cell: (row) => getName(data.warehouses, row.toWarehouseId) },
-        { header: "Miktar", cell: (row) => formatKg(row.items.reduce((sum, item) => sum + item.quantity, 0)) },
+        { header: "Miktar", cell: (row) => formatKg(normalizeItems(row.items).reduce((sum, item) => sum + (item.quantity || 0), 0)) },
         { header: "Durum", cell: (row) => <StatusBadge tone={cancelledTransferIds.has(row.id) ? "red" : "green"}>{cancelledTransferIds.has(row.id) ? "İptal" : "Aktif"}</StatusBadge> },
         { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end"><button className={dangerButton} disabled={cancelledTransferIds.has(row.id)} onClick={() => setCancelTarget(row)} type="button">{cancelledTransferIds.has(row.id) ? "İptal edildi" : "İptal et"}</button></div> },
       ]} searchPlaceholder="Kaynak depo, hedef depo veya açıklamada ara" getSearchText={(row) => [getName(data.warehouses, row.fromWarehouseId), getName(data.warehouses, row.toWarehouseId), row.description].join(" ")} />

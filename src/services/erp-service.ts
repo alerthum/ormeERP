@@ -1,3 +1,4 @@
+import { normalizeItems } from "@/lib/utils";
 import { emptyErpData } from "@/data/empty";
 import type { ErpData, Order, PurchaseOrder, StockCard, StockType } from "@/types/erp";
 
@@ -107,7 +108,7 @@ export function getDashboardMetrics(data: ErpData) {
     avgDyeWaste,
     openPurchaseCount: openPurchaseOrders.length,
     pendingRawMaterialKg: openPurchaseOrders.reduce((sum, order) => sum + order.totalRemainingKg, 0),
-    monthlyReceivedKg: data.purchaseReceipts.reduce((sum, receipt) => sum + receipt.items.reduce((itemSum, item) => itemSum + item.receivedKg, 0), 0),
+    monthlyReceivedKg: data.purchaseReceipts.reduce((sum, receipt) => sum + normalizeItems(receipt.items).reduce((itemSum, item) => itemSum + (item.receivedKg || 0), 0), 0),
     partialPurchaseCount: data.purchaseOrders.filter((order) => order.status === "Kısmi Geldi").length,
     delayedPurchaseCount: data.purchaseOrders.filter((order) => new Date(order.dueDate) < new Date("2026-05-02") && order.totalRemainingKg > 0).length,
   };

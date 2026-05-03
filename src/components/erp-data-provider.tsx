@@ -78,13 +78,22 @@ export function ErpDataProvider({ children }: { children: React.ReactNode }) {
   }, [refresh]);
 
   useEffect(() => {
-    const channel = supabase.channel("erp-realtime");
-    for (const table of realtimeTables) {
-      channel.on("postgres_changes", { event: "*", schema: "public", table }, () => {
-        refresh().catch(() => undefined);
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      channel = supabase.channel("erp-realtime");
+      for (const table of realtimeTables) {
+        channel.on("postgres_changes", { event: "*", schema: "public", table }, () => {
+          refresh().catch(() => undefined);
+        });
+      }
+      channel.subscribe((status, err) => {
+        if (err) {
+          console.warn("Realtime subscription error:", err);
+        }
       });
+    } catch (err) {
+      console.warn("Realtime channel creation error:", err);
     }
-    channel.subscribe();
 
     const interval = window.setInterval(() => {
       refresh().catch(() => undefined);
@@ -92,7 +101,13 @@ export function ErpDataProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       window.clearInterval(interval);
-      void supabase.removeChannel(channel);
+      if (channel) {
+        try {
+          void supabase.removeChannel(channel);
+        } catch {
+          // Ignore cleanup errors
+        }
+      }
     };
   }, [refresh]);
 

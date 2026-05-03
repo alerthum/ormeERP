@@ -23,3 +23,18 @@ export function wasteTone(percent: number) {
   if (percent <= 12) return "orange";
   return "red";
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function normalizeItems<T = any>(items: unknown): T[] {
+  if (!items) return [];
+  if (Array.isArray(items)) return items as T[];
+  if (typeof items === "string") {
+    try {
+      const parsed = JSON.parse(items);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
