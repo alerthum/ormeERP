@@ -88,16 +88,20 @@ async function apiPatch(endpoint: string, payload: Record<string, unknown>) {
 }
 
 export function OrdersPage() {
-  const { data, refresh } = useErpData();
+  const { data, refresh, mutateData } = useErpData();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Order | null>(null);
-  async function cancelOrder(id: string) {
+  const [deleteTarget, setDeleteTarget] = useState<Order | null>(null);
+  async function deleteOrder() {
+    if (!deleteTarget) return;
     try {
-      await apiDelete(`/api/orders/${id}`);
+      await apiDelete(`/api/orders/${deleteTarget.id}`);
+      mutateData((current) => ({ ...current, orders: current.orders.filter((order) => order.id !== deleteTarget.id) }));
       refreshInBackground(refresh);
-      toast.success("Sipariş iptal edildi.");
+      setDeleteTarget(null);
+      toast.success("Sipariş silindi.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Sipariş iptal edilemedi.");
+      toast.error(error instanceof Error ? error.message : "Sipariş silinemedi.");
     }
   }
   const columns: Column<Order>[] = [
@@ -107,14 +111,21 @@ export function OrdersPage() {
     { header: "Renk", cell: (row) => getName(data.colors, row.colorId) },
     { header: "Kg", cell: (row) => formatKg(row.quantityKg) },
     { header: "Durum", cell: (row) => <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge> },
-    { header: "İşlem", cell: (row) => <div className="flex gap-2"><button className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditing(row)} type="button">Düzenle</button><button className={dangerButton} onClick={() => cancelOrder(row.id)} type="button">İptal</button></div> },
+    { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end gap-2"><button className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditing(row)} type="button">Düzenle</button><button className={dangerButton} onClick={() => setDeleteTarget(row)} type="button">Sil</button></div> },
   ];
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Siparişler" title="Müşteri Siparişleri" description="Kumaş üretim talepleri, otomatik YM/MM stok eşleşmesi ve üretim durum takibi." icon={ShoppingCart} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Yeni sipariş</button>} />
-      <DataTable rows={data.orders} columns={columns} />
+      <DataTable rows={data.orders} columns={columns} searchPlaceholder="Sipariş, müşteri, durum, kumaş veya renkte ara" getSearchText={(row) => [row.orderNo, row.customerName, row.status, getName(data.fabricTypes, row.fabricTypeId), getName(data.colors, row.colorId), row.quantityKg].join(" ")} />
       <FormDrawer open={open} title="Yeni müşteri siparişi" onClose={() => setOpen(false)}><OrderForm /></FormDrawer>
       <FormDrawer open={Boolean(editing)} title="Sipariş düzenle" onClose={() => setEditing(null)}>{editing ? <OrderEditForm order={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        title="Sipariş silinsin mi?"
+        description={`${deleteTarget?.orderNo ?? "Bu sipariş"} üretim, parti, stok hareketi veya sevkiyat kaydında kullanıldıysa silinmeyecek.`}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={deleteOrder}
+      />
     </div>
   );
 }

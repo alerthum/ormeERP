@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useErpData } from "@/components/erp-data-provider";
 
@@ -26,9 +27,35 @@ function TableSkeleton() {
   );
 }
 
-export function DataTable<T extends { id: string }>({ rows, columns }: { rows: T[]; columns: Column<T>[] }) {
+function defaultSearchText<T>(row: T) {
+  return JSON.stringify(row).toLocaleLowerCase("tr-TR");
+}
+
+export function DataTable<T extends { id: string }>({
+  rows,
+  columns,
+  searchPlaceholder = "Listede ara",
+  getSearchText = defaultSearchText,
+  pageSize = 25,
+}: {
+  rows: T[];
+  columns: Column<T>[];
+  searchPlaceholder?: string;
+  getSearchText?: (row: T) => string;
+  pageSize?: number;
+}) {
   const { loading } = useErpData();
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
   const mobileColumns = columns.length > 4 ? [...columns.slice(0, 3), columns[columns.length - 1]] : columns;
+  const normalizedQuery = query.trim().toLocaleLowerCase("tr-TR");
+  const filteredRows = useMemo(
+    () => (normalizedQuery ? rows.filter((row) => getSearchText(row).toLocaleLowerCase("tr-TR").includes(normalizedQuery)) : rows),
+    [getSearchText, normalizedQuery, rows],
+  );
+  const pageCount = Math.max(Math.ceil(filteredRows.length / pageSize), 1);
+  const currentPage = Math.min(page, pageCount);
+  const visibleRows = filteredRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   if (rows.length === 0 && loading) {
     return <TableSkeleton />;
@@ -48,6 +75,20 @@ export function DataTable<T extends { id: string }>({ rows, columns }: { rows: T
 
   return (
     <div className="premium-card overflow-hidden rounded-2xl">
+      <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <input
+          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50 sm:max-w-sm"
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setPage(1);
+          }}
+          placeholder={searchPlaceholder}
+          value={query}
+        />
+        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
+          {filteredRows.length} kayıt
+        </div>
+      </div>
       <div className="hidden overflow-x-auto md:block">
         <table className="w-full min-w-[760px] border-collapse text-left text-sm">
           <thead className="bg-slate-50/80 text-xs uppercase tracking-[0.12em] text-slate-400">
@@ -60,7 +101,7 @@ export function DataTable<T extends { id: string }>({ rows, columns }: { rows: T
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {rows.map((row) => (
+            {visibleRows.map((row) => (
               <tr key={row.id} className="bg-white transition hover:bg-blue-50/30">
                 {columns.map((column) => (
                   <td key={column.header} className={cn("px-5 py-4 text-slate-700", column.className)}>
@@ -73,7 +114,7 @@ export function DataTable<T extends { id: string }>({ rows, columns }: { rows: T
         </table>
       </div>
       <div className="divide-y divide-slate-100 md:hidden">
-        {rows.map((row) => (
+        {visibleRows.map((row) => (
           <div key={row.id} className="space-y-3 bg-white p-4">
             {mobileColumns.map((column) => (
               <div key={column.header} className="flex items-center justify-between gap-4">
@@ -84,6 +125,22 @@ export function DataTable<T extends { id: string }>({ rows, columns }: { rows: T
           </div>
         ))}
       </div>
+      {filteredRows.length === 0 ? (
+        <div className="border-t border-slate-100 p-6 text-center text-sm text-slate-500">Filtreye uygun kayıt bulunamadı.</div>
+      ) : null}
+      {pageCount > 1 ? (
+        <div className="flex items-center justify-between border-t border-slate-100 p-4 text-sm">
+          <button className="rounded-xl border border-slate-200 px-3 py-2 font-semibold text-slate-600 disabled:opacity-40" disabled={currentPage === 1} onClick={() => setPage((value) => Math.max(value - 1, 1))} type="button">
+            Önceki
+          </button>
+          <span className="font-semibold text-slate-500">
+            {currentPage} / {pageCount}
+          </span>
+          <button className="rounded-xl border border-slate-200 px-3 py-2 font-semibold text-slate-600 disabled:opacity-40" disabled={currentPage === pageCount} onClick={() => setPage((value) => Math.min(value + 1, pageCount))} type="button">
+            Sonraki
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -826,6 +826,23 @@ export async function updateOrderStatus(recordId: string, status: string) {
   return { id: recordId, status };
 }
 
+export async function deleteCustomerOrder(recordId: string) {
+  const rows = await sql`
+    select
+      (select count(*) from parties where order_id = ${recordId}) +
+      (select count(*) from stock_movements where order_id = ${recordId}) +
+      (select count(*) from production_raw where order_id = ${recordId}) +
+      (select count(*) from production_dyehouse where order_id = ${recordId}) +
+      (select count(*) from sales where order_id = ${recordId}) as count
+  `;
+  const usageCount = Number(rows[0]?.count ?? 0);
+  if (usageCount > 0) {
+    throw new Error(`Bu sipariş ${usageCount} üretim/hareket kaydında kullanılıyor. Silmek yerine durumunu iptal edin.`);
+  }
+  await sql`delete from orders where id = ${recordId}`;
+  return { id: recordId };
+}
+
 export async function cancelPurchaseOrder(recordId: string) {
   await sql`update purchase_orders set status = 'İptal', updated_at = now() where id = ${recordId}`;
   return { id: recordId, status: "İptal" };

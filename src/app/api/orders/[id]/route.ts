@@ -1,5 +1,5 @@
 import { fail, ok, readJson, requirePermission } from "@/app/api/_helpers";
-import { updateCustomerOrder, updateOrderStatus } from "@/services/erp-write-service";
+import { deleteCustomerOrder, updateCustomerOrder, updateOrderStatus } from "@/services/erp-write-service";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -18,7 +18,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   try {
     await requirePermission(request, "orders:write");
     const { id } = await params;
-    return ok(await updateOrderStatus(id, "İptal"), 200);
+    return ok(await deleteCustomerOrder(id), 200);
   } catch (error) {
     return fail(error);
   }
