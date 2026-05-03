@@ -161,6 +161,15 @@ async function addBalance(tx: Tx, stockId: string, warehouseId: string, partyId:
   `;
 }
 
+async function assertAvailableBalance(tx: Tx, stockId: string, warehouseId: string, partyId: string | null, quantity: number) {
+  const balanceId = `bal-${stockId}-${warehouseId}-${partyId ?? "none"}`;
+  const rows = await tx`select quantity from warehouse_balances where id = ${balanceId} limit 1`;
+  const available = Number(rows[0]?.quantity ?? 0);
+  if (available < quantity) {
+    throw new Error(`Yetersiz stok. Mevcut bakiye ${available.toFixed(3)} kg, istenen ${quantity.toFixed(3)} kg.`);
+  }
+}
+
 async function addMovement(
   tx: Tx,
   input: {
@@ -179,6 +188,9 @@ async function addMovement(
 ) {
   const movementId = id("mov");
   const signedQuantity = input.direction === "IN" ? input.quantity : -input.quantity;
+  if (input.direction === "OUT") {
+    await assertAvailableBalance(tx, input.stockId, input.warehouseId, input.partyId ?? null, input.quantity);
+  }
   await tx`
     insert into stock_movements (
       id, date, stock_id, warehouse_id, party_id, order_id, movement_type, direction,
@@ -638,6 +650,42 @@ export async function createSale(payload: Record<string, unknown>) {
       await tx`update orders set status = 'Sevk Edildi', updated_at = now() where id = ${orderId}`;
     }
     return { id: saleId, saleNo };
+  });
+}
+
+export async function cancelSale(recordId: string) {
+  return sql.begin(async (tx) => {
+    const rows = await tx`
+      select id, sale_no, date, stock_id, warehouse_id, party_id, order_id, quantity_kg, status
+      from sales
+      where id = ${recordId}
+      limit 1
+    `;
+    const sale = rows[0];
+    if (!sale) throw new Error("Sevkiyat kaydı bulunamadı.");
+    if (String(sale.status) === "İptal") return { id: recordId, status: "İptal" };
+
+    await addMovement(tx, {
+      date: new Date().toISOString().slice(0, 10),
+      stockId: String(sale.stock_id),
+      warehouseId: String(sale.warehouse_id),
+      partyId: String(sale.party_id),
+      orderId: sale.order_id ? String(sale.order_id) : null,
+      movementType: "Düzeltme",
+      direction: "IN",
+      quantity: Number(sale.quantity_kg),
+      description: `Sevkiyat iptal iadesi: ${String(sale.sale_no)}`,
+      referenceType: "sale_cancel",
+      referenceId: recordId,
+    });
+    await tx`update sales set status = 'İptal' where id = ${recordId}`;
+    await tx`
+      update parties
+      set timeline = timeline || ${JSON.stringify([{ date: new Date().toISOString().slice(0, 10), title: "Sevkiyat iptal", description: `${String(sale.sale_no)} için stok iadesi işlendi.`, tone: "red" }])}::jsonb,
+          updated_at = now()
+      where id = ${String(sale.party_id)}
+    `;
+    return { id: recordId, status: "İptal" };
   });
 }
 

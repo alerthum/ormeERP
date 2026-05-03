@@ -1,11 +1,11 @@
 import { fail, ok, requirePermission } from "@/app/api/_helpers";
-import { deactivateStockCard } from "@/services/erp-write-service";
+import { cancelSale } from "@/services/erp-write-service";
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requirePermission(request, "stocks:write");
+    await requirePermission(request, "sales:write");
     const { id } = await params;
-    return ok(await deactivateStockCard(id), 200);
+    return ok(await cancelSale(id), 200);
   } catch (error) {
     return fail(error);
   }

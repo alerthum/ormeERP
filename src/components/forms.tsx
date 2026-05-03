@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useErpData } from "@/components/erp-data-provider";
 import { calculateDyehouseWaste, calculateRawWaste } from "@/services/erp-service";
 import { formatKg, formatPercent } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 
 const inputClass = "w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50";
 const labelClass = "text-xs font-bold uppercase tracking-[0.14em] text-slate-400";
@@ -16,9 +17,11 @@ interface ApiResponse<T = unknown> {
 }
 
 async function postJson(endpoint: string, payload: Record<string, unknown>) {
+  const session = await supabase.auth.getSession();
+  const token = session.data.session?.access_token;
   const response = await fetch(endpoint, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     body: JSON.stringify(payload),
   });
   const result = (await response.json()) as ApiResponse;

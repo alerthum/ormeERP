@@ -16,12 +16,27 @@ import { useErpData } from "@/components/erp-data-provider";
 import { getDashboardMetrics, getName, getPurchaseProgress } from "@/services/erp-service";
 import type { Order, Party, PurchaseOrder, Role, Sale, StockCard, StockMovement, UserProfile } from "@/types/erp";
 import { formatDate, formatKg, formatPercent, wasteTone } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 
 const primaryButton = "inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-100";
 const dangerButton = "rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700";
 
 async function apiDelete(endpoint: string) {
-  const response = await fetch(endpoint, { method: "DELETE" });
+  const session = await supabase.auth.getSession();
+  const token = session.data.session?.access_token;
+  const response = await fetch(endpoint, { method: "DELETE", headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+  const result = (await response.json()) as { ok: boolean; error?: string };
+  if (!response.ok || !result.ok) throw new Error(result.error ?? "İşlem tamamlanamadı.");
+}
+
+async function apiPatch(endpoint: string, payload: Record<string, unknown>) {
+  const session = await supabase.auth.getSession();
+  const token = session.data.session?.access_token;
+  const response = await fetch(endpoint, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify(payload),
+  });
   const result = (await response.json()) as { ok: boolean; error?: string };
   if (!response.ok || !result.ok) throw new Error(result.error ?? "İşlem tamamlanamadı.");
 }
@@ -274,8 +289,74 @@ export function WasteAnalysisPage() {
   );
 }
 
-export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "sales" | "reports" | "settings" }) {
+export function ReportsPage() {
   const { data } = useErpData();
+  const metrics = getDashboardMetrics(data);
+  const totalSalesKg = data.sales.filter((sale) => sale.status !== "İptal").reduce((sum, sale) => sum + sale.quantityKg, 0);
+  const openPurchaseKg = data.purchaseOrders.reduce((sum, order) => sum + order.totalRemainingKg, 0);
+  const stockValue = data.stockCards.reduce((sum, stock) => sum + stock.currentStockKg, 0);
+  const productionRows = data.parties.map((party) => {
+    const order = data.orders.find((item) => item.id === party.orderId);
+    return {
+      id: party.id,
+      partyNo: party.partyNo,
+      customerName: order?.customerName ?? "-",
+      rawKg: party.rawProducedKg,
+      finishedKg: party.finishedKg,
+      rawWaste: party.rawWastePercent,
+      dyeWaste: party.dyehouseWastePercent,
+      status: party.status,
+    };
+  });
+  const stockRows = data.stockCards
+    .filter((stock) => stock.isActive)
+    .map((stock) => ({
+      id: stock.id,
+      code: stock.code,
+      name: stock.name,
+      type: stock.type,
+      currentStockKg: stock.currentStockKg,
+      criticalStockKg: stock.criticalStockKg,
+      risk: stock.criticalStockKg > 0 && stock.currentStockKg <= stock.criticalStockKg,
+    }));
+
+  return (
+    <div className="space-y-6">
+      <PageHeader eyebrow="Raporlama" title="Gelişmiş ERP Raporları" description="Üretim, stok, satın alma, satış ve fire metrikleri canlı PostgreSQL verisinden hesaplanır." icon={BarChart3} />
+      <div className="grid gap-4 md:grid-cols-4">
+        <StatCard title="Üretim kg" value={formatKg(metrics.monthlyProductionKg)} helper="Ham + mamül zinciri" icon={Factory} />
+        <StatCard title="Satış kg" value={formatKg(totalSalesKg)} helper="İptal dışı sevkiyat" icon={Truck} tone="green" />
+        <StatCard title="Açık satın alma" value={formatKg(openPurchaseKg)} helper="Bekleyen hammadde" icon={PackagePlus} tone="amber" />
+        <StatCard title="Stok toplamı" value={formatKg(stockValue)} helper="Aktif kart bakiyesi" icon={Boxes} tone="blue" />
+      </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        <StatCard title="Ham fire ort." value={formatPercent(metrics.avgRawWaste)} helper={formatKg(data.parties.reduce((sum, item) => sum + item.rawWasteKg, 0))} icon={BarChart3} tone="red" />
+        <StatCard title="Boyahane fire ort." value={formatPercent(metrics.avgDyeWaste)} helper={formatKg(data.parties.reduce((sum, item) => sum + item.dyehouseWasteKg, 0))} icon={BarChart3} tone="amber" />
+        <StatCard title="Kritik stok" value={String(stockRows.filter((row) => row.risk).length)} helper="Eşik altında kalan kart" icon={Boxes} tone="red" />
+      </div>
+      <DataTable rows={productionRows} columns={[
+        { header: "Parti", cell: (row) => row.partyNo },
+        { header: "Müşteri", cell: (row) => row.customerName },
+        { header: "Ham kg", cell: (row) => formatKg(row.rawKg) },
+        { header: "Mamül kg", cell: (row) => formatKg(row.finishedKg) },
+        { header: "Ham fire", cell: (row) => <StatusBadge tone={wasteTone(row.rawWaste)}>{formatPercent(row.rawWaste)}</StatusBadge> },
+        { header: "Boya fire", cell: (row) => <StatusBadge tone={wasteTone(row.dyeWaste)}>{formatPercent(row.dyeWaste)}</StatusBadge> },
+        { header: "Durum", cell: (row) => <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge> },
+      ]} />
+      <DataTable rows={stockRows} columns={[
+        { header: "Kod", cell: (row) => row.code },
+        { header: "Ad", cell: (row) => row.name },
+        { header: "Tip", cell: (row) => <StatusBadge tone={row.type === "MM" ? "green" : row.type === "YM" ? "blue" : "amber"}>{row.type}</StatusBadge> },
+        { header: "Stok", cell: (row) => formatKg(row.currentStockKg) },
+        { header: "Kritik", cell: (row) => formatKg(row.criticalStockKg) },
+        { header: "Risk", cell: (row) => <StatusBadge tone={row.risk ? "red" : "green"}>{row.risk ? "Kritik" : "Normal"}</StatusBadge> },
+      ]} />
+    </div>
+  );
+}
+
+export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "sales" | "reports" | "settings" }) {
+  const { data, refresh } = useErpData();
   const [open, setOpen] = useState(false);
   const map = {
     warehouses: { title: "Depo YÃ¶netimi", desc: "Depo tanÄ±mlarÄ±, bakiye kartlarÄ± ve partili stok gÃ¶rÃ¼nÃ¼mÃ¼.", icon: Warehouse },
@@ -285,6 +366,15 @@ export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "
     settings: { title: "Ayarlar", desc: "KumaÅŸ cinsi, renk, Ne, proses, depo, rol ve prefix tanÄ±mlarÄ±.", icon: Settings },
   }[kind];
   if (kind === "sales") {
+    async function cancelSaleRecord(id: string) {
+      try {
+        await apiDelete(`/api/sales/${id}`);
+        await refresh();
+        toast.success("Sevkiyat iptal edildi ve stok iadesi işlendi.");
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Sevkiyat iptal edilemedi.");
+      }
+    }
     const columns: Column<Sale>[] = [
       { header: "Sevkiyat", cell: (row) => <span className="font-semibold text-blue-700">{row.saleNo}</span> },
       { header: "Müşteri", cell: (row) => row.customerName },
@@ -292,6 +382,7 @@ export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "
       { header: "Depo", cell: (row) => getName(data.warehouses, row.warehouseId) },
       { header: "Kg", cell: (row) => formatKg(row.quantityKg) },
       { header: "Durum", cell: (row) => <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge> },
+      { header: "İşlem", cell: (row) => <button className={dangerButton} onClick={() => cancelSaleRecord(row.id)} type="button">İptal/iade</button> },
     ];
     return (
       <div className="space-y-6">
@@ -432,6 +523,7 @@ const startSteps = [
 
 export function SettingsGuidePage({ section }: { section?: "fabric-types" | "colors" | "yarn-counts" | "process-types" | "warehouses" }) {
   const { data, refresh } = useErpData();
+  const [editing, setEditing] = useState<{ id: string; name: string; kind?: string } | null>(null);
   const activeGroup = section
     ? settingGroups.find((group) => group.href.endsWith(section))
     : undefined;
@@ -451,6 +543,23 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
     if (!response.ok || !result.ok) throw new Error(result.error ?? "TanÄ±m silinemedi.");
     await refresh();
     toast.success("TanÄ±m silindi.");
+  }
+
+  async function updateDefinition(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!settingConfig || !editing) return;
+    const form = new FormData(event.currentTarget);
+    try {
+      await apiPatch(`/api/settings/${settingConfig.entity}/${editing.id}`, {
+        name: form.get("name"),
+        kind: form.get("kind") ?? editing.kind,
+      });
+      setEditing(null);
+      await refresh();
+      toast.success("Tanım güncellendi.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Tanım güncellenemedi.");
+    }
   }
 
   return (
@@ -533,7 +642,14 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
                     {"kind" in row ? <p className="text-xs text-slate-400">{row.kind}</p> : null}
                   </div>
                   <button
-                    className="rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700"
+                    className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700"
+                    onClick={() => setEditing({ id: row.id, name: row.name, kind: "kind" in row ? row.kind : undefined })}
+                    type="button"
+                  >
+                    Düzenle
+                  </button>
+                  <button
+                    className="ml-2 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700"
                     onClick={() => deleteDefinition(settingConfig.entity, row.id).catch((error: unknown) => toast.error(error instanceof Error ? error.message : "TanÄ±m silinemedi."))}
                     type="button"
                   >
@@ -543,6 +659,29 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
               ))
             )}
           </div>
+          <FormDrawer open={Boolean(editing)} title="Tanım düzenle" onClose={() => setEditing(null)}>
+            <form className="grid gap-4" onSubmit={updateDefinition}>
+              <label className="space-y-2">
+                <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Ad</span>
+                <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="name" defaultValue={editing?.name} required />
+              </label>
+              {section === "warehouses" ? (
+                <label className="space-y-2">
+                  <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Tip</span>
+                  <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="kind" defaultValue={editing?.kind ?? "RAW"}>
+                    <option value="YARN">İplik deposu</option>
+                    <option value="KNITTER">Fasoncu deposu</option>
+                    <option value="RAW">Ham kumaş deposu</option>
+                    <option value="DYEHOUSE">Boyahane deposu</option>
+                    <option value="FINISHED">Mamül depo</option>
+                    <option value="STORE">Satış mağazası</option>
+                    <option value="WASTE">Fire deposu</option>
+                  </select>
+                </label>
+              ) : null}
+              <button className={primaryButton} type="submit">Güncelle</button>
+            </form>
+          </FormDrawer>
         </div>
       ) : null}
 
