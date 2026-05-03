@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { AlertTriangle, Boxes, Factory, PackageCheck, ShoppingCart, Timer, TrendingDown, Truck } from "lucide-react";
@@ -17,14 +17,19 @@ export function Dashboard() {
   );
   const { data } = useErpData();
   const metrics = getDashboardMetrics(data);
-  const productionTrend = [
-    { month: "Oca", kg: 11800, fire: 4.8 },
-    { month: "Şub", kg: 13400, fire: 5.2 },
-    { month: "Mar", kg: 15100, fire: 4.4 },
-    { month: "Nis", kg: 16800, fire: 6.1 },
-    { month: "May", kg: 9240, fire: 5.7 },
-  ];
-  const statusData = ["İplik Bekliyor", "Örmede", "Boyahanede", "Mamül Hazır"].map((status) => ({
+  const productionByMonth = new Map<string, { month: string; kg: number }>();
+  for (const item of data.productionRaw) {
+    const month = new Intl.DateTimeFormat("tr-TR", { month: "short" }).format(new Date(item.date));
+    const current = productionByMonth.get(month) ?? { month, kg: 0 };
+    productionByMonth.set(month, { month, kg: current.kg + item.producedRawKg });
+  }
+  for (const item of data.productionDyehouse) {
+    const month = new Intl.DateTimeFormat("tr-TR", { month: "short" }).format(new Date(item.date));
+    const current = productionByMonth.get(month) ?? { month, kg: 0 };
+    productionByMonth.set(month, { month, kg: current.kg + item.finishedKg });
+  }
+  const productionTrend = Array.from(productionByMonth.values());
+  const statusData = ["Ä°plik Bekliyor", "Ã–rmede", "Boyahanede", "MamÃ¼l HazÄ±r"].map((status) => ({
     name: status,
     value: data.orders.filter((order) => order.status === status).length,
   }));
@@ -33,28 +38,28 @@ export function Dashboard() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Aktif siparişler" value={String(metrics.activeOrders)} helper="Müşteri üretim talepleri" icon={ShoppingCart} />
-        <StatCard title="Bu ay üretim" value={formatKg(metrics.monthlyProductionKg)} helper="Ham + mamül üretim toplamı" icon={Factory} tone="green" />
+        <StatCard title="Aktif sipariÅŸler" value={String(metrics.activeOrders)} helper="MÃ¼ÅŸteri Ã¼retim talepleri" icon={ShoppingCart} />
+        <StatCard title="Bu ay Ã¼retim" value={formatKg(metrics.monthlyProductionKg)} helper="Ham + mamÃ¼l Ã¼retim toplamÄ±" icon={Factory} tone="green" />
         <StatCard title="Toplam fire" value={formatKg(metrics.wasteKg)} helper={`Ham ${formatPercent(metrics.avgRawWaste)} / Boya ${formatPercent(metrics.avgDyeWaste)}`} icon={TrendingDown} tone="red" />
-        <StatCard title="Bekleyen hammadde" value={formatKg(metrics.pendingRawMaterialKg)} helper={`${metrics.openPurchaseCount} açık satıcı siparişi`} icon={PackageCheck} tone="amber" />
+        <StatCard title="Bekleyen hammadde" value={formatKg(metrics.pendingRawMaterialKg)} helper={`${metrics.openPurchaseCount} aÃ§Ä±k satÄ±cÄ± sipariÅŸi`} icon={PackageCheck} tone="amber" />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <StatCard title="Örmede" value={String(metrics.knittingOrders)} helper="Fason örmeci üzerinde" icon={Factory} />
-        <StatCard title="Boyahanede" value={String(metrics.dyehouseOrders)} helper="Proses bekleyen işler" icon={Truck} />
-        <StatCard title="Kısmi gelen" value={String(metrics.partialPurchaseCount)} helper="Satıcı siparişleri" icon={Boxes} tone="amber" />
-        <StatCard title="Bu ay gelen" value={formatKg(metrics.monthlyReceivedKg)} helper="Mal kabul toplamı" icon={PackageCheck} tone="green" />
-        <StatCard title="Geciken satın alma" value={String(metrics.delayedPurchaseCount)} helper="Termin riski" icon={AlertTriangle} tone="red" />
+        <StatCard title="Ã–rmede" value={String(metrics.knittingOrders)} helper="Fason Ã¶rmeci Ã¼zerinde" icon={Factory} />
+        <StatCard title="Boyahanede" value={String(metrics.dyehouseOrders)} helper="Proses bekleyen iÅŸler" icon={Truck} />
+        <StatCard title="KÄ±smi gelen" value={String(metrics.partialPurchaseCount)} helper="SatÄ±cÄ± sipariÅŸleri" icon={Boxes} tone="amber" />
+        <StatCard title="Bu ay gelen" value={formatKg(metrics.monthlyReceivedKg)} helper="Mal kabul toplamÄ±" icon={PackageCheck} tone="green" />
+        <StatCard title="Geciken satÄ±n alma" value={String(metrics.delayedPurchaseCount)} helper="Termin riski" icon={AlertTriangle} tone="red" />
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1.4fr_0.8fr]">
         <div className="premium-card rounded-2xl p-5">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-semibold text-slate-950">Aylık üretim ve fire trendi</h2>
-              <p className="text-sm text-slate-500">Üretim kg ile gerçek fire yüzdesi</p>
+              <h2 className="font-semibold text-slate-950">AylÄ±k Ã¼retim ve fire trendi</h2>
+              <p className="text-sm text-slate-500">Ãœretim kg ile gerÃ§ek fire yÃ¼zdesi</p>
             </div>
-            <StatusBadge tone="green">Canlı</StatusBadge>
+            <StatusBadge tone="green">CanlÄ±</StatusBadge>
           </div>
           <div className="mt-6 h-72">
             {mounted ? (
@@ -78,7 +83,7 @@ export function Dashboard() {
         </div>
 
         <div className="premium-card rounded-2xl p-5">
-          <h2 className="font-semibold text-slate-950">Sipariş durum dağılımı</h2>
+          <h2 className="font-semibold text-slate-950">SipariÅŸ durum daÄŸÄ±lÄ±mÄ±</h2>
           <div className="mt-6 h-60">
             {mounted ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -104,7 +109,7 @@ export function Dashboard() {
 
       <div className="grid gap-5 xl:grid-cols-3">
         <div className="premium-card rounded-2xl p-5 xl:col-span-2">
-          <h2 className="font-semibold text-slate-950">Satıcı bazlı açık sipariş kg</h2>
+          <h2 className="font-semibold text-slate-950">SatÄ±cÄ± bazlÄ± aÃ§Ä±k sipariÅŸ kg</h2>
           <div className="mt-5 h-64">
             {mounted ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -137,13 +142,13 @@ export function Dashboard() {
 
       <div className="grid gap-5 xl:grid-cols-2">
         <div className="premium-card rounded-2xl p-5">
-          <h2 className="font-semibold text-slate-950">Termin yaklaşan satın alma siparişleri</h2>
+          <h2 className="font-semibold text-slate-950">Termin yaklaÅŸan satÄ±n alma sipariÅŸleri</h2>
           <div className="mt-5 space-y-3">
             {data.purchaseOrders.map((order) => (
               <div key={order.id} className="rounded-2xl border border-slate-100 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-slate-950">{order.purchaseOrderNo} · {getName(data.partners, order.supplierId)}</p>
+                    <p className="font-semibold text-slate-950">{order.purchaseOrderNo} Â· {getName(data.partners, order.supplierId)}</p>
                     <p className="text-sm text-slate-500">{formatKg(order.totalReceivedKg)} geldi, {formatKg(order.totalRemainingKg)} bekliyor</p>
                   </div>
                   <StatusBadge tone={statusTone(order.status)}>{order.status}</StatusBadge>
@@ -176,3 +181,4 @@ export function Dashboard() {
     </div>
   );
 }
+
