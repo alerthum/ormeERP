@@ -12,7 +12,7 @@ export const sql = postgres(databaseUrl, {
   // Prepared statements are session scoped, so keep them off to avoid
   // "prepared statement ... does not exist" errors in Vercel/serverless.
   prepare: false,
-  max: 1,
+  max: 5,
   idle_timeout: 10,
   connect_timeout: 15,
 });
