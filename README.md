@@ -41,6 +41,44 @@ npm run seed
 
 Storage için beklenen bucket isimleri: `erp-documents`, `erp-photos`, `erp-receipts`.
 
+## API Katmanı
+
+Gerçek PostgreSQL yazma işlemleri component içinden değil, API route ve servis katmanı üzerinden yapılır.
+
+Temel endpointler:
+
+```text
+POST /api/settings/fabricTypes
+POST /api/settings/colors
+POST /api/settings/yarnCounts
+POST /api/settings/processTypes
+POST /api/settings/warehouses
+POST /api/settings/partners
+POST /api/stocks
+POST /api/orders
+POST /api/purchase-orders
+POST /api/purchase-receipts
+POST /api/transfers
+POST /api/production/raw
+POST /api/production/dyehouse
+```
+
+Örnek ayar kaydı:
+
+```bash
+curl -X POST http://localhost:3000/api/settings/fabricTypes \
+  -H "Content-Type: application/json" \
+  -d "{\"name\":\"Süprem\"}"
+```
+
+Sipariş oluşturma endpointi aynı özelliklerde YM/MM stok kartı arar; yoksa transaction içinde otomatik stok kodu ve stok kartı açar.
+
+Veriyi boş başlangıca almak için:
+
+```bash
+npm run reset:data
+```
+
 ## Vercel
 
 GitHub reposunu Vercel'e bağlayın, environment değişkenlerini ekleyin ve default Next.js build ayarlarıyla deploy edin.
