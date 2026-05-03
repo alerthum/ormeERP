@@ -446,3 +446,140 @@ export function DyehouseProductionForm() {
     </form>
   );
 }
+
+export function SaleForm() {
+  const { data, refresh } = useErpData();
+  const [loading, setLoading] = useState(false);
+  const finishedStocks = data.stockCards.filter((item) => item.type === "MM");
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    const form = new FormData(event.currentTarget);
+    const party = data.parties.find((item) => item.id === form.get("partyId"));
+    try {
+      await postJson("/api/sales", {
+        date: form.get("date"),
+        customerName: form.get("customerName"),
+        warehouseId: form.get("warehouseId"),
+        stockId: form.get("stockId"),
+        partyId: form.get("partyId"),
+        orderId: party?.orderId,
+        quantityKg: form.get("quantityKg"),
+        unitPrice: form.get("unitPrice"),
+        currency: form.get("currency"),
+        description: form.get("description"),
+      });
+      event.currentTarget.reset();
+      await refresh();
+      toast.success("Satış / sevkiyat kaydedildi.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Satış kaydedilemedi.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form className="grid gap-4" onSubmit={submit}>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Tarih"><input className={inputClass} name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required /></Field>
+        <Field label="Müşteri"><input className={inputClass} name="customerName" required /></Field>
+        <Field label="Mamül stok"><select className={inputClass} name="stockId" required>{finishedStocks.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}</select></Field>
+        <Field label="Parti"><select className={inputClass} name="partyId" required>{data.parties.map((item) => <option key={item.id} value={item.id}>{item.partyNo}</option>)}</select></Field>
+        <Field label="Çıkış deposu"><select className={inputClass} name="warehouseId" required>{data.warehouses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
+        <Field label="Sevk kg"><input className={inputClass} name="quantityKg" type="number" required /></Field>
+        <Field label="Birim fiyat"><input className={inputClass} name="unitPrice" type="number" step="0.01" /></Field>
+        <Field label="Para birimi"><select className={inputClass} name="currency" defaultValue="TRY"><option>TRY</option><option>USD</option><option>EUR</option></select></Field>
+      </div>
+      <Field label="Açıklama"><textarea className={inputClass} name="description" rows={3} /></Field>
+      <FormButton loading={loading}>Sevkiyat kaydet</FormButton>
+    </form>
+  );
+}
+
+const rolePermissions = [
+  "dashboard:read",
+  "orders:write",
+  "stocks:write",
+  "production:write",
+  "purchase:write",
+  "sales:write",
+  "settings:write",
+  "reports:read",
+];
+
+export function RoleForm() {
+  const { refresh } = useErpData();
+  const [loading, setLoading] = useState(false);
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    const form = new FormData(event.currentTarget);
+    try {
+      await postJson("/api/roles", {
+        name: form.get("name"),
+        description: form.get("description"),
+        permissions: form.getAll("permissions"),
+      });
+      event.currentTarget.reset();
+      await refresh();
+      toast.success("Rol kaydedildi.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Rol kaydedilemedi.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form className="grid gap-4" onSubmit={submit}>
+      <Field label="Rol adı"><input className={inputClass} name="name" required /></Field>
+      <Field label="Açıklama"><textarea className={inputClass} name="description" rows={2} /></Field>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {rolePermissions.map((permission) => (
+          <label key={permission} className="flex items-center gap-2 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+            <input name="permissions" type="checkbox" value={permission} />
+            {permission}
+          </label>
+        ))}
+      </div>
+      <FormButton loading={loading}>Rol kaydet</FormButton>
+    </form>
+  );
+}
+
+export function UserProfileForm() {
+  const { data, refresh } = useErpData();
+  const [loading, setLoading] = useState(false);
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    const form = new FormData(event.currentTarget);
+    try {
+      await postJson("/api/users", {
+        email: form.get("email"),
+        fullName: form.get("fullName"),
+        roleId: form.get("roleId"),
+      });
+      event.currentTarget.reset();
+      await refresh();
+      toast.success("Kullanıcı profili kaydedildi.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Kullanıcı kaydedilemedi.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form className="grid gap-4" onSubmit={submit}>
+      <Field label="Ad soyad"><input className={inputClass} name="fullName" required /></Field>
+      <Field label="E-posta"><input className={inputClass} name="email" type="email" required /></Field>
+      <Field label="Rol"><select className={inputClass} name="roleId" required>{data.roles.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
+      <FormButton loading={loading}>Kullanıcı kaydet</FormButton>
+    </form>
+  );
+}

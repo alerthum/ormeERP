@@ -56,10 +56,10 @@ async function nextCode(tx: Tx, type: StockType) {
   return `${type}-${String(sequence).padStart(6, "0")}`;
 }
 
-async function nextBusinessNo(tx: Tx, key: "order" | "purchaseOrder" | "receipt") {
+async function nextBusinessNo(tx: Tx, key: "order" | "purchaseOrder" | "receipt" | "sale") {
   const year = new Date().getFullYear();
   const yy = String(year).slice(-2);
-  const prefix = key === "order" ? "MS" : key === "purchaseOrder" ? "SS" : "MK";
+  const prefix = key === "order" ? "MS" : key === "purchaseOrder" ? "SS" : key === "receipt" ? "MK" : "SV";
   const sequence = await nextCounter(tx, `${key}:${year}`, prefix);
   return `${prefix}-${yy}${String(sequence).padStart(4, "0")}`;
 }
@@ -242,6 +242,49 @@ export async function updateSetting(entity: SettingEntity, recordId: string, pay
 export async function deleteSetting(entity: SettingEntity, recordId: string) {
   const table = tableMap[entity];
   await sql`delete from ${sql(table)} where id = ${recordId}`;
+  return { id: recordId };
+}
+
+export async function createRole(payload: Record<string, unknown>) {
+  const recordId = id("role");
+  const permissions = Array.isArray(payload.permissions) ? payload.permissions.map(String) : [];
+  await sql`
+    insert into roles (id, name, description, permissions, is_active, created_at, updated_at)
+    values (${recordId}, ${requireString(payload.name, "Rol adı")}, ${optionalString(payload.description) ?? ""}, ${JSON.stringify(permissions)}, true, now(), now())
+  `;
+  return { id: recordId };
+}
+
+export async function updateRole(recordId: string, payload: Record<string, unknown>) {
+  const permissions = Array.isArray(payload.permissions) ? payload.permissions.map(String) : [];
+  await sql`
+    update roles
+    set name = ${requireString(payload.name, "Rol adı")},
+        description = ${optionalString(payload.description) ?? ""},
+        permissions = ${JSON.stringify(permissions)},
+        is_active = ${payload.isActive === undefined ? true : boolValue(payload.isActive)},
+        updated_at = now()
+    where id = ${recordId}
+  `;
+  return { id: recordId };
+}
+
+export async function deleteRole(recordId: string) {
+  await sql`delete from roles where id = ${recordId}`;
+  return { id: recordId };
+}
+
+export async function createUserProfile(payload: Record<string, unknown>) {
+  const recordId = id("user");
+  await sql`
+    insert into user_profiles (id, email, full_name, role_id, is_active, created_at, updated_at)
+    values (${recordId}, ${requireString(payload.email, "E-posta")}, ${requireString(payload.fullName, "Ad soyad")}, ${requireString(payload.roleId, "Rol")}, true, now(), now())
+  `;
+  return { id: recordId };
+}
+
+export async function deactivateUserProfile(recordId: string) {
+  await sql`update user_profiles set is_active = false, updated_at = now() where id = ${recordId}`;
   return { id: recordId };
 }
 
@@ -543,4 +586,72 @@ export async function createDyehouseProduction(payload: Record<string, unknown>)
     await tx`update orders set status = 'Mamül Hazır', updated_at = now() where id = ${String(partyRows[0].order_id)}`;
     return { id: productionId, waste };
   });
+}
+
+export async function createSale(payload: Record<string, unknown>) {
+  return sql.begin(async (tx) => {
+    const saleId = id("sale");
+    const saleNo = await nextBusinessNo(tx, "sale");
+    const date = requireString(payload.date ?? new Date().toISOString().slice(0, 10), "Sevkiyat tarihi");
+    const partyId = requireString(payload.partyId, "Parti");
+    const stockId = requireString(payload.stockId, "Stok");
+    const warehouseId = requireString(payload.warehouseId, "Depo");
+    const quantityKg = numberValue(payload.quantityKg, "Satış kg");
+    const customerName = requireString(payload.customerName, "Müşteri");
+    const partyRows = await tx`select order_id from parties where id = ${partyId} limit 1`;
+    const orderId = optionalString(payload.orderId) ?? (partyRows[0]?.order_id ? String(partyRows[0].order_id) : null);
+
+    await tx`
+      insert into sales (
+        id, sale_no, date, customer_name, warehouse_id, stock_id, party_id, order_id,
+        quantity_kg, unit_price, currency, status, description, created_at, created_by
+      )
+      values (
+        ${saleId}, ${saleNo}, ${date}, ${customerName}, ${warehouseId}, ${stockId}, ${partyId}, ${orderId},
+        ${quantityKg}, ${payload.unitPrice ? numberValue(payload.unitPrice, "Birim fiyat") : null},
+        ${optionalString(payload.currency) ?? "TRY"}, 'Sevk Edildi', ${optionalString(payload.description) ?? ""}, now(), 'system'
+      )
+    `;
+
+    await addMovement(tx, {
+      date,
+      stockId,
+      warehouseId,
+      partyId,
+      orderId,
+      movementType: "Çıkış",
+      direction: "OUT",
+      quantity: quantityKg,
+      description: "Satış / sevkiyat çıkışı",
+      referenceType: "sale",
+      referenceId: saleId,
+    });
+
+    await tx`
+      update parties
+      set status = 'Sevk Edildi',
+          timeline = timeline || ${JSON.stringify([{ date, title: "Sevkiyat", description: `${saleNo} ile ${quantityKg} kg çıkış yapıldı.`, tone: "green" }])}::jsonb,
+          updated_at = now()
+      where id = ${partyId}
+    `;
+    if (orderId) {
+      await tx`update orders set status = 'Sevk Edildi', updated_at = now() where id = ${orderId}`;
+    }
+    return { id: saleId, saleNo };
+  });
+}
+
+export async function updateOrderStatus(recordId: string, status: string) {
+  await sql`update orders set status = ${status}, updated_at = now() where id = ${recordId}`;
+  return { id: recordId, status };
+}
+
+export async function cancelPurchaseOrder(recordId: string) {
+  await sql`update purchase_orders set status = 'İptal', updated_at = now() where id = ${recordId}`;
+  return { id: recordId, status: "İptal" };
+}
+
+export async function deactivateStockCard(recordId: string) {
+  await sql`update stock_cards set is_active = false, updated_at = now() where id = ${recordId}`;
+  return { id: recordId };
 }

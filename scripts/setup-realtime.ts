@@ -28,6 +28,9 @@ const tables = [
   "transfers",
   "purchase_orders",
   "purchase_receipts",
+  "sales",
+  "roles",
+  "user_profiles",
 ];
 
 async function main() {

@@ -210,6 +210,44 @@ export const purchaseReceipts = pgTable("purchase_receipts", {
   createdBy: text("created_by"),
 });
 
+export const sales = pgTable("sales", {
+  id: text("id").primaryKey(),
+  saleNo: text("sale_no").notNull().unique(),
+  date: date("date").notNull(),
+  customerName: text("customer_name").notNull(),
+  warehouseId: text("warehouse_id").notNull(),
+  stockId: text("stock_id").notNull(),
+  partyId: text("party_id").notNull(),
+  orderId: text("order_id"),
+  quantityKg: numeric("quantity_kg", { precision: 14, scale: 3 }).notNull(),
+  unitPrice: numeric("unit_price", { precision: 14, scale: 3 }),
+  currency: text("currency").default("TRY").notNull(),
+  status: text("status").default("Sevk Edildi").notNull(),
+  description: text("description").default("").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  createdBy: text("created_by"),
+});
+
+export const roles = pgTable("roles", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description").default("").notNull(),
+  permissions: jsonb("permissions").$type<string[]>().default([]).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const userProfiles = pgTable("user_profiles", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  fullName: text("full_name").notNull(),
+  roleId: text("role_id").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const counters = pgTable("counters", {
   key: text("key").primaryKey(),
   prefix: text("prefix").notNull(),

@@ -29,6 +29,7 @@ const navigation = [
   { href: "/production/raw", label: "Ham Üretim", icon: Factory },
   { href: "/production/dyehouse", label: "Boyahane", icon: PackageCheck },
   { href: "/parties", label: "Partiler", icon: Store },
+  { href: "/sales", label: "Satış / Sevkiyat", icon: Truck },
   { href: "/waste-analysis", label: "Fire Analizi", icon: BarChart3 },
   { href: "/partners", label: "Cari/Fasoncu", icon: Users },
   { href: "/settings", label: "Ayarlar", icon: Settings },
@@ -88,13 +89,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="hidden flex-1 justify-center md:flex">
             <input className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" placeholder="Sipariş, parti, stok veya cari ara" />
           </div>
-          <div className="flex items-center gap-3">
+          <Link href="/login" className="flex items-center gap-3 rounded-2xl px-2 py-1 transition hover:bg-slate-50">
             <div className="hidden text-right sm:block">
               <p className="text-sm font-semibold text-slate-950">ERP Admin</p>
               <p className="text-xs text-slate-400">Üretim yöneticisi</p>
             </div>
             <div className="grid size-11 place-items-center rounded-2xl bg-slate-950 text-sm font-bold text-white">YA</div>
-          </div>
+          </Link>
         </div>
       </header>
 

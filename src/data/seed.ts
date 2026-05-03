@@ -335,4 +335,10 @@ export const erpSeed: ErpData = {
   purchaseReceipts: [
     { id: "rec-1", purchaseOrderId: "po-1", receiptNo: "MK-260001", receiptDate: "2026-04-18", warehouseId: "wh-yarn", supplierId: "p-sup-1", items: [{ purchaseOrderItemId: "poi-1", stockId: "st-ip-1", receivedKg: 4000, lotNo: "KAR-2604-1" }, { purchaseOrderItemId: "poi-1", stockId: "st-ip-1", receivedKg: 3000, lotNo: "KAR-2604-2" }], description: "Kısmi mal kabul", createdAt: now, createdBy: "demo" },
   ],
+  sales: [],
+  roles: [
+    { id: "role-admin", name: "Admin", description: "Tum moduller icin tam yetki.", permissions: ["dashboard:read", "orders:write", "stocks:write", "production:write", "purchase:write", "sales:write", "settings:write", "reports:read"], isActive: true, createdAt: now, updatedAt: now },
+    { id: "role-production", name: "Uretim", description: "Uretim ve parti sureci.", permissions: ["dashboard:read", "production:write", "stocks:write"], isActive: true, createdAt: now, updatedAt: now },
+  ],
+  userProfiles: [],
 };

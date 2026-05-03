@@ -17,4 +17,7 @@ export const emptyErpData: ErpData = {
   transfers: [],
   purchaseOrders: [],
   purchaseReceipts: [],
+  sales: [],
+  roles: [],
+  userProfiles: [],
 };

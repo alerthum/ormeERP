@@ -10,18 +10,34 @@ import { StatusBadge, statusTone } from "@/components/ui/status-badge";
 import { StatCard } from "@/components/ui/stat-card";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { FormDrawer } from "@/components/ui/form-drawer";
-import { DyehouseProductionForm, OrderForm, PurchaseOrderForm, PurchaseReceiptForm, RawProductionForm, SettingForm, StockCardForm, TransferForm } from "@/components/forms";
+import { DyehouseProductionForm, OrderForm, PurchaseOrderForm, PurchaseReceiptForm, RawProductionForm, RoleForm, SaleForm, SettingForm, StockCardForm, TransferForm, UserProfileForm } from "@/components/forms";
 import { PartyTimeline } from "@/components/party-timeline";
 import { useErpData } from "@/components/erp-data-provider";
 import { getDashboardMetrics, getName, getPurchaseProgress } from "@/services/erp-service";
-import type { Order, Party, PurchaseOrder, StockCard, StockMovement } from "@/types/erp";
+import type { Order, Party, PurchaseOrder, Role, Sale, StockCard, StockMovement, UserProfile } from "@/types/erp";
 import { formatDate, formatKg, formatPercent, wasteTone } from "@/lib/utils";
 
 const primaryButton = "inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-100";
+const dangerButton = "rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700";
+
+async function apiDelete(endpoint: string) {
+  const response = await fetch(endpoint, { method: "DELETE" });
+  const result = (await response.json()) as { ok: boolean; error?: string };
+  if (!response.ok || !result.ok) throw new Error(result.error ?? "İşlem tamamlanamadı.");
+}
 
 export function OrdersPage() {
-  const { data } = useErpData();
+  const { data, refresh } = useErpData();
   const [open, setOpen] = useState(false);
+  async function cancelOrder(id: string) {
+    try {
+      await apiDelete(`/api/orders/${id}`);
+      await refresh();
+      toast.success("Sipariş iptal edildi.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Sipariş iptal edilemedi.");
+    }
+  }
   const columns: Column<Order>[] = [
     { header: "SipariÅŸ", cell: (row) => <Link className="font-semibold text-blue-700" href={`/orders/${row.id}`}>{row.orderNo}</Link> },
     { header: "MÃ¼ÅŸteri", cell: (row) => row.customerName },
@@ -29,6 +45,7 @@ export function OrdersPage() {
     { header: "Renk", cell: (row) => getName(data.colors, row.colorId) },
     { header: "Kg", cell: (row) => formatKg(row.quantityKg) },
     { header: "Durum", cell: (row) => <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge> },
+    { header: "İşlem", cell: (row) => <button className={dangerButton} onClick={() => cancelOrder(row.id)} type="button">İptal</button> },
   ];
   return (
     <div className="space-y-6">
@@ -59,9 +76,18 @@ export function OrderDetailPage({ id }: { id: string }) {
 }
 
 export function PurchaseOrdersPage() {
-  const { data } = useErpData();
+  const { data, refresh } = useErpData();
   const [orderOpen, setOrderOpen] = useState(false);
   const [receiptOpen, setReceiptOpen] = useState(false);
+  async function cancelPurchase(id: string) {
+    try {
+      await apiDelete(`/api/purchase-orders/${id}`);
+      await refresh();
+      toast.success("Satıcı siparişi iptal edildi.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Satıcı siparişi iptal edilemedi.");
+    }
+  }
   const columns: Column<PurchaseOrder>[] = [
     { header: "SipariÅŸ", cell: (row) => <span className="font-semibold text-blue-700">{row.purchaseOrderNo}</span> },
     { header: "SatÄ±cÄ±", cell: (row) => getName(data.partners, row.supplierId) },
@@ -69,6 +95,7 @@ export function PurchaseOrdersPage() {
     { header: "Gelen", cell: (row) => formatKg(row.totalReceivedKg) },
     { header: "Kalan", cell: (row) => formatKg(row.totalRemainingKg) },
     { header: "Durum", cell: (row) => <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge> },
+    { header: "İşlem", cell: (row) => <button className={dangerButton} onClick={() => cancelPurchase(row.id)} type="button">İptal</button> },
   ];
   return (
     <div className="space-y-6">
@@ -100,8 +127,17 @@ export function PurchaseOrdersPage() {
 }
 
 export function StocksPage() {
-  const { data } = useErpData();
+  const { data, refresh } = useErpData();
   const [open, setOpen] = useState(false);
+  async function deactivateStock(id: string) {
+    try {
+      await apiDelete(`/api/stocks/${id}`);
+      await refresh();
+      toast.success("Stok kartı pasife alındı.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Stok kartı pasife alınamadı.");
+    }
+  }
   const columns: Column<StockCard>[] = [
     { header: "Kod", cell: (row) => <Link className="font-semibold text-blue-700" href={`/stocks/${row.id}`}>{row.code}</Link> },
     { header: "Ad", cell: (row) => row.name },
@@ -109,6 +145,7 @@ export function StocksPage() {
     { header: "Ne", cell: (row) => getName(data.yarnCounts, row.yarnCountId) },
     { header: "Stok", cell: (row) => formatKg(row.currentStockKg) },
     { header: "Kritik", cell: (row) => formatKg(row.criticalStockKg) },
+    { header: "İşlem", cell: (row) => <button className={dangerButton} onClick={() => deactivateStock(row.id)} type="button">Pasifleştir</button> },
   ];
   return (
     <div className="space-y-6">
@@ -247,6 +284,23 @@ export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "
     reports: { title: "Raporlar", desc: "Ãœretim, stok, satÄ±n alma ve fire raporlarÄ±.", icon: BarChart3 },
     settings: { title: "Ayarlar", desc: "KumaÅŸ cinsi, renk, Ne, proses, depo, rol ve prefix tanÄ±mlarÄ±.", icon: Settings },
   }[kind];
+  if (kind === "sales") {
+    const columns: Column<Sale>[] = [
+      { header: "Sevkiyat", cell: (row) => <span className="font-semibold text-blue-700">{row.saleNo}</span> },
+      { header: "Müşteri", cell: (row) => row.customerName },
+      { header: "Parti", cell: (row) => data.parties.find((item) => item.id === row.partyId)?.partyNo ?? "-" },
+      { header: "Depo", cell: (row) => getName(data.warehouses, row.warehouseId) },
+      { header: "Kg", cell: (row) => formatKg(row.quantityKg) },
+      { header: "Durum", cell: (row) => <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge> },
+    ];
+    return (
+      <div className="space-y-6">
+        <PageHeader eyebrow="Satış" title={map.title} description={map.desc} icon={map.icon} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Sevkiyat</button>} />
+        <DataTable rows={data.sales} columns={columns} />
+        <FormDrawer open={open} title="Satış / sevkiyat kaydı" onClose={() => setOpen(false)}><SaleForm /></FormDrawer>
+      </div>
+    );
+  }
   const rows = kind === "warehouses" ? data.warehouses : kind === "partners" ? data.partners : data.fabricTypes;
   return (
     <div className="space-y-6">
@@ -259,6 +313,59 @@ export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "
         {kind === "warehouses" ? <SettingForm entity="warehouses" extra="warehouse" /> : null}
         {kind === "partners" ? <SettingForm entity="partners" extra="partner" /> : null}
       </FormDrawer>
+    </div>
+  );
+}
+
+export function RolesSecurityPage() {
+  const { data, refresh } = useErpData();
+  const [roleOpen, setRoleOpen] = useState(false);
+  const [userOpen, setUserOpen] = useState(false);
+
+  async function remove(endpoint: string, success: string) {
+    try {
+      await apiDelete(endpoint);
+      await refresh();
+      toast.success(success);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "İşlem tamamlanamadı.");
+    }
+  }
+
+  const roleColumns: Column<Role>[] = [
+    { header: "Rol", cell: (row) => <span className="font-semibold text-slate-950">{row.name}</span> },
+    { header: "Açıklama", cell: (row) => row.description || "-" },
+    { header: "Yetki", cell: (row) => `${row.permissions.length} izin` },
+    { header: "Durum", cell: (row) => <StatusBadge tone={row.isActive ? "green" : "slate"}>{row.isActive ? "Aktif" : "Pasif"}</StatusBadge> },
+    { header: "İşlem", cell: (row) => <button className={dangerButton} onClick={() => remove(`/api/roles/${row.id}`, "Rol silindi.")} type="button">Sil</button> },
+  ];
+
+  const userColumns: Column<UserProfile>[] = [
+    { header: "Kullanıcı", cell: (row) => <span className="font-semibold text-slate-950">{row.fullName}</span> },
+    { header: "E-posta", cell: (row) => row.email },
+    { header: "Rol", cell: (row) => data.roles.find((role) => role.id === row.roleId)?.name ?? "-" },
+    { header: "Durum", cell: (row) => <StatusBadge tone={row.isActive ? "green" : "slate"}>{row.isActive ? "Aktif" : "Pasif"}</StatusBadge> },
+    { header: "İşlem", cell: (row) => <button className={dangerButton} onClick={() => remove(`/api/users/${row.id}`, "Kullanıcı pasife alındı.")} type="button">Pasifleştir</button> },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Güvenlik"
+        title="Roller ve Kullanıcı Yetkileri"
+        description="Rol tanımları, izin setleri ve kullanıcı profil eşleştirmeleri Supabase PostgreSQL üzerinde tutulur."
+        icon={Users}
+        action={<><button className={primaryButton} onClick={() => setRoleOpen(true)}><Plus className="size-4" />Rol</button><button className={primaryButton} onClick={() => setUserOpen(true)}><Plus className="size-4" />Kullanıcı</button></>}
+      />
+      <div className="grid gap-4 md:grid-cols-3">
+        <StatCard title="Rol sayısı" value={String(data.roles.length)} helper="Aktif yetki grupları" icon={KeyRound} />
+        <StatCard title="Kullanıcı profili" value={String(data.userProfiles.length)} helper="Auth ile eşleşecek profil kayıtları" icon={Users} tone="green" />
+        <StatCard title="Güvenlik notu" value="Hazır" helper="RLS/Auth enforcement aşamasına temel oluşturur" icon={Settings} tone="amber" />
+      </div>
+      <DataTable rows={data.roles} columns={roleColumns} />
+      <DataTable rows={data.userProfiles} columns={userColumns} />
+      <FormDrawer open={roleOpen} title="Rol tanımı" onClose={() => setRoleOpen(false)}><RoleForm /></FormDrawer>
+      <FormDrawer open={userOpen} title="Kullanıcı profili" onClose={() => setUserOpen(false)}><UserProfileForm /></FormDrawer>
     </div>
   );
 }
@@ -307,7 +414,7 @@ const settingGroups = [
     items: ["YM", "MM", "IP", "LYC", "POLY"],
   },
   {
-    href: "/settings",
+    href: "/settings/roles",
     title: "Roller ve gÃ¼venlik",
     description: "Admin, Ã¼retim, depo, satÄ±n alma, satÄ±ÅŸ ve raporlama yetki altyapÄ±sÄ±.",
     items: ["Admin", "Ãœretim", "Depo", "SatÄ±n alma"],

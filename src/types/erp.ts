@@ -1,25 +1,10 @@
 export type StockType = "YM" | "MM" | "IP" | "LYC" | "POLY";
 export type Direction = "IN" | "OUT";
 export type PartnerType = "KNITTER" | "DYEHOUSE" | "SUPPLIER" | "CUSTOMER";
-export type OrderStatus =
-  | "Taslak"
-  | "Onaylandı"
-  | "İplik Bekliyor"
-  | "Örmede"
-  | "Ham Geldi"
-  | "Boyahanede"
-  | "Mamül Hazır"
-  | "Sevk Edildi"
-  | "Kapandı";
-export type PurchaseStatus = "Taslak" | "Onaylandı" | "Kısmi Geldi" | "Tamamlandı" | "İptal";
-export type MovementType =
-  | "Giriş"
-  | "Çıkış"
-  | "Transfer"
-  | "Üretim tüketim"
-  | "Üretim giriş"
-  | "Fire"
-  | "Düzeltme";
+export type OrderStatus = string;
+export type PurchaseStatus = string;
+export type SaleStatus = string;
+export type MovementType = string;
 
 export interface NamedEntity {
   id: string;
@@ -238,6 +223,44 @@ export interface PurchaseReceipt {
   createdBy: string;
 }
 
+export interface Sale {
+  id: string;
+  saleNo: string;
+  date: string;
+  customerName: string;
+  warehouseId: string;
+  stockId: string;
+  partyId: string;
+  orderId?: string;
+  quantityKg: number;
+  unitPrice?: number;
+  currency: "TRY" | "USD" | "EUR";
+  status: SaleStatus;
+  description: string;
+  createdAt: string;
+  createdBy?: string;
+}
+
+export interface Role {
+  id: string;
+  name: string;
+  description: string;
+  permissions: string[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  fullName: string;
+  roleId: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ErpData {
   fabricTypes: NamedEntity[];
   colors: NamedEntity[];
@@ -255,4 +278,7 @@ export interface ErpData {
   transfers: Transfer[];
   purchaseOrders: PurchaseOrder[];
   purchaseReceipts: PurchaseReceipt[];
+  sales: Sale[];
+  roles: Role[];
+  userProfiles: UserProfile[];
 }

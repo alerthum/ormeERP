@@ -14,6 +14,9 @@ loadLocalEnv();
 const databaseUrl = process.env.DATABASE_URL;
 
 const tables = [
+  "user_profiles",
+  "roles",
+  "sales",
   "purchase_receipts",
   "purchase_orders",
   "transfers",

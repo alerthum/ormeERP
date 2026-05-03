@@ -27,6 +27,7 @@ const numericKeys = new Set([
   "receivedKg",
   "remainingKg",
   "unitPrice",
+  "quantityKg",
   "riskScore",
   "rawWidth",
   "rawGsm",
@@ -79,6 +80,9 @@ export async function getErpDataFromDb(): Promise<ErpData> {
     transfers,
     purchaseOrders,
     purchaseReceipts,
+    sales,
+    roles,
+    userProfiles,
   ] = await Promise.all([
     table<ErpData["fabricTypes"][number]>("settings_fabric_types"),
     table<ErpData["colors"][number]>("settings_colors"),
@@ -96,6 +100,9 @@ export async function getErpDataFromDb(): Promise<ErpData> {
     table<ErpData["transfers"][number]>("transfers"),
     table<ErpData["purchaseOrders"][number]>("purchase_orders"),
     table<ErpData["purchaseReceipts"][number]>("purchase_receipts"),
+    table<ErpData["sales"][number]>("sales"),
+    table<ErpData["roles"][number]>("roles"),
+    table<ErpData["userProfiles"][number]>("user_profiles"),
   ]);
 
   return {
@@ -115,5 +122,8 @@ export async function getErpDataFromDb(): Promise<ErpData> {
     transfers,
     purchaseOrders,
     purchaseReceipts,
+    sales,
+    roles,
+    userProfiles,
   };
 }

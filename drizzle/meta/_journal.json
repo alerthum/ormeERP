@@ -8,6 +8,13 @@
       "when": 1777745428672,
       "tag": "0000_flaky_captain_universe",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777796335908,
+      "tag": "0001_chilly_thunderbolts",
+      "breakpoints": true
     }
   ]
 }
