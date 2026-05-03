@@ -55,9 +55,9 @@ export function OrdersPage() {
     }
   }
   const columns: Column<Order>[] = [
-    { header: "SipariÅŸ", cell: (row) => <Link className="font-semibold text-blue-700" href={`/orders/${row.id}`}>{row.orderNo}</Link> },
-    { header: "MÃ¼ÅŸteri", cell: (row) => row.customerName },
-    { header: "KumaÅŸ", cell: (row) => getName(data.fabricTypes, row.fabricTypeId) },
+    { header: "Sipariş", cell: (row) => <Link className="font-semibold text-blue-700" href={`/orders/${row.id}`}>{row.orderNo}</Link> },
+    { header: "Müşteri", cell: (row) => row.customerName },
+    { header: "Kumaş", cell: (row) => getName(data.fabricTypes, row.fabricTypeId) },
     { header: "Renk", cell: (row) => getName(data.colors, row.colorId) },
     { header: "Kg", cell: (row) => formatKg(row.quantityKg) },
     { header: "Durum", cell: (row) => <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge> },
@@ -65,9 +65,9 @@ export function OrdersPage() {
   ];
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="SipariÅŸler" title="MÃ¼ÅŸteri SipariÅŸleri" description="KumaÅŸ Ã¼retim talepleri, otomatik YM/MM stok eÅŸleÅŸmesi ve Ã¼retim durum takibi." icon={ShoppingCart} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Yeni sipariÅŸ</button>} />
+      <PageHeader eyebrow="Siparişler" title="Müşteri Siparişleri" description="Kumaş üretim talepleri, otomatik YM/MM stok eşleşmesi ve üretim durum takibi." icon={ShoppingCart} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Yeni sipariş</button>} />
       <DataTable rows={data.orders} columns={columns} />
-      <FormDrawer open={open} title="Yeni mÃ¼ÅŸteri sipariÅŸi" onClose={() => setOpen(false)}><OrderForm /></FormDrawer>
+      <FormDrawer open={open} title="Yeni müşteri siparişi" onClose={() => setOpen(false)}><OrderForm /></FormDrawer>
       <FormDrawer open={Boolean(editing)} title="Sipariş düzenle" onClose={() => setEditing(null)}>{editing ? <OrderEditForm order={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
     </div>
   );
@@ -80,12 +80,12 @@ export function OrderDetailPage({ id }: { id: string }) {
   const party = data.parties.find((item) => item.orderId === order.id);
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow={order.orderNo} title={order.customerName} description={`${getName(data.fabricTypes, order.fabricTypeId)} Â· ${getName(data.colors, order.colorId)} Â· ${formatKg(order.quantityKg)}`} icon={ShoppingCart} action={<StatusBadge tone={statusTone(order.status)}>{order.status}</StatusBadge>} />
+      <PageHeader eyebrow={order.orderNo} title={order.customerName} description={`${getName(data.fabricTypes, order.fabricTypeId)} · ${getName(data.colors, order.colorId)} · ${formatKg(order.quantityKg)}`} icon={ShoppingCart} action={<StatusBadge tone={statusTone(order.status)}>{order.status}</StatusBadge>} />
       <div className="grid gap-4 md:grid-cols-4">
         <StatCard title="Termin" value={formatDate(order.dueDate)} helper="Planlanan teslim" icon={ShoppingCart} />
-        <StatCard title="YM stok" value={getName(data.stockCards, order.ymStockId)} helper="Ham kumaÅŸ referansÄ±" icon={Boxes} tone="green" />
-        <StatCard title="MM stok" value={getName(data.stockCards, order.mmStockId)} helper="MamÃ¼l kumaÅŸ referansÄ±" icon={Boxes} tone="green" />
-        <StatCard title="Parti" value={party?.partyNo ?? "-"} helper="SatÄ±ÅŸa kadar izlenir" icon={Factory} tone="amber" />
+        <StatCard title="YM stok" value={getName(data.stockCards, order.ymStockId)} helper="Ham kumaş referansı" icon={Boxes} tone="green" />
+        <StatCard title="MM stok" value={getName(data.stockCards, order.mmStockId)} helper="Mamül kumaş referansı" icon={Boxes} tone="green" />
+        <StatCard title="Parti" value={party?.partyNo ?? "-"} helper="Satışa kadar izlenir" icon={Factory} tone="amber" />
       </div>
       <PartyTimeline items={party?.timeline ?? []} />
     </div>
@@ -107,9 +107,9 @@ export function PurchaseOrdersPage() {
     }
   }
   const columns: Column<PurchaseOrder>[] = [
-    { header: "SipariÅŸ", cell: (row) => <span className="font-semibold text-blue-700">{row.purchaseOrderNo}</span> },
-    { header: "SatÄ±cÄ±", cell: (row) => getName(data.partners, row.supplierId) },
-    { header: "SipariÅŸ kg", cell: (row) => formatKg(row.totalOrderedKg) },
+    { header: "Sipariş", cell: (row) => <span className="font-semibold text-blue-700">{row.purchaseOrderNo}</span> },
+    { header: "Satıcı", cell: (row) => getName(data.partners, row.supplierId) },
+    { header: "Sipariş kg", cell: (row) => formatKg(row.totalOrderedKg) },
     { header: "Gelen", cell: (row) => formatKg(row.totalReceivedKg) },
     { header: "Kalan", cell: (row) => formatKg(row.totalRemainingKg) },
     { header: "Durum", cell: (row) => <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge> },
@@ -117,7 +117,7 @@ export function PurchaseOrdersPage() {
   ];
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="SatÄ±n alma" title="SatÄ±cÄ± SipariÅŸleri" description="IP, LYC ve POLY hammadde sipariÅŸleri; kÄ±smi mal kabul ve aÃ§Ä±k kg takibi." icon={PackagePlus} action={<><button className={primaryButton} onClick={() => setOrderOpen(true)}><Plus className="size-4" />SatÄ±cÄ± sipariÅŸi</button><button className={primaryButton} onClick={() => setReceiptOpen(true)}><Plus className="size-4" />Mal kabul</button></>} />
+      <PageHeader eyebrow="Satın alma" title="Satıcı Siparişleri" description="IP, LYC ve POLY hammadde siparişleri; kısmi mal kabul ve açık kg takibi." icon={PackagePlus} action={<><button className={primaryButton} onClick={() => setOrderOpen(true)}><Plus className="size-4" />Satıcı siparişi</button><button className={primaryButton} onClick={() => setReceiptOpen(true)}><Plus className="size-4" />Mal kabul</button></>} />
       <div className="grid gap-4 md:grid-cols-3">
         {data.purchaseOrders.map((order) => (
           <div key={order.id} className="premium-card rounded-2xl p-5">
@@ -129,7 +129,7 @@ export function PurchaseOrdersPage() {
               <StatusBadge tone={statusTone(order.status)}>{order.status}</StatusBadge>
             </div>
             <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
-              <span><b>{formatKg(order.totalOrderedKg)}</b><br />SipariÅŸ</span>
+              <span><b>{formatKg(order.totalOrderedKg)}</b><br />Sipariş</span>
               <span><b>{formatKg(order.totalReceivedKg)}</b><br />Gelen</span>
               <span><b>{formatKg(order.totalRemainingKg)}</b><br />Kalan</span>
             </div>
@@ -138,7 +138,7 @@ export function PurchaseOrdersPage() {
         ))}
       </div>
       <DataTable rows={data.purchaseOrders} columns={columns} />
-      <FormDrawer open={orderOpen} title="Yeni satÄ±cÄ± sipariÅŸi" onClose={() => setOrderOpen(false)}><PurchaseOrderForm /></FormDrawer>
+      <FormDrawer open={orderOpen} title="Yeni satıcı siparişi" onClose={() => setOrderOpen(false)}><PurchaseOrderForm /></FormDrawer>
       <FormDrawer open={receiptOpen} title="Mal kabul" onClose={() => setReceiptOpen(false)}><PurchaseReceiptForm /></FormDrawer>
       <FormDrawer open={Boolean(editing)} title="Satıcı siparişi düzenle" onClose={() => setEditing(null)}>{editing ? <PurchaseOrderEditForm order={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
     </div>
@@ -169,9 +169,9 @@ export function StocksPage() {
   ];
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Stok" title="Stok KartlarÄ±" description="YM/MM partili izlenir; IP/LYC/POLY satÄ±n alma ve Ã¼retim tÃ¼ketimiyle takip edilir." icon={Boxes} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Stok kartÄ±</button>} />
+      <PageHeader eyebrow="Stok" title="Stok Kartları" description="YM/MM partili izlenir; IP/LYC/POLY satın alma ve üretim tüketimiyle takip edilir." icon={Boxes} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Stok kartı</button>} />
       <DataTable rows={data.stockCards} columns={columns} />
-      <FormDrawer open={open} title="Yeni stok kartÄ±" onClose={() => setOpen(false)}><StockCardForm /></FormDrawer>
+      <FormDrawer open={open} title="Yeni stok kartı" onClose={() => setOpen(false)}><StockCardForm /></FormDrawer>
       <FormDrawer open={Boolean(editing)} title="Stok kartı düzenle" onClose={() => setEditing(null)}>{editing ? <StockCardEditForm stock={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
     </div>
   );
@@ -185,18 +185,18 @@ export function StockDetailPage({ id }: { id: string }) {
   const purchaseItems = data.purchaseOrders.flatMap((order) => order.items.filter((item) => item.stockId === stock.id).map((item) => ({ ...item, id: `${order.id}-${item.id}`, orderNo: order.purchaseOrderNo, status: order.status })));
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow={stock.code} title={stock.name} description="Genel, bakiye, hareketler, satÄ±cÄ± sipariÅŸleri ve Ã¼retim kullanÄ±mÄ± tek kartta." icon={Boxes} action={<StatusBadge tone={stock.type === "MM" ? "green" : "blue"}>{stock.type}</StatusBadge>} />
+      <PageHeader eyebrow={stock.code} title={stock.name} description="Genel, bakiye, hareketler, satıcı siparişleri ve üretim kullanımı tek kartta." icon={Boxes} action={<StatusBadge tone={stock.type === "MM" ? "green" : "blue"}>{stock.type}</StatusBadge>} />
       <div className="grid gap-4 md:grid-cols-4">
-        <StatCard title="Mevcut stok" value={formatKg(stock.currentStockKg)} helper="Kart Ã¼stÃ¼ Ã¶zet" icon={Boxes} />
-        <StatCard title="SatÄ±n alÄ±nan" value={formatKg(purchaseItems.reduce((sum, item) => sum + item.orderedKg, 0))} helper="IP/LYC/POLY iÃ§in" icon={PackagePlus} tone="green" />
-        <StatCard title="Bekleyen" value={formatKg(purchaseItems.reduce((sum, item) => sum + item.remainingKg, 0))} helper="SatÄ±cÄ± aÃ§Ä±k kg" icon={Truck} tone="amber" />
-        <StatCard title="Üretim tüketimi" value={formatKg(movements.filter((item) => item.movementType === "Üretim tüketim").reduce((sum, item) => sum + item.quantity, 0))} helper="Hareketlerden hesaplanÄ±r" icon={Factory} tone="red" />
+        <StatCard title="Mevcut stok" value={formatKg(stock.currentStockKg)} helper="Kart üstü özet" icon={Boxes} />
+        <StatCard title="Satın alınan" value={formatKg(purchaseItems.reduce((sum, item) => sum + item.orderedKg, 0))} helper="IP/LYC/POLY için" icon={PackagePlus} tone="green" />
+        <StatCard title="Bekleyen" value={formatKg(purchaseItems.reduce((sum, item) => sum + item.remainingKg, 0))} helper="Satıcı açık kg" icon={Truck} tone="amber" />
+        <StatCard title="Üretim tüketimi" value={formatKg(movements.filter((item) => item.movementType === "Üretim tüketim").reduce((sum, item) => sum + item.quantity, 0))} helper="Hareketlerden hesaplanır" icon={Factory} tone="red" />
       </div>
       <DataTable rows={movements} columns={[
         { header: "Tarih", cell: (row: StockMovement) => formatDate(row.date) },
         { header: "Depo", cell: (row: StockMovement) => getName(data.warehouses, row.warehouseId) },
         { header: "Tip", cell: (row: StockMovement) => row.movementType },
-        { header: "YÃ¶n", cell: (row: StockMovement) => <StatusBadge tone={row.direction === "IN" ? "green" : "red"}>{row.direction}</StatusBadge> },
+        { header: "Yön", cell: (row: StockMovement) => <StatusBadge tone={row.direction === "IN" ? "green" : "red"}>{row.direction}</StatusBadge> },
         { header: "Miktar", cell: (row: StockMovement) => formatKg(row.quantity) },
       ]} />
     </div>
@@ -207,15 +207,15 @@ export function PartiesPage() {
   const { data } = useErpData();
   const columns: Column<Party>[] = [
     { header: "Parti", cell: (row) => <Link className="font-semibold text-blue-700" href={`/parties/${row.id}`}>{row.partyNo}</Link> },
-    { header: "SipariÅŸ", cell: (row) => data.orders.find((item) => item.id === row.orderId)?.orderNo },
+    { header: "Sipariş", cell: (row) => data.orders.find((item) => item.id === row.orderId)?.orderNo },
     { header: "Ham kg", cell: (row) => formatKg(row.rawProducedKg) },
-    { header: "MamÃ¼l kg", cell: (row) => formatKg(row.finishedKg) },
+    { header: "Mamül kg", cell: (row) => formatKg(row.finishedKg) },
     { header: "Ham fire", cell: (row) => <StatusBadge tone={wasteTone(row.rawWastePercent)}>{formatPercent(row.rawWastePercent)}</StatusBadge> },
     { header: "Durum", cell: (row) => <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge> },
   ];
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Parti takibi" title="Partiler" description="Ä°lk ham Ã¼retimden satÄ±ÅŸa kadar parti numarasÄ±, fire, depo ve timeline izleme." icon={Factory} />
+      <PageHeader eyebrow="Parti takibi" title="Partiler" description="İlk ham üretimden satışa kadar parti numarası, fire, depo ve timeline izleme." icon={Factory} />
       <DataTable rows={data.parties} columns={columns} />
     </div>
   );
@@ -228,12 +228,12 @@ export function PartyDetailPage({ id }: { id: string }) {
   const order = data.orders.find((item) => item.id === party.orderId);
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow={`Parti ${party.partyNo}`} title={order?.customerName ?? "Parti detayÄ±"} description="SipariÅŸ, iplik tÃ¼ketimi, fasoncu, boyahane, satÄ±ÅŸ ve kalan kg zinciri." icon={Factory} action={<StatusBadge tone={statusTone(party.status)}>{party.status}</StatusBadge>} />
+      <PageHeader eyebrow={`Parti ${party.partyNo}`} title={order?.customerName ?? "Parti detayı"} description="Sipariş, iplik tüketimi, fasoncu, boyahane, satış ve kalan kg zinciri." icon={Factory} action={<StatusBadge tone={statusTone(party.status)}>{party.status}</StatusBadge>} />
       <div className="grid gap-4 md:grid-cols-4">
-        <StatCard title="Ham Ã¼retim" value={formatKg(party.rawProducedKg)} helper={`${formatKg(party.rawConsumedKg)} iplik tÃ¼ketildi`} icon={Factory} />
+        <StatCard title="Ham üretim" value={formatKg(party.rawProducedKg)} helper={`${formatKg(party.rawConsumedKg)} iplik tüketildi`} icon={Factory} />
         <StatCard title="Ham fire" value={formatPercent(party.rawWastePercent)} helper={formatKg(party.rawWasteKg)} icon={BarChart3} tone="red" />
-        <StatCard title="Boyahane giriÅŸ" value={formatKg(party.dyehouseInputKg)} helper="Ham kumaÅŸ sevki" icon={Truck} tone="amber" />
-        <StatCard title="MamÃ¼l" value={formatKg(party.finishedKg)} helper={`${formatPercent(party.dyehouseWastePercent)} boyahane fire`} icon={Boxes} tone="green" />
+        <StatCard title="Boyahane giriş" value={formatKg(party.dyehouseInputKg)} helper="Ham kumaş sevki" icon={Truck} tone="amber" />
+        <StatCard title="Mamül" value={formatKg(party.finishedKg)} helper={`${formatPercent(party.dyehouseWastePercent)} boyahane fire`} icon={Boxes} tone="green" />
       </div>
       <PartyTimeline items={party?.timeline ?? []} />
     </div>
@@ -245,11 +245,11 @@ export function ProductionPage({ type }: { type: "raw" | "dyehouse" }) {
   const isRaw = type === "raw";
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Ãœretim" title={isRaw ? "Ham KumaÅŸ Ãœretimi" : "Boyahane Ãœretimi"} description={isRaw ? "Ä°plik tÃ¼ketimi, ham kumaÅŸ giriÅŸi, fire ve fasoncu depo kapanÄ±ÅŸ mutabakatÄ±." : "Ham Ã§Ä±kÄ±ÅŸÄ±, mamÃ¼l giriÅŸi, finish Ã¶zellikleri ve boyahane fire hesaplama."} icon={Factory} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Yeni kayÄ±t</button>} />
+      <PageHeader eyebrow="Üretim" title={isRaw ? "Ham Kumaş Üretimi" : "Boyahane Üretimi"} description={isRaw ? "İplik tüketimi, ham kumaş girişi, fire ve fasoncu depo kapanış mutabakatı." : "Ham çıkışı, mamül girişi, finish özellikleri ve boyahane fire hesaplama."} icon={Factory} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Yeni kayıt</button>} />
       <div className="premium-card rounded-2xl p-5">
         {isRaw ? <RawProductionForm /> : <DyehouseProductionForm />}
       </div>
-      <FormDrawer open={open} title={isRaw ? "Ham Ã¼retim kaydÄ±" : "Boyahane Ã¼retim kaydÄ±"} onClose={() => setOpen(false)}>{isRaw ? <RawProductionForm /> : <DyehouseProductionForm />}</FormDrawer>
+      <FormDrawer open={open} title={isRaw ? "Ham üretim kaydı" : "Boyahane üretim kaydı"} onClose={() => setOpen(false)}>{isRaw ? <RawProductionForm /> : <DyehouseProductionForm />}</FormDrawer>
     </div>
   );
 }
@@ -259,7 +259,7 @@ export function TransfersPage() {
   const [confirm, setConfirm] = useState(false);
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Depo" title="Depolar ArasÄ± Transfer" description="Her depodan her depoya Ã§ift taraflÄ± stok hareketi; negatif stok kontrolÃ¼ne hazÄ±r altyapÄ±." icon={Truck} action={<button className={primaryButton} onClick={() => setConfirm(true)}><Plus className="size-4" />OnaylÄ± transfer</button>} />
+      <PageHeader eyebrow="Depo" title="Depolar Arası Transfer" description="Her depodan her depoya çift taraflı stok hareketi; negatif stok kontrolüne hazır altyapı." icon={Truck} action={<button className={primaryButton} onClick={() => setConfirm(true)}><Plus className="size-4" />Onaylı transfer</button>} />
       <div className="premium-card rounded-2xl p-5"><TransferForm /></div>
       <DataTable rows={data.transfers} columns={[
         { header: "Tarih", cell: (row) => formatDate(row.date) },
@@ -267,7 +267,7 @@ export function TransfersPage() {
         { header: "Hedef", cell: (row) => getName(data.warehouses, row.toWarehouseId) },
         { header: "Miktar", cell: (row) => formatKg(row.items.reduce((sum, item) => sum + item.quantity, 0)) },
       ]} />
-      <ConfirmModal open={confirm} title="Transfer onayÄ±" description="Bu iÅŸlem kaynak depodan Ã§Ä±kÄ±ÅŸ ve hedef depoya giriÅŸ hareketi oluÅŸturur." onClose={() => setConfirm(false)} onConfirm={() => setConfirm(false)} />
+      <ConfirmModal open={confirm} title="Transfer onayı" description="Bu işlem kaynak depodan çıkış ve hedef depoya giriş hareketi oluşturur." onClose={() => setConfirm(false)} onConfirm={() => setConfirm(false)} />
     </div>
   );
 }
@@ -277,12 +277,12 @@ export function WasteAnalysisPage() {
   const metrics = getDashboardMetrics(data);
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Fire" title="Fire Analizi Dashboard" description="SipariÅŸ, parti, fasoncu, kumaÅŸ cinsi ve dÃ¶nem bazlÄ± beklenen/gerÃ§ek fire takibi." icon={BarChart3} />
+      <PageHeader eyebrow="Fire" title="Fire Analizi Dashboard" description="Sipariş, parti, fasoncu, kumaş cinsi ve dönem bazlı beklenen/gerçek fire takibi." icon={BarChart3} />
       <div className="grid gap-4 md:grid-cols-4">
-        <StatCard title="Ham fire ort." value={formatPercent(metrics.avgRawWaste)} helper="0-3 yeÅŸil, 12+ kritik" icon={BarChart3} tone="red" />
-        <StatCard title="Boyahane fire ort." value={formatPercent(metrics.avgDyeWaste)} helper="GÃ¶nderilen ham kg bazlÄ±" icon={BarChart3} tone="amber" />
+        <StatCard title="Ham fire ort." value={formatPercent(metrics.avgRawWaste)} helper="0-3 yeşil, 12+ kritik" icon={BarChart3} tone="red" />
+        <StatCard title="Boyahane fire ort." value={formatPercent(metrics.avgDyeWaste)} helper="Gönderilen ham kg bazlı" icon={BarChart3} tone="amber" />
         <StatCard title="Fire kg" value={formatKg(metrics.wasteKg)} helper="Ham + boyahane" icon={Factory} tone="red" />
-        <StatCard title="Riskli fasoncu" value="2" helper="EÅŸik Ã¼stÃ¼ Ã¼retim ortaÄŸÄ±" icon={Users} tone="amber" />
+        <StatCard title="Riskli fasoncu" value="2" helper="Eşik üstü üretim ortağı" icon={Users} tone="amber" />
       </div>
       <DataTable rows={data.parties} columns={[
         { header: "Parti", cell: (row) => row.partyNo },
@@ -404,11 +404,11 @@ export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "
   const { data, refresh } = useErpData();
   const [open, setOpen] = useState(false);
   const map = {
-    warehouses: { title: "Depo YÃ¶netimi", desc: "Depo tanÄ±mlarÄ±, bakiye kartlarÄ± ve partili stok gÃ¶rÃ¼nÃ¼mÃ¼.", icon: Warehouse },
-    partners: { title: "Fasoncu Cari YÃ¶netimi", desc: "Fason Ã¶rmeci, boyahane, satÄ±cÄ± ve mÃ¼ÅŸteri kartlarÄ±.", icon: Users },
-    sales: { title: "SatÄ±ÅŸ / Sevkiyat", desc: "MamÃ¼l kumaÅŸÄ±n satÄ±ÅŸ maÄŸazasÄ± ve sevkiyat deposu Ã§Ä±kÄ±ÅŸlarÄ±.", icon: Truck },
-    reports: { title: "Raporlar", desc: "Ãœretim, stok, satÄ±n alma ve fire raporlarÄ±.", icon: BarChart3 },
-    settings: { title: "Ayarlar", desc: "KumaÅŸ cinsi, renk, Ne, proses, depo, rol ve prefix tanÄ±mlarÄ±.", icon: Settings },
+    warehouses: { title: "Depo Yönetimi", desc: "Depo tanımları, bakiye kartları ve partili stok görünümü.", icon: Warehouse },
+    partners: { title: "Fasoncu Cari Yönetimi", desc: "Fason örmeci, boyahane, satıcı ve müşteri kartları.", icon: Users },
+    sales: { title: "Satış / Sevkiyat", desc: "Mamül kumaşın satış mağazası ve sevkiyat deposu çıkışları.", icon: Truck },
+    reports: { title: "Raporlar", desc: "Üretim, stok, satın alma ve fire raporları.", icon: BarChart3 },
+    settings: { title: "Ayarlar", desc: "Kumaş cinsi, renk, Ne, proses, depo, rol ve prefix tanımları.", icon: Settings },
   }[kind];
   if (kind === "sales") {
     async function cancelSaleRecord(id: string) {
@@ -509,61 +509,61 @@ export function RolesSecurityPage() {
 const settingGroups = [
   {
     href: "/settings/fabric-types",
-    title: "KumaÅŸ cinsleri",
-    description: "SÃ¼prem, iki iplik, Ã¼Ã§ iplik, kaÅŸkorse, ribana gibi Ã¼retim aileleri.",
-    items: ["SÃ¼prem", "Ä°ki iplik", "ÃœÃ§ iplik", "KaÅŸkorse", "Ribana"],
+    title: "Kumaş cinsleri",
+    description: "Süprem, iki iplik, üç iplik, kaşkorse, ribana gibi üretim aileleri.",
+    items: ["Süprem", "İki iplik", "Üç iplik", "Kaşkorse", "Ribana"],
   },
   {
     href: "/settings/colors",
     title: "Renkler",
-    description: "SipariÅŸ, stok kartÄ± ve boyahane final kartlarÄ±nda kullanÄ±lacak renk kataloÄŸu.",
+    description: "Sipariş, stok kartı ve boyahane final kartlarında kullanılacak renk kataloğu.",
     items: ["Ekru", "Siyah", "Lacivert", "Gri melanj"],
   },
   {
     href: "/settings/yarn-counts",
-    title: "Ne numaralarÄ±",
-    description: "YM kartÄ±ndan MM karta taÅŸÄ±nacak iplik numarasÄ± standardÄ±.",
+    title: "Ne numaraları",
+    description: "YM kartından MM karta taşınacak iplik numarası standardı.",
     items: ["20/1", "24/1", "30/1", "36/1", "40/1"],
   },
   {
     href: "/settings/process-types",
-    title: "Boyahane iÅŸlem tÃ¼rleri",
-    description: "Reaktif boya, ÅŸardon, sanfor, apre, yÄ±kama gibi proses tanÄ±mlarÄ±.",
-    items: ["Reaktif boya", "Åardon", "Sanfor", "Apre"],
+    title: "Boyahane işlem türleri",
+    description: "Reaktif boya, şardon, sanfor, apre, yıkama gibi proses tanımları.",
+    items: ["Reaktif boya", "Şardon", "Sanfor", "Apre"],
   },
   {
     href: "/settings/warehouses",
     title: "Depolar",
-    description: "Merkez iplik, fasoncu, ham kumaÅŸ, boyahane, mamÃ¼l, satÄ±ÅŸ ve fire depolarÄ±.",
-    items: ["Merkez iplik", "Fasoncu", "Ham kumaÅŸ", "MamÃ¼l"],
+    description: "Merkez iplik, fasoncu, ham kumaş, boyahane, mamül, satış ve fire depoları.",
+    items: ["Merkez iplik", "Fasoncu", "Ham kumaş", "Mamül"],
   },
   {
     href: "/partners",
-    title: "Cari ve Ã¼retim ortaklarÄ±",
-    description: "Fason Ã¶rmeci, boyahane, satÄ±cÄ±/tedarikÃ§i ve mÃ¼ÅŸteri kartlarÄ±.",
-    items: ["Fason Ã¶rmeci", "Boyahane", "SatÄ±cÄ±", "MÃ¼ÅŸteri"],
+    title: "Cari ve üretim ortakları",
+    description: "Fason örmeci, boyahane, satıcı/tedarikçi ve müşteri kartları.",
+    items: ["Fason örmeci", "Boyahane", "Satıcı", "Müşteri"],
   },
   {
     href: "/settings",
-    title: "Prefix ve sayaÃ§lar",
-    description: "YM, MM, IP, LYC, POLY, sipariÅŸ no ve parti no otomatik sayaÃ§larÄ±.",
+    title: "Prefix ve sayaçlar",
+    description: "YM, MM, IP, LYC, POLY, sipariş no ve parti no otomatik sayaçları.",
     items: ["YM", "MM", "IP", "LYC", "POLY"],
   },
   {
     href: "/settings/roles",
-    title: "Roller ve gÃ¼venlik",
-    description: "Admin, Ã¼retim, depo, satÄ±n alma, satÄ±ÅŸ ve raporlama yetki altyapÄ±sÄ±.",
-    items: ["Admin", "Ãœretim", "Depo", "SatÄ±n alma"],
+    title: "Roller ve güvenlik",
+    description: "Admin, üretim, depo, satın alma, satış ve raporlama yetki altyapısı.",
+    items: ["Admin", "Üretim", "Depo", "Satın alma"],
   },
 ];
 
 const startSteps = [
-  "KumaÅŸ cinsi, renk, Ne numarasÄ± ve boyahane iÅŸlem tÃ¼rlerini tanÄ±mla.",
-  "DepolarÄ± ve cari kartlarÄ± aÃ§: fason Ã¶rmeci, boyahane, satÄ±cÄ± ve mÃ¼ÅŸteri.",
-  "IP, LYC ve POLY hammadde stok kartlarÄ±nÄ± oluÅŸtur.",
-  "SatÄ±cÄ± sipariÅŸi gir ve gelen hammaddeler iÃ§in mal kabul yap.",
-  "MÃ¼ÅŸteri sipariÅŸi oluÅŸtur; sistem YM/MM stok eÅŸleÅŸmesini hazÄ±rlar.",
-  "Ham Ã¼retim, boyahane, transfer ve satÄ±ÅŸ akÄ±ÅŸÄ±nÄ± parti Ã¼zerinden takip et.",
+  "Kumaş cinsi, renk, Ne numarası ve boyahane işlem türlerini tanımla.",
+  "Depoları ve cari kartları aç: fason örmeci, boyahane, satıcı ve müşteri.",
+  "IP, LYC ve POLY hammadde stok kartlarını oluştur.",
+  "Satıcı siparişi gir ve gelen hammaddeler için mal kabul yap.",
+  "Müşteri siparişi oluştur; sistem YM/MM stok eşleşmesini hazırlar.",
+  "Ham üretim, boyahane, transfer ve satış akışını parti üzerinden takip et.",
 ];
 
 export function SettingsGuidePage({ section }: { section?: "fabric-types" | "colors" | "yarn-counts" | "process-types" | "warehouses" }) {
@@ -585,9 +585,9 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
   async function deleteDefinition(entity: string, recordId: string) {
     const response = await fetch(`/api/settings/${entity}/${recordId}`, { method: "DELETE" });
     const result = (await response.json()) as { ok: boolean; error?: string };
-    if (!response.ok || !result.ok) throw new Error(result.error ?? "TanÄ±m silinemedi.");
+    if (!response.ok || !result.ok) throw new Error(result.error ?? "Tanım silinemedi.");
     await refresh();
-    toast.success("TanÄ±m silindi.");
+    toast.success("Tanım silindi.");
   }
 
   async function updateDefinition(event: React.FormEvent<HTMLFormElement>) {
@@ -611,10 +611,10 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
     <div className="space-y-6">
       <PageHeader
         eyebrow="Ayarlar"
-        title={activeGroup?.title ?? "Kurulum ve TanÄ±m Merkezi"}
-        description={activeGroup?.description ?? "BoÅŸ ERP kurulumunda Ã¶nce temel tanÄ±mlarÄ± tamamlayÄ±n; sipariÅŸ, stok, Ã¼retim ve rapor ekranlarÄ± bu sÃ¶zlÃ¼kleri kullanÄ±r."}
+        title={activeGroup?.title ?? "Kurulum ve Tanım Merkezi"}
+        description={activeGroup?.description ?? "Boş ERP kurulumunda önce temel tanımları tamamlayın; sipariş, stok, üretim ve rapor ekranları bu sözlükleri kullanır."}
         icon={Settings}
-        action={<Link className={primaryButton} href="/orders/new"><Plus className="size-4" />Ä°lk sipariÅŸi aÃ§</Link>}
+        action={<Link className={primaryButton} href="/orders/new"><Plus className="size-4" />İlk siparişi aç</Link>}
       />
 
       {!activeGroup ? (
@@ -625,8 +625,8 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
                 <BookOpen className="size-5" />
               </div>
               <div>
-                <h2 className="font-semibold text-slate-950">Projeye nereden baÅŸlamalÄ±?</h2>
-                <p className="text-sm text-slate-500">Ã–nerilen canlÄ±ya geÃ§iÅŸ sÄ±rasÄ±</p>
+                <h2 className="font-semibold text-slate-950">Projeye nereden başlamalı?</h2>
+                <p className="text-sm text-slate-500">Önerilen canlıya geçiş sırası</p>
               </div>
             </div>
             <div className="mt-5 space-y-3">
@@ -640,10 +640,10 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <StatCard title="Zorunlu tanÄ±mlar" value="8 grup" helper="SipariÅŸten Ã¶nce tamamlanmalÄ±" icon={SlidersHorizontal} />
-            <StatCard title="Kod sistemi" value="YM/MM/IP" helper="SayaÃ§lar transaction mantÄ±ÄŸÄ±yla tasarlandÄ±" icon={KeyRound} tone="green" />
-            <StatCard title="BoÅŸ veri" value="HazÄ±r" helper="Demo kayÄ±tlar temizlendi" icon={CheckCircle2} tone="green" />
-            <StatCard title="Yetki altyapÄ±sÄ±" value="PlanlandÄ±" helper="Supabase Auth ile geniÅŸletilecek" icon={Users} tone="amber" />
+            <StatCard title="Zorunlu tanımlar" value="8 grup" helper="Siparişten önce tamamlanmalı" icon={SlidersHorizontal} />
+            <StatCard title="Kod sistemi" value="YM/MM/IP" helper="Sayaçlar transaction mantığıyla tasarlandı" icon={KeyRound} tone="green" />
+            <StatCard title="Boş veri" value="Hazır" helper="Demo kayıtlar temizlendi" icon={CheckCircle2} tone="green" />
+            <StatCard title="Yetki altyapısı" value="Planlandı" helper="Supabase Auth ile genişletilecek" icon={Users} tone="amber" />
           </div>
         </div>
       ) : null}
@@ -671,14 +671,14 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
 
       {settingConfig ? (
         <div className="premium-card rounded-2xl p-5">
-          <h2 className="font-semibold text-slate-950">VeritabanÄ± tanÄ±mlarÄ±</h2>
-          <p className="mt-2 text-sm text-slate-500">Bu alandaki kayÄ±tlar doÄŸrudan Supabase PostgreSQL tablolarÄ±na yazÄ±lÄ±r ve tÃ¼m cihazlarda anlÄ±k yenilenir.</p>
+          <h2 className="font-semibold text-slate-950">Veritabanı tanımları</h2>
+          <p className="mt-2 text-sm text-slate-500">Bu alandaki kayıtlar doğrudan Supabase PostgreSQL tablolarına yazılır ve tüm cihazlarda anlık yenilenir.</p>
           <div className="mt-5">
             <SettingForm entity={settingConfig.entity} extra={settingConfig.extra} />
           </div>
           <div className="mt-5 divide-y divide-slate-100">
             {settingConfig.rows.length === 0 ? (
-              <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">HenÃ¼z tanÄ±m yok.</p>
+              <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">Henüz tanım yok.</p>
             ) : (
               settingConfig.rows.map((row) => (
                 <div key={row.id} className="flex items-center justify-between gap-3 py-3">
@@ -695,7 +695,7 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
                   </button>
                   <button
                     className="ml-2 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700"
-                    onClick={() => deleteDefinition(settingConfig.entity, row.id).catch((error: unknown) => toast.error(error instanceof Error ? error.message : "TanÄ±m silinemedi."))}
+                    onClick={() => deleteDefinition(settingConfig.entity, row.id).catch((error: unknown) => toast.error(error instanceof Error ? error.message : "Tanım silinemedi."))}
                     type="button"
                   >
                     Sil
@@ -731,9 +731,9 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
       ) : null}
 
       <div className="premium-card rounded-2xl p-5">
-        <h2 className="font-semibold text-slate-950">KullanÄ±m notu</h2>
+        <h2 className="font-semibold text-slate-950">Kullanım notu</h2>
         <p className="mt-2 text-sm leading-6 text-slate-500">
-          Ã–nce ayar sÃ¶zlÃ¼klerini girin. Sonra hammadde stok kartlarÄ±nÄ± ve satÄ±cÄ± sipariÅŸlerini aÃ§Ä±n. MÃ¼ÅŸteri sipariÅŸinde aynÄ± Ã¶zelliklerde YM/MM stok yoksa sistem yeni kod Ã¼retim mantÄ±ÄŸÄ±yla kart aÃ§acak ÅŸekilde kurgulandÄ±. Ham Ã¼retim ilk parti numarasÄ±nÄ± oluÅŸturur; boyahane, transfer ve satÄ±ÅŸ hareketleri bu parti Ã¼zerinden izlenir.
+          Önce ayar sözlüklerini girin. Sonra hammadde stok kartlarını ve satıcı siparişlerini açın. Müşteri siparişinde aynı özelliklerde YM/MM stok yoksa sistem yeni kod üretim mantığıyla kart açacak şekilde kurgulandı. Ham üretim ilk parti numarasını oluşturur; boyahane, transfer ve satış hareketleri bu parti üzerinden izlenir.
         </p>
       </div>
     </div>

@@ -26,20 +26,43 @@ Uygulama varsayılan olarak `/dashboard` ekranına yönlenir.
 
 1. Supabase projesi oluşturun.
 2. `.env.local` içine `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` ve `DATABASE_URL` değerlerini girin.
-3. Migration üretildi: `drizzle/0000_chemical_rachel_grey.sql`.
-4. Migration çalıştırmak için:
+3. Vercel tarafında en az şu değişkenler olmalı: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `DATABASE_URL`.
+4. Migration dosyaları `drizzle/` klasöründedir.
+5. Migration çalıştırmak için:
 
 ```bash
 npm run db:migrate
 ```
 
-5. Demo veriyi Supabase tablolarına basmak için:
+6. Demo veriyi Supabase tablolarına basmak için:
 
 ```bash
 npm run seed
 ```
 
 Storage için beklenen bucket isimleri: `erp-documents`, `erp-photos`, `erp-receipts`.
+
+### Supabase bağlantı hatası
+
+`password authentication failed for user "postgres"` veya `ECIRCUITBREAKER` hatası alırsanız yanlış şifreyle çok fazla bağlantı denenmiştir.
+
+1. Supabase Dashboard > Connect > ORM sekmesinden `Transaction pooler` bağlantı adresini kopyalayın.
+2. Supabase Dashboard > Project Settings > Database > Database password alanından şifrenizi doğrulayın veya resetleyin.
+3. `DATABASE_URL` değerini hem `.env.local` içinde hem de Vercel Environment Variables içinde aynı ve güncel değerle değiştirin.
+4. Şifrede özel karakter varsa URL içinde percent-encode edilmiş olmalı. Emin değilseniz Supabase'in verdiği hazır connection string'i kullanın.
+5. `ECIRCUITBREAKER` geçici bloktur; doğru şifreyi girdikten sonra birkaç dakika bekleyip redeploy edin.
+
+Vercel'de env değiştirdikten sonra mutlaka yeni deploy tetikleyin.
+
+## Kullanıcı ve Roller
+
+1. `/login` ekranından Supabase Auth kullanıcısı oluşturun veya giriş yapın.
+2. İlk kurulumda `/settings/roles` ekranına gidin. Henüz aktif kullanıcı profili yoksa sistem ilk profil/rol eşlemesini açık bırakır.
+3. `Kullanıcı` butonuyla Auth kullanıcısının e-posta adresini birebir aynı yazın.
+4. Kullanıcıya rol seçin: Admin, Üretim, Depo, Satın alma, Satış gibi.
+5. İlk admin profili oluşturulduktan sonra API işlemleri Supabase oturumu ve rol izinlerine göre kontrol edilir.
+
+Önerilen ilk kayıt: kendi e-posta adresinizi `Admin` rolüyle kullanıcı profiline ekleyin. Sonrasında diğer personelleri kendi görev rollerine bağlayın.
 
 ## API Katmanı
 
