@@ -150,17 +150,21 @@ export function OrderDetailPage({ id }: { id: string }) {
 }
 
 export function PurchaseOrdersPage() {
-  const { data, refresh } = useErpData();
+  const { data, refresh, mutateData } = useErpData();
   const [orderOpen, setOrderOpen] = useState(false);
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [editing, setEditing] = useState<PurchaseOrder | null>(null);
-  async function cancelPurchase(id: string) {
+  const [deleteTarget, setDeleteTarget] = useState<PurchaseOrder | null>(null);
+  async function deletePurchase() {
+    if (!deleteTarget) return;
     try {
-      await apiDelete(`/api/purchase-orders/${id}`);
+      await apiDelete(`/api/purchase-orders/${deleteTarget.id}`);
+      mutateData((current) => ({ ...current, purchaseOrders: current.purchaseOrders.filter((order) => order.id !== deleteTarget.id) }));
       refreshInBackground(refresh);
-      toast.success("Satıcı siparişi iptal edildi.");
+      setDeleteTarget(null);
+      toast.success("Satıcı siparişi silindi.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Satıcı siparişi iptal edilemedi.");
+      toast.error(error instanceof Error ? error.message : "Satıcı siparişi silinemedi.");
     }
   }
   const columns: Column<PurchaseOrder>[] = [
@@ -170,7 +174,7 @@ export function PurchaseOrdersPage() {
     { header: "Gelen", cell: (row) => formatKg(row.totalReceivedKg) },
     { header: "Kalan", cell: (row) => formatKg(row.totalRemainingKg) },
     { header: "Durum", cell: (row) => <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge> },
-    { header: "İşlem", cell: (row) => <div className="flex gap-2"><button className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditing(row)} type="button">Düzenle</button><button className={dangerButton} onClick={() => cancelPurchase(row.id)} type="button">İptal</button></div> },
+    { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end gap-2"><button className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditing(row)} type="button">Düzenle</button><button className={dangerButton} onClick={() => setDeleteTarget(row)} type="button">Sil</button></div> },
   ];
   return (
     <div className="space-y-6">
@@ -194,23 +198,38 @@ export function PurchaseOrdersPage() {
           </div>
         ))}
       </div>
-      <DataTable rows={data.purchaseOrders} columns={columns} />
+      <DataTable rows={data.purchaseOrders} columns={columns} searchPlaceholder="Satıcı siparişi, tedarikçi, durum veya stokta ara" getSearchText={(row) => [row.purchaseOrderNo, getName(data.partners, row.supplierId), row.status, row.items.map((item) => `${item.stockCode} ${item.stockName}`).join(" ")].join(" ")} />
       <FormDrawer open={orderOpen} title="Yeni satıcı siparişi" onClose={() => setOrderOpen(false)}><PurchaseOrderForm /></FormDrawer>
       <FormDrawer open={receiptOpen} title="Mal kabul" onClose={() => setReceiptOpen(false)}><PurchaseReceiptForm /></FormDrawer>
       <FormDrawer open={Boolean(editing)} title="Satıcı siparişi düzenle" onClose={() => setEditing(null)}>{editing ? <PurchaseOrderEditForm order={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        title="Satıcı siparişi silinsin mi?"
+        description={`${deleteTarget?.purchaseOrderNo ?? "Bu sipariş"} için mal kabul veya stok hareketi varsa silinmeyecek.`}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={deletePurchase}
+      />
     </div>
   );
 }
 
 export function StocksPage() {
-  const { data, refresh } = useErpData();
+  const { data, refresh, mutateData } = useErpData();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<StockCard | null>(null);
   async function deactivateStock(id: string) {
     try {
-      await apiDelete(`/api/stocks/${id}`);
+      const response = await fetch(`/api/stocks/${id}`, { method: "DELETE" });
+      const result = (await response.json()) as { ok: boolean; data?: { deleted?: boolean }; error?: string };
+      if (!response.ok || !result.ok) throw new Error(result.error ?? "Stok kartı işlem göremedi.");
+      mutateData((current) => ({
+        ...current,
+        stockCards: result.data?.deleted
+          ? current.stockCards.filter((stock) => stock.id !== id)
+          : current.stockCards.map((stock) => (stock.id === id ? { ...stock, isActive: false } : stock)),
+      }));
       refreshInBackground(refresh);
-      toast.success("Stok kartı pasife alındı.");
+      toast.success("Stok kartı güncellendi.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Stok kartı pasife alınamadı.");
     }
@@ -222,12 +241,12 @@ export function StocksPage() {
     { header: "Ne", cell: (row) => getName(data.yarnCounts, row.yarnCountId) },
     { header: "Stok", cell: (row) => formatKg(row.currentStockKg) },
     { header: "Kritik", cell: (row) => formatKg(row.criticalStockKg) },
-    { header: "İşlem", cell: (row) => <div className="flex gap-2"><button className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditing(row)} type="button">Düzenle</button><button className={dangerButton} onClick={() => deactivateStock(row.id)} type="button">Pasifleştir</button></div> },
+    { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end gap-2"><button className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditing(row)} type="button">Düzenle</button><button className={dangerButton} onClick={() => deactivateStock(row.id)} type="button">Sil/Pasif</button></div> },
   ];
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Stok" title="Stok Kartları" description="YM/MM partili izlenir; IP/LYC/POLY satın alma ve üretim tüketimiyle takip edilir." icon={Boxes} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Stok kartı</button>} />
-      <DataTable rows={data.stockCards} columns={columns} />
+      <DataTable rows={data.stockCards} columns={columns} searchPlaceholder="Stok kodu, ad, tip veya özellikte ara" getSearchText={(row) => [row.code, row.name, row.type, getName(data.fabricTypes, row.fabricTypeId), getName(data.colors, row.colorId), getName(data.yarnCounts, row.yarnCountId)].join(" ")} />
       <FormDrawer open={open} title="Yeni stok kartı" onClose={() => setOpen(false)}><StockCardForm /></FormDrawer>
       <FormDrawer open={Boolean(editing)} title="Stok kartı düzenle" onClose={() => setEditing(null)}>{editing ? <StockCardEditForm stock={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
     </div>

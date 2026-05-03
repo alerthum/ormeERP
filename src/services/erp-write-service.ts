@@ -848,7 +848,37 @@ export async function cancelPurchaseOrder(recordId: string) {
   return { id: recordId, status: "İptal" };
 }
 
-export async function deactivateStockCard(recordId: string) {
-  await sql`update stock_cards set is_active = false, updated_at = now() where id = ${recordId}`;
+export async function deletePurchaseOrder(recordId: string) {
+  const rows = await sql`
+    select
+      (select count(*) from purchase_receipts where purchase_order_id = ${recordId}) +
+      (select count(*) from stock_movements where reference_type = 'purchase_receipt' and reference_id in (select id from purchase_receipts where purchase_order_id = ${recordId})) as count
+  `;
+  const usageCount = Number(rows[0]?.count ?? 0);
+  if (usageCount > 0) {
+    throw new Error(`Bu satıcı siparişi ${usageCount} mal kabul/hareket kaydında kullanılıyor. Silmek yerine iptal edin.`);
+  }
+  await sql`delete from purchase_orders where id = ${recordId}`;
   return { id: recordId };
+}
+
+export async function deactivateStockCard(recordId: string) {
+  const rows = await sql`
+    select
+      (select count(*) from stock_movements where stock_id = ${recordId}) +
+      (select count(*) from warehouse_balances where stock_id = ${recordId}) +
+      (select count(*) from orders where ym_stock_id = ${recordId} or mm_stock_id = ${recordId}) +
+      (select count(*) from parties where ym_stock_id = ${recordId} or mm_stock_id = ${recordId}) +
+      (select count(*) from production_raw where ym_stock_id = ${recordId}) +
+      (select count(*) from production_raw where consumed_items @> ${JSON.stringify([{ stockId: recordId }])}::jsonb) +
+      (select count(*) from production_dyehouse where ym_stock_id = ${recordId} or mm_stock_id = ${recordId}) +
+      (select count(*) from sales where stock_id = ${recordId}) as count
+  `;
+  const usageCount = Number(rows[0]?.count ?? 0);
+  if (usageCount === 0) {
+    await sql`delete from stock_cards where id = ${recordId}`;
+    return { id: recordId, deleted: true };
+  }
+  await sql`update stock_cards set is_active = false, updated_at = now() where id = ${recordId}`;
+  return { id: recordId, deleted: false };
 }
