@@ -57,7 +57,20 @@ function normalizeObject(row: Row) {
   );
 }
 
+async function ensureCountersTable() {
+  await sql`
+    create table if not exists counters (
+      key text primary key,
+      prefix text not null,
+      current_value integer not null default 0,
+      updated_at timestamptz not null default now()
+    )
+  `;
+}
+
 export async function getErpDataFromDb(): Promise<ErpData> {
+  await ensureCountersTable();
+
   const rows = await sql`
     select
       coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from settings_fabric_types t), '[]'::jsonb) as fabric_types,
