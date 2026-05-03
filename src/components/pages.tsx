@@ -21,10 +21,14 @@ import { supabase } from "@/lib/supabase";
 const primaryButton = "inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-100";
 const dangerButton = "rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700";
 
-function requestSignal(ms = 20000) {
+function requestSignal(ms = 8000) {
   const controller = new AbortController();
-  window.setTimeout(() => controller.abort(), ms);
+  window.setTimeout(() => controller.abort(new DOMException("Sunucu yanıtı gecikti.", "TimeoutError")), ms);
   return controller.signal;
+}
+
+function refreshInBackground(refresh: () => Promise<void>) {
+  void refresh().catch(() => undefined);
 }
 
 async function apiDelete(endpoint: string) {
@@ -55,7 +59,7 @@ export function OrdersPage() {
   async function cancelOrder(id: string) {
     try {
       await apiDelete(`/api/orders/${id}`);
-      await refresh();
+      refreshInBackground(refresh);
       toast.success("Sipariş iptal edildi.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Sipariş iptal edilemedi.");
@@ -107,7 +111,7 @@ export function PurchaseOrdersPage() {
   async function cancelPurchase(id: string) {
     try {
       await apiDelete(`/api/purchase-orders/${id}`);
-      await refresh();
+      refreshInBackground(refresh);
       toast.success("Satıcı siparişi iptal edildi.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Satıcı siparişi iptal edilemedi.");
@@ -159,7 +163,7 @@ export function StocksPage() {
   async function deactivateStock(id: string) {
     try {
       await apiDelete(`/api/stocks/${id}`);
-      await refresh();
+      refreshInBackground(refresh);
       toast.success("Stok kartı pasife alındı.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Stok kartı pasife alınamadı.");
@@ -421,7 +425,7 @@ export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "
     async function cancelSaleRecord(id: string) {
       try {
         await apiDelete(`/api/sales/${id}`);
-        await refresh();
+        refreshInBackground(refresh);
         toast.success("Sevkiyat iptal edildi ve stok iadesi işlendi.");
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Sevkiyat iptal edilemedi.");
@@ -468,7 +472,7 @@ export function RolesSecurityPage() {
   async function remove(endpoint: string, success: string) {
     try {
       await apiDelete(endpoint);
-      await refresh();
+      refreshInBackground(refresh);
       toast.success(success);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "İşlem tamamlanamadı.");
@@ -593,7 +597,7 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
     const response = await fetch(`/api/settings/${entity}/${recordId}`, { method: "DELETE" });
     const result = (await response.json()) as { ok: boolean; error?: string };
     if (!response.ok || !result.ok) throw new Error(result.error ?? "Tanım silinemedi.");
-    await refresh();
+    refreshInBackground(refresh);
     toast.success("Tanım silindi.");
   }
 
@@ -607,7 +611,7 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
         kind: form.get("kind") ?? editing.kind,
       });
       setEditing(null);
-      await refresh();
+      refreshInBackground(refresh);
       toast.success("Tanım güncellendi.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Tanım güncellenemedi.");

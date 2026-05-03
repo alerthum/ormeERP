@@ -17,10 +17,14 @@ interface ApiResponse<T = unknown> {
   error?: string;
 }
 
-function requestSignal(ms = 20000) {
+function requestSignal(ms = 8000) {
   const controller = new AbortController();
-  window.setTimeout(() => controller.abort(), ms);
+  window.setTimeout(() => controller.abort(new DOMException("Sunucu yanıtı gecikti.", "TimeoutError")), ms);
   return controller.signal;
+}
+
+function refreshInBackground(refresh: () => Promise<void>) {
+  void refresh().catch(() => undefined);
 }
 
 async function postJson(endpoint: string, payload: Record<string, unknown>) {
@@ -82,7 +86,7 @@ export function SettingForm({ entity, extra }: { entity: "fabricTypes" | "colors
         type: form.get("type"),
       });
       event.currentTarget.reset();
-      await refresh();
+      refreshInBackground(refresh);
       toast.success("Tanım kaydedildi.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Tanım kaydedilemedi.");
@@ -136,7 +140,7 @@ export function StockCardForm() {
     try {
       await postJson("/api/stocks", Object.fromEntries(form.entries()));
       event.currentTarget.reset();
-      await refresh();
+      refreshInBackground(refresh);
       toast.success("Stok kartı kaydedildi.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Stok kartı kaydedilemedi.");
@@ -181,7 +185,7 @@ export function StockCardEditForm({ stock, onDone }: { stock: StockCard; onDone:
         hasPolyester: form.get("hasPolyester") === "on",
         hasLycra: form.get("hasLycra") === "on",
       });
-      await refresh();
+      refreshInBackground(refresh);
       onDone();
       toast.success("Stok kartı güncellendi.");
     } catch (error) {
@@ -239,7 +243,7 @@ export function OrderForm() {
         description: form.get("description"),
       });
       event.currentTarget.reset();
-      await refresh();
+      refreshInBackground(refresh);
       toast.success("Sipariş kaydedildi; YM/MM stok eşleşmesi tamamlandı.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Sipariş kaydedilemedi.");
@@ -286,7 +290,7 @@ export function OrderEditForm({ order, onDone }: { order: Order; onDone: () => v
     const form = new FormData(event.currentTarget);
     try {
       await patchJson(`/api/orders/${order.id}`, Object.fromEntries(form.entries()));
-      await refresh();
+      refreshInBackground(refresh);
       onDone();
       toast.success("Sipariş güncellendi.");
     } catch (error) {
@@ -340,7 +344,7 @@ export function PurchaseOrderForm() {
         },
       });
       event.currentTarget.reset();
-      await refresh();
+      refreshInBackground(refresh);
       toast.success("Satıcı siparişi kaydedildi.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Satıcı siparişi kaydedilemedi.");
@@ -375,7 +379,7 @@ export function PurchaseOrderEditForm({ order, onDone }: { order: PurchaseOrder;
     const form = new FormData(event.currentTarget);
     try {
       await patchJson(`/api/purchase-orders/${order.id}`, Object.fromEntries(form.entries()));
-      await refresh();
+      refreshInBackground(refresh);
       onDone();
       toast.success("Satıcı siparişi güncellendi.");
     } catch (error) {
@@ -424,7 +428,7 @@ export function PurchaseReceiptForm() {
         description: form.get("description"),
       });
       event.currentTarget.reset();
-      await refresh();
+      refreshInBackground(refresh);
       toast.success("Mal kabul kaydedildi.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Mal kabul kaydedilemedi.");
@@ -463,7 +467,7 @@ export function TransferForm() {
         items: [{ stockId: form.get("stockId"), partyId: form.get("partyId") || null, quantity: form.get("quantity") }],
       });
       event.currentTarget.reset();
-      await refresh();
+      refreshInBackground(refresh);
       toast.success("Transfer kaydedildi.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Transfer kaydedilemedi.");
@@ -507,7 +511,7 @@ export function RawProductionForm() {
         description: form.get("description"),
       });
       event.currentTarget.reset();
-      await refresh();
+      refreshInBackground(refresh);
       toast.success("Ham üretim kaydedildi.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Ham üretim kaydedilemedi.");
@@ -559,7 +563,7 @@ export function DyehouseProductionForm() {
         description: form.get("description"),
       });
       event.currentTarget.reset();
-      await refresh();
+      refreshInBackground(refresh);
       toast.success("Boyahane üretimi kaydedildi.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Boyahane üretimi kaydedilemedi.");
@@ -613,7 +617,7 @@ export function SaleForm() {
         description: form.get("description"),
       });
       event.currentTarget.reset();
-      await refresh();
+      refreshInBackground(refresh);
       toast.success("Satış / sevkiyat kaydedildi.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Satış kaydedilemedi.");
@@ -666,7 +670,7 @@ export function RoleForm() {
         permissions: form.getAll("permissions"),
       });
       event.currentTarget.reset();
-      await refresh();
+      refreshInBackground(refresh);
       toast.success("Rol kaydedildi.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Rol kaydedilemedi.");
@@ -707,7 +711,7 @@ export function UserProfileForm() {
         roleId: form.get("roleId"),
       });
       event.currentTarget.reset();
-      await refresh();
+      refreshInBackground(refresh);
       toast.success("Kullanıcı profili kaydedildi.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Kullanıcı kaydedilemedi.");

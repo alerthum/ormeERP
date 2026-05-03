@@ -63,47 +63,25 @@ async function table<T>(name: string): Promise<T[]> {
 }
 
 export async function getErpDataFromDb(): Promise<ErpData> {
-  const [
-    fabricTypes,
-    colors,
-    yarnCounts,
-    processTypes,
-    warehouses,
-    partners,
-    stockCards,
-    stockMovements,
-    warehouseBalances,
-    orders,
-    parties,
-    productionRaw,
-    productionDyehouse,
-    transfers,
-    purchaseOrders,
-    purchaseReceipts,
-    sales,
-    roles,
-    userProfiles,
-  ] = await Promise.all([
-    table<ErpData["fabricTypes"][number]>("settings_fabric_types"),
-    table<ErpData["colors"][number]>("settings_colors"),
-    table<ErpData["yarnCounts"][number]>("settings_yarn_counts"),
-    table<ErpData["processTypes"][number]>("settings_process_types"),
-    table<ErpData["warehouses"][number]>("warehouses"),
-    table<ErpData["partners"][number]>("partners"),
-    table<ErpData["stockCards"][number]>("stock_cards"),
-    table<ErpData["stockMovements"][number]>("stock_movements"),
-    table<ErpData["warehouseBalances"][number]>("warehouse_balances"),
-    table<ErpData["orders"][number]>("orders"),
-    table<ErpData["parties"][number]>("parties"),
-    table<ErpData["productionRaw"][number]>("production_raw"),
-    table<ErpData["productionDyehouse"][number]>("production_dyehouse"),
-    table<ErpData["transfers"][number]>("transfers"),
-    table<ErpData["purchaseOrders"][number]>("purchase_orders"),
-    table<ErpData["purchaseReceipts"][number]>("purchase_receipts"),
-    table<ErpData["sales"][number]>("sales"),
-    table<ErpData["roles"][number]>("roles"),
-    table<ErpData["userProfiles"][number]>("user_profiles"),
-  ]);
+  const fabricTypes = await table<ErpData["fabricTypes"][number]>("settings_fabric_types");
+  const colors = await table<ErpData["colors"][number]>("settings_colors");
+  const yarnCounts = await table<ErpData["yarnCounts"][number]>("settings_yarn_counts");
+  const processTypes = await table<ErpData["processTypes"][number]>("settings_process_types");
+  const warehouses = await table<ErpData["warehouses"][number]>("warehouses");
+  const partners = await table<ErpData["partners"][number]>("partners");
+  const stockCards = await table<ErpData["stockCards"][number]>("stock_cards");
+  const stockMovements = await table<ErpData["stockMovements"][number]>("stock_movements");
+  const warehouseBalances = await table<ErpData["warehouseBalances"][number]>("warehouse_balances");
+  const orders = await table<ErpData["orders"][number]>("orders");
+  const parties = await table<ErpData["parties"][number]>("parties");
+  const productionRaw = await table<ErpData["productionRaw"][number]>("production_raw");
+  const productionDyehouse = await table<ErpData["productionDyehouse"][number]>("production_dyehouse");
+  const transfers = await table<ErpData["transfers"][number]>("transfers");
+  const purchaseOrders = await table<ErpData["purchaseOrders"][number]>("purchase_orders");
+  const purchaseReceipts = await table<ErpData["purchaseReceipts"][number]>("purchase_receipts");
+  const sales = await table<ErpData["sales"][number]>("sales");
+  const roles = await table<ErpData["roles"][number]>("roles");
+  const userProfiles = await table<ErpData["userProfiles"][number]>("user_profiles");
 
   return {
     fabricTypes,
