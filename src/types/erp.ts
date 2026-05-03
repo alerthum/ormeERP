@@ -217,7 +217,7 @@ export interface PurchaseReceipt {
   receiptDate: string;
   warehouseId: string;
   supplierId: string;
-  items: { purchaseOrderItemId: string; stockId: string; receivedKg: number; lotNo?: string; description?: string }[];
+  items: { purchaseOrderItemId: string; stockId: string; receivedKg: number; unitPrice?: number; lotNo?: string; description?: string }[];
   description: string;
   createdAt: string;
   createdBy: string;
