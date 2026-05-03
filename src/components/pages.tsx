@@ -33,6 +33,7 @@ function refreshInBackground(refresh: () => Promise<void>) {
 
 type SettingEntity = "fabricTypes" | "colors" | "yarnCounts" | "processTypes" | "warehouses" | "partners";
 type EditableSetting = { id: string; name: string; kind?: WarehouseEntity["kind"]; type?: Partner["type"] };
+type OrderGroupMode = "none" | "ymStock" | "mmStock" | "fabricType" | "color" | "yarnCount" | "customer" | "status";
 type OrderFilters = {
   status: string;
   customer: string;
@@ -149,6 +150,7 @@ export function OrdersPage() {
   const [editing, setEditing] = useState<Order | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Order | null>(null);
   const [filters, setFilters] = useState<OrderFilters>(emptyOrderFilters);
+  const [groupMode, setGroupMode] = useState<OrderGroupMode>("none");
   const ymStocks = data.stockCards.filter((stock) => stock.type === "YM");
   const mmStocks = data.stockCards.filter((stock) => stock.type === "MM");
   const customerNames = [...new Set(data.orders.map((order) => order.customerName).filter(Boolean))].sort((a, b) => a.localeCompare(b, "tr"));
@@ -171,6 +173,27 @@ export function OrdersPage() {
     [data, filters],
   );
   const setOrderFilter = (key: keyof OrderFilters, value: string) => setFilters((current) => ({ ...current, [key]: value }));
+  const orderGroupBy = groupMode === "none" ? undefined : {
+    label: {
+      ymStock: "YM stok",
+      mmStock: "MM stok",
+      fabricType: "Kumaş cinsi",
+      color: "Renk",
+      yarnCount: "Ne",
+      customer: "Müşteri",
+      status: "Durum",
+    }[groupMode],
+    getKey: (order: Order) => {
+      if (groupMode === "ymStock") return getName(data.stockCards, order.ymStockId);
+      if (groupMode === "mmStock") return getName(data.stockCards, order.mmStockId);
+      if (groupMode === "fabricType") return getName(data.fabricTypes, order.fabricTypeId);
+      if (groupMode === "color") return getName(data.colors, order.colorId);
+      if (groupMode === "yarnCount") return getName(data.yarnCounts, order.yarnCountId);
+      if (groupMode === "customer") return order.customerName;
+      return order.status;
+    },
+    summary: (orders: Order[]) => `${orders.length} sipariş · ${formatKg(orders.reduce((sum, order) => sum + order.quantityKg, 0))}`,
+  };
   async function deleteOrder() {
     if (!deleteTarget) return;
     try {
@@ -206,6 +229,16 @@ export function OrdersPage() {
           </button>
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-4">
+          <select className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 outline-none" value={groupMode} onChange={(event) => setGroupMode(event.target.value as OrderGroupMode)}>
+            <option value="none">Gruplama yok</option>
+            <option value="ymStock">YM stok adına göre grupla</option>
+            <option value="mmStock">MM stok adına göre grupla</option>
+            <option value="fabricType">Kumaş cinsine göre grupla</option>
+            <option value="color">Renge göre grupla</option>
+            <option value="yarnCount">Ne numarasına göre grupla</option>
+            <option value="customer">Müşteriye göre grupla</option>
+            <option value="status">Duruma göre grupla</option>
+          </select>
           <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.status} onChange={(event) => setOrderFilter("status", event.target.value)}>
             <option value="ALL">Tüm durumlar</option>
             {["Taslak", "Onaylandı", "İplik Bekliyor", "Örmede", "Ham Geldi", "Boyahanede", "Mamül Hazır", "Sevk Edildi", "Kapandı", "İptal"].map((status) => <option key={status}>{status}</option>)}
@@ -254,11 +287,12 @@ export function OrdersPage() {
         </div>
         <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-slate-500">
           <StatusBadge tone="blue">{filteredOrders.length} sipariş</StatusBadge>
+          {groupMode !== "none" ? <StatusBadge tone="blue">Gruplu görünüm aktif</StatusBadge> : null}
           <StatusBadge tone="amber">Akıllı örnek: bekleyen boyahanede lacivert</StatusBadge>
           <StatusBadge tone="green">Çoklu filtre aktif</StatusBadge>
         </div>
       </div>
-      <DataTable rows={filteredOrders} columns={columns} searchPlaceholder="Liste içinde hızlı ara" getSearchText={(row) => [row.orderNo, row.customerName, row.status, getName(data.fabricTypes, row.fabricTypeId), getName(data.colors, row.colorId), row.quantityKg].join(" ")} />
+      <DataTable rows={filteredOrders} columns={columns} groupBy={orderGroupBy} searchPlaceholder="Liste içinde hızlı ara" getSearchText={(row) => [row.orderNo, row.customerName, row.status, getName(data.fabricTypes, row.fabricTypeId), getName(data.colors, row.colorId), getName(data.yarnCounts, row.yarnCountId), getName(data.stockCards, row.ymStockId), getName(data.stockCards, row.mmStockId), row.quantityKg].join(" ")} />
       <FormDrawer open={open} title="Yeni müşteri siparişi" onClose={() => setOpen(false)}><OrderForm /></FormDrawer>
       <FormDrawer open={Boolean(editing)} title="Sipariş düzenle" onClose={() => setEditing(null)}>{editing ? <OrderEditForm order={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
       <ConfirmModal
