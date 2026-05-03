@@ -26,6 +26,7 @@ const navigation = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/orders", label: "Müşteri Siparişleri", icon: ShoppingCart },
   { href: "/purchase-orders", label: "Satıcı Siparişleri", icon: PackagePlus },
+  { href: "/purchases", label: "Alış İşlemleri", icon: PackageCheck },
   { href: "/stocks", label: "Stok Kartları", icon: Boxes },
   { href: "/warehouses", label: "Depo Yönetimi", icon: Warehouse },
   { href: "/transfers", label: "Transfer", icon: Truck },

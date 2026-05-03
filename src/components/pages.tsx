@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { BarChart3, BookOpen, Boxes, CheckCircle2, Download, Factory, KeyRound, PackagePlus, Plus, Settings, ShoppingCart, SlidersHorizontal, Truck, Users, Warehouse } from "lucide-react";
+import { BarChart3, BookOpen, Boxes, CheckCircle2, Download, Factory, KeyRound, PackageCheck, PackagePlus, Plus, Settings, ShoppingCart, SlidersHorizontal, Truck, Users, Warehouse } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DataTable, type Column } from "@/components/ui/data-table";
@@ -14,7 +14,7 @@ import { DirectPurchaseForm, DyehouseProductionForm, OrderEditForm, OrderForm, P
 import { PartyTimeline } from "@/components/party-timeline";
 import { useErpData } from "@/components/erp-data-provider";
 import { getDashboardMetrics, getName, getPurchaseProgress } from "@/services/erp-service";
-import type { DyehouseProduction, ErpData, NamedEntity, Order, Partner, Party, PurchaseOrder, RawProduction, Role, Sale, StockCard, StockMovement, Transfer, UserProfile, Warehouse as WarehouseEntity } from "@/types/erp";
+import type { DyehouseProduction, ErpData, NamedEntity, Order, Partner, Party, PurchaseOrder, PurchaseReceipt, RawProduction, Role, Sale, StockCard, StockMovement, Transfer, UserProfile, Warehouse as WarehouseEntity } from "@/types/erp";
 import { formatDate, formatKg, formatPercent, wasteTone } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 
@@ -328,8 +328,6 @@ export function OrderDetailPage({ id }: { id: string }) {
 export function PurchaseOrdersPage() {
   const { data, refresh, mutateData } = useErpData();
   const [orderOpen, setOrderOpen] = useState(false);
-  const [receiptOpen, setReceiptOpen] = useState(false);
-  const [directOpen, setDirectOpen] = useState(false);
   const [editing, setEditing] = useState<PurchaseOrder | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<PurchaseOrder | null>(null);
   async function deletePurchase() {
@@ -355,7 +353,7 @@ export function PurchaseOrdersPage() {
   ];
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Satın alma" title="Satıcı Siparişleri" description="IP, LYC ve POLY hammadde siparişleri; kısmi mal kabul, siparişsiz alış ve açık kg takibi." icon={PackagePlus} action={<><button className={primaryButton} onClick={() => setDirectOpen(true)}><Plus className="size-4" />Hızlı alış</button><button className={primaryButton} onClick={() => setOrderOpen(true)}><Plus className="size-4" />Satıcı siparişi</button><button className={primaryButton} onClick={() => setReceiptOpen(true)}><Plus className="size-4" />Mal kabul</button></>} />
+      <PageHeader eyebrow="Satın alma" title="Satıcı Siparişleri" description="IP, LYC ve POLY için açık satıcı siparişleri, termin ve bekleyen kg takibi." icon={PackagePlus} action={<button className={primaryButton} onClick={() => setOrderOpen(true)}><Plus className="size-4" />Satıcı siparişi</button>} />
       <div className="grid gap-4 md:grid-cols-3">
         {data.purchaseOrders.map((order) => (
           <div key={order.id} className="premium-card rounded-2xl p-5">
@@ -376,9 +374,7 @@ export function PurchaseOrdersPage() {
         ))}
       </div>
       <DataTable rows={data.purchaseOrders} columns={columns} searchPlaceholder="Satıcı siparişi, tedarikçi, durum veya stokta ara" getSearchText={(row) => [row.purchaseOrderNo, getName(data.partners, row.supplierId), row.status, row.items.map((item) => `${item.stockCode} ${item.stockName}`).join(" ")].join(" ")} />
-      <FormDrawer open={directOpen} title="Siparişsiz hammadde alışı" onClose={() => setDirectOpen(false)}><DirectPurchaseForm /></FormDrawer>
       <FormDrawer open={orderOpen} title="Yeni satıcı siparişi" onClose={() => setOrderOpen(false)}><PurchaseOrderForm /></FormDrawer>
-      <FormDrawer open={receiptOpen} title="Mal kabul" onClose={() => setReceiptOpen(false)}><PurchaseReceiptForm /></FormDrawer>
       <FormDrawer open={Boolean(editing)} title="Satıcı siparişi düzenle" onClose={() => setEditing(null)}>{editing ? <PurchaseOrderEditForm order={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
       <ConfirmModal
         open={Boolean(deleteTarget)}
@@ -387,6 +383,60 @@ export function PurchaseOrdersPage() {
         onClose={() => setDeleteTarget(null)}
         onConfirm={deletePurchase}
       />
+    </div>
+  );
+}
+
+export function PurchasesPage() {
+  const { data } = useErpData();
+  const [directOpen, setDirectOpen] = useState(false);
+  const [receiptOpen, setReceiptOpen] = useState(false);
+  const openOrders = data.purchaseOrders.filter((order) => order.status !== "Tamamlandı" && order.status !== "İptal");
+  const directReceiptIds = new Set(data.stockMovements.filter((movement) => movement.referenceType === "direct_purchase_receipt").map((movement) => movement.referenceId));
+  const receiptColumns: Column<PurchaseReceipt>[] = [
+    { header: "Fiş", cell: (row) => <span className="font-semibold text-blue-700">{row.receiptNo}</span> },
+    { header: "Tarih", cell: (row) => formatDate(row.receiptDate) },
+    { header: "Satıcı", cell: (row) => getName(data.partners, row.supplierId) },
+    { header: "Depo", cell: (row) => getName(data.warehouses, row.warehouseId) },
+    { header: "Stok", cell: (row) => row.items.map((item) => getName(data.stockCards, item.stockId)).join(", ") },
+    { header: "Kg", cell: (row) => formatKg(row.items.reduce((sum, item) => sum + item.receivedKg, 0)) },
+    { header: "Tür", cell: (row) => <StatusBadge tone={directReceiptIds.has(row.id) ? "blue" : "green"}>{directReceiptIds.has(row.id) ? "Hızlı alış" : "Siparişe bağlı"}</StatusBadge> },
+  ];
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Alış"
+        title="Alış İşlemleri"
+        description="IP, LYC ve POLY hammaddeleri hızlı alışla veya açık satıcı siparişine bağlı mal kabul ile depoya alınır."
+        icon={PackageCheck}
+        action={<><button className={primaryButton} onClick={() => setDirectOpen(true)}><Plus className="size-4" />Hızlı alış</button><button className={primaryButton} onClick={() => setReceiptOpen(true)}><Plus className="size-4" />Siparişe bağlı alış</button></>}
+      />
+      <div className="grid gap-4 md:grid-cols-4">
+        <StatCard title="Açık sipariş" value={String(openOrders.length)} helper="Mal kabul bekleyen" icon={PackagePlus} tone="amber" />
+        <StatCard title="Bekleyen kg" value={formatKg(openOrders.reduce((sum, order) => sum + order.totalRemainingKg, 0))} helper="Satıcı siparişlerinden" icon={Truck} tone="amber" />
+        <StatCard title="Toplam gelen" value={formatKg(data.purchaseReceipts.reduce((sum, receipt) => sum + receipt.items.reduce((itemSum, item) => itemSum + item.receivedKg, 0), 0))} helper="Tüm alış fişleri" icon={PackageCheck} tone="green" />
+        <StatCard title="Hızlı alış" value={String(data.purchaseReceipts.filter((receipt) => directReceiptIds.has(receipt.id)).length)} helper="Siparişsiz giriş" icon={CheckCircle2} tone="blue" />
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="premium-card rounded-2xl p-5">
+          <h2 className="font-semibold text-slate-950">Hızlı alış</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-500">Sipariş açmadan IP, LYC veya POLY stoğunu doğrudan seçilen depoya alır. Sistem tamamlanmış satıcı siparişi, mal kabul ve stok girişi kaydını birlikte oluşturur.</p>
+          <button className="mt-4 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white" onClick={() => setDirectOpen(true)} type="button">Hızlı alış başlat</button>
+        </div>
+        <div className="premium-card rounded-2xl p-5">
+          <h2 className="font-semibold text-slate-950">Siparişe bağlı alış</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-500">Önceden açılmış satıcı siparişlerine kısmi veya tam mal kabul girer. Gelen ve kalan kg otomatik hesaplanır.</p>
+          <button className="mt-4 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white" onClick={() => setReceiptOpen(true)} type="button">Mal kabul gir</button>
+        </div>
+      </div>
+      <DataTable
+        rows={data.purchaseReceipts}
+        columns={receiptColumns}
+        searchPlaceholder="Fiş, satıcı, depo veya stokta ara"
+        getSearchText={(row) => [row.receiptNo, getName(data.partners, row.supplierId), getName(data.warehouses, row.warehouseId), row.items.map((item) => getName(data.stockCards, item.stockId)).join(" "), row.description].join(" ")}
+      />
+      <FormDrawer open={directOpen} title="Hızlı hammadde alışı" onClose={() => setDirectOpen(false)}><DirectPurchaseForm /></FormDrawer>
+      <FormDrawer open={receiptOpen} title="Siparişe bağlı mal kabul" onClose={() => setReceiptOpen(false)}><PurchaseReceiptForm /></FormDrawer>
     </div>
   );
 }
