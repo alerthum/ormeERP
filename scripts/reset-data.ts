@@ -42,7 +42,7 @@ async function main() {
     return;
   }
 
-  const sql = postgres(databaseUrl, { ssl: "require", max: 1 });
+  const sql = postgres(databaseUrl, { ssl: "require", max: 1, prepare: false });
   try {
     await sql.unsafe(`truncate table ${tables.map((table) => `"${table}"`).join(", ")} restart identity cascade`);
     console.log("ERP data reset completed.");

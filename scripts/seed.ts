@@ -69,7 +69,7 @@ function normalizeJsonValues(row: Record<string, unknown>) {
 async function seedViaPostgres() {
   if (!databaseUrl) return false;
 
-  const sql = postgres(databaseUrl, { ssl: "require", max: 1 });
+  const sql = postgres(databaseUrl, { ssl: "require", max: 1, prepare: false });
   try {
     for (const [table, rows] of tables) {
       const normalizedRows = rows.map((row) => normalizeJsonValues(toDbValue(row) as Record<string, unknown>));

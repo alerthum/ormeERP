@@ -1,6 +1,4 @@
-import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import * as schema from "@/db/schema";
 
 const databaseUrl = process.env.DATABASE_URL;
 
@@ -14,9 +12,7 @@ export const sql = postgres(databaseUrl, {
   // Prepared statements are session scoped, so keep them off to avoid
   // "prepared statement ... does not exist" errors in Vercel/serverless.
   prepare: false,
-  max: 3,
-  idle_timeout: 20,
+  max: 1,
+  idle_timeout: 10,
   connect_timeout: 15,
 });
-
-export const db = drizzle(sql, { schema });
