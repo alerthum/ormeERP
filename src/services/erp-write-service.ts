@@ -329,6 +329,29 @@ export async function createStockCard(payload: Record<string, unknown>) {
   });
 }
 
+export async function updateStockCard(recordId: string, payload: Record<string, unknown>) {
+  const type = requireString(payload.type, "Stok tipi") as StockType;
+  if (!["YM", "MM", "IP", "LYC", "POLY"].includes(type)) throw new Error("Geçersiz stok tipi.");
+  await sql`
+    update stock_cards
+    set type = ${type},
+        name = ${requireString(payload.name, "Stok adı")},
+        fabric_type_id = ${optionalString(payload.fabricTypeId)},
+        color_id = ${optionalString(payload.colorId)},
+        yarn_count_id = ${optionalString(payload.yarnCountId)},
+        has_polyester = ${boolValue(payload.hasPolyester)},
+        has_lycra = ${boolValue(payload.hasLycra)},
+        raw_width = ${payload.rawWidth ? numberValue(payload.rawWidth, "Ham en") : null},
+        raw_gsm = ${payload.rawGsm ? numberValue(payload.rawGsm, "Ham gramaj") : null},
+        finish_width = ${payload.finishWidth ? numberValue(payload.finishWidth, "Finish en") : null},
+        finish_gsm = ${payload.finishGsm ? numberValue(payload.finishGsm, "Finish gramaj") : null},
+        critical_stock_kg = ${payload.criticalStockKg ? numberValue(payload.criticalStockKg, "Kritik stok") : 0},
+        updated_at = now()
+    where id = ${recordId}
+  `;
+  return { id: recordId };
+}
+
 export async function createCustomerOrder(payload: Record<string, unknown>) {
   return sql.begin(async (tx) => {
     const orderInput = {
@@ -365,6 +388,21 @@ export async function createCustomerOrder(payload: Record<string, unknown>) {
     `;
     return { id: recordId, orderNo, ymStockId, mmStockId };
   });
+}
+
+export async function updateCustomerOrder(recordId: string, payload: Record<string, unknown>) {
+  await sql`
+    update orders
+    set customer_name = ${requireString(payload.customerName, "Müşteri")},
+        order_date = ${requireString(payload.orderDate, "Sipariş tarihi")},
+        due_date = ${requireString(payload.dueDate, "Termin tarihi")},
+        quantity_kg = ${numberValue(payload.quantityKg, "Sipariş kg")},
+        status = ${requireString(payload.status ?? "Taslak", "Durum")},
+        description = ${optionalString(payload.description) ?? ""},
+        updated_at = now()
+    where id = ${recordId}
+  `;
+  return { id: recordId };
 }
 
 export async function createPurchaseOrder(payload: Record<string, unknown>) {
@@ -405,6 +443,33 @@ export async function createPurchaseOrder(payload: Record<string, unknown>) {
     `;
     return { id: recordId, purchaseOrderNo };
   });
+}
+
+export async function updatePurchaseOrder(recordId: string, payload: Record<string, unknown>) {
+  const rows = await sql`select items, total_received_kg from purchase_orders where id = ${recordId} limit 1`;
+  if (!rows[0]) throw new Error("Satıcı siparişi bulunamadı.");
+  const items = (rows[0].items as Array<Record<string, unknown>>) ?? [];
+  const firstItem = items[0];
+  if (!firstItem) throw new Error("Satıcı sipariş kalemi bulunamadı.");
+  const orderedKg = numberValue(payload.orderedKg, "Sipariş kg");
+  const receivedKg = Number(firstItem.receivedKg ?? 0);
+  const nextItems = [{ ...firstItem, orderedKg, remainingKg: Math.max(orderedKg - receivedKg, 0), unitPrice: payload.unitPrice ? numberValue(payload.unitPrice, "Birim fiyat") : null, currency: optionalString(payload.currency) ?? "TRY" }];
+  const totalReceived = Number(rows[0].total_received_kg ?? 0);
+  const totalRemaining = Math.max(orderedKg - totalReceived, 0);
+  await sql`
+    update purchase_orders
+    set supplier_id = ${requireString(payload.supplierId, "Satıcı")},
+        order_date = ${requireString(payload.orderDate, "Sipariş tarihi")},
+        due_date = ${requireString(payload.dueDate, "Termin tarihi")},
+        status = ${requireString(payload.status ?? "Taslak", "Durum")},
+        items = ${JSON.stringify(nextItems)},
+        total_ordered_kg = ${orderedKg},
+        total_remaining_kg = ${totalRemaining},
+        description = ${optionalString(payload.description) ?? ""},
+        updated_at = now()
+    where id = ${recordId}
+  `;
+  return { id: recordId };
 }
 
 export async function createPurchaseReceipt(payload: Record<string, unknown>) {

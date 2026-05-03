@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { BarChart3, BookOpen, Boxes, CheckCircle2, Factory, KeyRound, PackagePlus, Plus, Settings, ShoppingCart, SlidersHorizontal, Truck, Users, Warehouse } from "lucide-react";
+import { BarChart3, BookOpen, Boxes, CheckCircle2, Download, Factory, KeyRound, PackagePlus, Plus, Settings, ShoppingCart, SlidersHorizontal, Truck, Users, Warehouse } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DataTable, type Column } from "@/components/ui/data-table";
@@ -10,7 +10,7 @@ import { StatusBadge, statusTone } from "@/components/ui/status-badge";
 import { StatCard } from "@/components/ui/stat-card";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { FormDrawer } from "@/components/ui/form-drawer";
-import { DyehouseProductionForm, OrderForm, PurchaseOrderForm, PurchaseReceiptForm, RawProductionForm, RoleForm, SaleForm, SettingForm, StockCardForm, TransferForm, UserProfileForm } from "@/components/forms";
+import { DyehouseProductionForm, OrderEditForm, OrderForm, PurchaseOrderEditForm, PurchaseOrderForm, PurchaseReceiptForm, RawProductionForm, RoleForm, SaleForm, SettingForm, StockCardEditForm, StockCardForm, TransferForm, UserProfileForm } from "@/components/forms";
 import { PartyTimeline } from "@/components/party-timeline";
 import { useErpData } from "@/components/erp-data-provider";
 import { getDashboardMetrics, getName, getPurchaseProgress } from "@/services/erp-service";
@@ -44,6 +44,7 @@ async function apiPatch(endpoint: string, payload: Record<string, unknown>) {
 export function OrdersPage() {
   const { data, refresh } = useErpData();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Order | null>(null);
   async function cancelOrder(id: string) {
     try {
       await apiDelete(`/api/orders/${id}`);
@@ -60,13 +61,14 @@ export function OrdersPage() {
     { header: "Renk", cell: (row) => getName(data.colors, row.colorId) },
     { header: "Kg", cell: (row) => formatKg(row.quantityKg) },
     { header: "Durum", cell: (row) => <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge> },
-    { header: "İşlem", cell: (row) => <button className={dangerButton} onClick={() => cancelOrder(row.id)} type="button">İptal</button> },
+    { header: "İşlem", cell: (row) => <div className="flex gap-2"><button className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditing(row)} type="button">Düzenle</button><button className={dangerButton} onClick={() => cancelOrder(row.id)} type="button">İptal</button></div> },
   ];
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="SipariÅŸler" title="MÃ¼ÅŸteri SipariÅŸleri" description="KumaÅŸ Ã¼retim talepleri, otomatik YM/MM stok eÅŸleÅŸmesi ve Ã¼retim durum takibi." icon={ShoppingCart} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Yeni sipariÅŸ</button>} />
       <DataTable rows={data.orders} columns={columns} />
       <FormDrawer open={open} title="Yeni mÃ¼ÅŸteri sipariÅŸi" onClose={() => setOpen(false)}><OrderForm /></FormDrawer>
+      <FormDrawer open={Boolean(editing)} title="Sipariş düzenle" onClose={() => setEditing(null)}>{editing ? <OrderEditForm order={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
     </div>
   );
 }
@@ -94,6 +96,7 @@ export function PurchaseOrdersPage() {
   const { data, refresh } = useErpData();
   const [orderOpen, setOrderOpen] = useState(false);
   const [receiptOpen, setReceiptOpen] = useState(false);
+  const [editing, setEditing] = useState<PurchaseOrder | null>(null);
   async function cancelPurchase(id: string) {
     try {
       await apiDelete(`/api/purchase-orders/${id}`);
@@ -110,7 +113,7 @@ export function PurchaseOrdersPage() {
     { header: "Gelen", cell: (row) => formatKg(row.totalReceivedKg) },
     { header: "Kalan", cell: (row) => formatKg(row.totalRemainingKg) },
     { header: "Durum", cell: (row) => <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge> },
-    { header: "İşlem", cell: (row) => <button className={dangerButton} onClick={() => cancelPurchase(row.id)} type="button">İptal</button> },
+    { header: "İşlem", cell: (row) => <div className="flex gap-2"><button className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditing(row)} type="button">Düzenle</button><button className={dangerButton} onClick={() => cancelPurchase(row.id)} type="button">İptal</button></div> },
   ];
   return (
     <div className="space-y-6">
@@ -137,6 +140,7 @@ export function PurchaseOrdersPage() {
       <DataTable rows={data.purchaseOrders} columns={columns} />
       <FormDrawer open={orderOpen} title="Yeni satÄ±cÄ± sipariÅŸi" onClose={() => setOrderOpen(false)}><PurchaseOrderForm /></FormDrawer>
       <FormDrawer open={receiptOpen} title="Mal kabul" onClose={() => setReceiptOpen(false)}><PurchaseReceiptForm /></FormDrawer>
+      <FormDrawer open={Boolean(editing)} title="Satıcı siparişi düzenle" onClose={() => setEditing(null)}>{editing ? <PurchaseOrderEditForm order={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
     </div>
   );
 }
@@ -144,6 +148,7 @@ export function PurchaseOrdersPage() {
 export function StocksPage() {
   const { data, refresh } = useErpData();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<StockCard | null>(null);
   async function deactivateStock(id: string) {
     try {
       await apiDelete(`/api/stocks/${id}`);
@@ -160,13 +165,14 @@ export function StocksPage() {
     { header: "Ne", cell: (row) => getName(data.yarnCounts, row.yarnCountId) },
     { header: "Stok", cell: (row) => formatKg(row.currentStockKg) },
     { header: "Kritik", cell: (row) => formatKg(row.criticalStockKg) },
-    { header: "İşlem", cell: (row) => <button className={dangerButton} onClick={() => deactivateStock(row.id)} type="button">Pasifleştir</button> },
+    { header: "İşlem", cell: (row) => <div className="flex gap-2"><button className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditing(row)} type="button">Düzenle</button><button className={dangerButton} onClick={() => deactivateStock(row.id)} type="button">Pasifleştir</button></div> },
   ];
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Stok" title="Stok KartlarÄ±" description="YM/MM partili izlenir; IP/LYC/POLY satÄ±n alma ve Ã¼retim tÃ¼ketimiyle takip edilir." icon={Boxes} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Stok kartÄ±</button>} />
       <DataTable rows={data.stockCards} columns={columns} />
       <FormDrawer open={open} title="Yeni stok kartÄ±" onClose={() => setOpen(false)}><StockCardForm /></FormDrawer>
+      <FormDrawer open={Boolean(editing)} title="Stok kartı düzenle" onClose={() => setEditing(null)}>{editing ? <StockCardEditForm stock={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
     </div>
   );
 }
@@ -291,6 +297,8 @@ export function WasteAnalysisPage() {
 
 export function ReportsPage() {
   const { data } = useErpData();
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [stockTypeFilter, setStockTypeFilter] = useState("ALL");
   const metrics = getDashboardMetrics(data);
   const totalSalesKg = data.sales.filter((sale) => sale.status !== "İptal").reduce((sum, sale) => sum + sale.quantityKg, 0);
   const openPurchaseKg = data.purchaseOrders.reduce((sum, order) => sum + order.totalRemainingKg, 0);
@@ -307,9 +315,10 @@ export function ReportsPage() {
       dyeWaste: party.dyehouseWastePercent,
       status: party.status,
     };
-  });
+  }).filter((row) => statusFilter === "ALL" || row.status === statusFilter);
   const stockRows = data.stockCards
     .filter((stock) => stock.isActive)
+    .filter((stock) => stockTypeFilter === "ALL" || stock.type === stockTypeFilter)
     .map((stock) => ({
       id: stock.id,
       code: stock.code,
@@ -319,10 +328,46 @@ export function ReportsPage() {
       criticalStockKg: stock.criticalStockKg,
       risk: stock.criticalStockKg > 0 && stock.currentStockKg <= stock.criticalStockKg,
     }));
+  const statuses = Array.from(new Set(data.parties.map((party) => party.status))).filter(Boolean);
+
+  function exportCsv() {
+    const rows = [
+      ["Rapor", "Kod", "Ad/Musteri", "Tip/Durum", "Kg1", "Kg2", "Oran1", "Oran2"],
+      ...productionRows.map((row) => ["Uretim", row.partyNo, row.customerName, row.status, row.rawKg, row.finishedKg, row.rawWaste, row.dyeWaste]),
+      ...stockRows.map((row) => ["Stok", row.code, row.name, row.type, row.currentStockKg, row.criticalStockKg, row.risk ? "Kritik" : "Normal", ""]),
+    ];
+    const csv = rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `orme-erp-rapor-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Raporlama" title="Gelişmiş ERP Raporları" description="Üretim, stok, satın alma, satış ve fire metrikleri canlı PostgreSQL verisinden hesaplanır." icon={BarChart3} />
+      <PageHeader eyebrow="Raporlama" title="Gelişmiş ERP Raporları" description="Üretim, stok, satın alma, satış ve fire metrikleri canlı PostgreSQL verisinden hesaplanır." icon={BarChart3} action={<button className={primaryButton} onClick={exportCsv} type="button"><Download className="size-4" />CSV dışa aktar</button>} />
+      <div className="premium-card grid gap-4 rounded-2xl p-4 md:grid-cols-2">
+        <label className="space-y-2">
+          <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Parti durumu</span>
+          <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+            <option value="ALL">Tüm durumlar</option>
+            {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
+          </select>
+        </label>
+        <label className="space-y-2">
+          <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Stok tipi</span>
+          <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" value={stockTypeFilter} onChange={(event) => setStockTypeFilter(event.target.value)}>
+            <option value="ALL">Tüm stoklar</option>
+            <option value="IP">IP</option>
+            <option value="LYC">LYC</option>
+            <option value="POLY">POLY</option>
+            <option value="YM">YM</option>
+            <option value="MM">MM</option>
+          </select>
+        </label>
+      </div>
       <div className="grid gap-4 md:grid-cols-4">
         <StatCard title="Üretim kg" value={formatKg(metrics.monthlyProductionKg)} helper="Ham + mamül zinciri" icon={Factory} />
         <StatCard title="Satış kg" value={formatKg(totalSalesKg)} helper="İptal dışı sevkiyat" icon={Truck} tone="green" />

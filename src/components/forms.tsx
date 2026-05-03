@@ -6,6 +6,7 @@ import { useErpData } from "@/components/erp-data-provider";
 import { calculateDyehouseWaste, calculateRawWaste } from "@/services/erp-service";
 import { formatKg, formatPercent } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
+import type { Order, PurchaseOrder, StockCard } from "@/types/erp";
 
 const inputClass = "w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50";
 const labelClass = "text-xs font-bold uppercase tracking-[0.14em] text-slate-400";
@@ -26,6 +27,19 @@ async function postJson(endpoint: string, payload: Record<string, unknown>) {
   });
   const result = (await response.json()) as ApiResponse;
   if (!response.ok || !result.ok) throw new Error(result.error ?? "Kayıt tamamlanamadı.");
+  return result.data;
+}
+
+async function patchJson(endpoint: string, payload: Record<string, unknown>) {
+  const session = await supabase.auth.getSession();
+  const token = session.data.session?.access_token;
+  const response = await fetch(endpoint, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify(payload),
+  });
+  const result = (await response.json()) as ApiResponse;
+  if (!response.ok || !result.ok) throw new Error(result.error ?? "Güncelleme tamamlanamadı.");
   return result.data;
 }
 
@@ -146,6 +160,52 @@ export function StockCardForm() {
   );
 }
 
+export function StockCardEditForm({ stock, onDone }: { stock: StockCard; onDone: () => void }) {
+  const { data, refresh } = useErpData();
+  const [loading, setLoading] = useState(false);
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    const form = new FormData(event.currentTarget);
+    try {
+      await patchJson(`/api/stocks/${stock.id}`, {
+        ...Object.fromEntries(form.entries()),
+        hasPolyester: form.get("hasPolyester") === "on",
+        hasLycra: form.get("hasLycra") === "on",
+      });
+      await refresh();
+      onDone();
+      toast.success("Stok kartı güncellendi.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Stok kartı güncellenemedi.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form className="grid gap-4" onSubmit={submit}>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Stok tipi"><select className={inputClass} name="type" defaultValue={stock.type} required><option value="IP">IP</option><option value="LYC">LYC</option><option value="POLY">POLY</option><option value="YM">YM</option><option value="MM">MM</option></select></Field>
+        <Field label="Stok adı"><input className={inputClass} name="name" defaultValue={stock.name} required /></Field>
+        <Field label="Ne"><select className={inputClass} name="yarnCountId" defaultValue={stock.yarnCountId ?? ""}><option value="">Seçiniz</option>{data.yarnCounts.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
+        <Field label="Renk"><select className={inputClass} name="colorId" defaultValue={stock.colorId ?? ""}><option value="">Seçiniz</option>{data.colors.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
+        <Field label="Kumaş cinsi"><select className={inputClass} name="fabricTypeId" defaultValue={stock.fabricTypeId ?? ""}><option value="">Seçiniz</option>{data.fabricTypes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
+        <Field label="Kritik stok kg"><input className={inputClass} name="criticalStockKg" type="number" defaultValue={stock.criticalStockKg} /></Field>
+        <Field label="Ham en"><input className={inputClass} name="rawWidth" type="number" defaultValue={stock.rawWidth ?? ""} /></Field>
+        <Field label="Ham gramaj"><input className={inputClass} name="rawGsm" type="number" defaultValue={stock.rawGsm ?? ""} /></Field>
+        <Field label="Finish en"><input className={inputClass} name="finishWidth" type="number" defaultValue={stock.finishWidth ?? ""} /></Field>
+        <Field label="Finish gramaj"><input className={inputClass} name="finishGsm" type="number" defaultValue={stock.finishGsm ?? ""} /></Field>
+      </div>
+      <div className="flex gap-4 text-sm text-slate-600">
+        <label className="flex items-center gap-2"><input defaultChecked={stock.hasPolyester} name="hasPolyester" type="checkbox" /> Polyesterli</label>
+        <label className="flex items-center gap-2"><input defaultChecked={stock.hasLycra} name="hasLycra" type="checkbox" /> Likralı</label>
+      </div>
+      <FormButton loading={loading}>Stok kartını güncelle</FormButton>
+    </form>
+  );
+}
+
 export function OrderForm() {
   const { data, refresh } = useErpData();
   const [loading, setLoading] = useState(false);
@@ -209,6 +269,40 @@ export function OrderForm() {
   );
 }
 
+export function OrderEditForm({ order, onDone }: { order: Order; onDone: () => void }) {
+  const { refresh } = useErpData();
+  const [loading, setLoading] = useState(false);
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    const form = new FormData(event.currentTarget);
+    try {
+      await patchJson(`/api/orders/${order.id}`, Object.fromEntries(form.entries()));
+      await refresh();
+      onDone();
+      toast.success("Sipariş güncellendi.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Sipariş güncellenemedi.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form className="grid gap-4" onSubmit={submit}>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Müşteri"><input className={inputClass} name="customerName" defaultValue={order.customerName} required /></Field>
+        <Field label="Sipariş tarihi"><input className={inputClass} name="orderDate" type="date" defaultValue={order.orderDate} required /></Field>
+        <Field label="Termin"><input className={inputClass} name="dueDate" type="date" defaultValue={order.dueDate} required /></Field>
+        <Field label="Sipariş kg"><input className={inputClass} name="quantityKg" type="number" defaultValue={order.quantityKg} required /></Field>
+        <Field label="Durum"><select className={inputClass} name="status" defaultValue={order.status}><option>Taslak</option><option>Onaylandı</option><option>İplik Bekliyor</option><option>Örmede</option><option>Ham Geldi</option><option>Boyahanede</option><option>Mamül Hazır</option><option>Sevk Edildi</option><option>Kapandı</option><option>İptal</option></select></Field>
+      </div>
+      <Field label="Açıklama"><textarea className={inputClass} name="description" rows={3} defaultValue={order.description} /></Field>
+      <FormButton loading={loading}>Siparişi güncelle</FormButton>
+    </form>
+  );
+}
+
 export function PurchaseOrderForm() {
   const { data, refresh } = useErpData();
   const [loading, setLoading] = useState(false);
@@ -259,6 +353,43 @@ export function PurchaseOrderForm() {
       </div>
       <Field label="Açıklama"><textarea className={inputClass} name="description" rows={3} /></Field>
       <FormButton loading={loading}>Satıcı siparişini kaydet</FormButton>
+    </form>
+  );
+}
+
+export function PurchaseOrderEditForm({ order, onDone }: { order: PurchaseOrder; onDone: () => void }) {
+  const { data, refresh } = useErpData();
+  const [loading, setLoading] = useState(false);
+  const item = order.items[0];
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    const form = new FormData(event.currentTarget);
+    try {
+      await patchJson(`/api/purchase-orders/${order.id}`, Object.fromEntries(form.entries()));
+      await refresh();
+      onDone();
+      toast.success("Satıcı siparişi güncellendi.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Satıcı siparişi güncellenemedi.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form className="grid gap-4" onSubmit={submit}>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Satıcı"><select className={inputClass} name="supplierId" defaultValue={order.supplierId} required>{data.partners.filter((partner) => partner.type === "SUPPLIER").map((partner) => <option key={partner.id} value={partner.id}>{partner.name}</option>)}</select></Field>
+        <Field label="Sipariş tarihi"><input className={inputClass} name="orderDate" type="date" defaultValue={order.orderDate} required /></Field>
+        <Field label="Termin"><input className={inputClass} name="dueDate" type="date" defaultValue={order.dueDate} required /></Field>
+        <Field label="Sipariş kg"><input className={inputClass} name="orderedKg" type="number" defaultValue={item?.orderedKg ?? order.totalOrderedKg} required /></Field>
+        <Field label="Birim fiyat"><input className={inputClass} name="unitPrice" type="number" step="0.01" defaultValue={item?.unitPrice ?? ""} /></Field>
+        <Field label="Para birimi"><select className={inputClass} name="currency" defaultValue={item?.currency ?? "TRY"}><option>TRY</option><option>USD</option><option>EUR</option></select></Field>
+        <Field label="Durum"><select className={inputClass} name="status" defaultValue={order.status}><option>Taslak</option><option>Onaylandı</option><option>Kısmi Geldi</option><option>Tamamlandı</option><option>İptal</option></select></Field>
+      </div>
+      <Field label="Açıklama"><textarea className={inputClass} name="description" rows={3} defaultValue={order.description} /></Field>
+      <FormButton loading={loading}>Satıcı siparişini güncelle</FormButton>
     </form>
   );
 }
