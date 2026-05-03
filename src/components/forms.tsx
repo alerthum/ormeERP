@@ -124,22 +124,24 @@ function FormButton({ loading, children }: { loading: boolean; children: React.R
   );
 }
 
-export function SettingForm({ entity, extra }: { entity: SettingEntity; extra?: "warehouse" | "partner" }) {
+export function SettingForm({ entity, extra, onDone }: { entity: SettingEntity; extra?: "warehouse" | "partner"; onDone?: () => void }) {
   const { refresh, mutateData } = useErpData();
   const [loading, setLoading] = useState(false);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     try {
       const saved = await postJson(`/api/settings/${entity}`, {
         name: String(form.get("name") ?? ""),
         kind: form.get("kind"),
         type: form.get("type"),
       });
-      event.currentTarget.reset();
+      formElement.reset();
       mutateData((current) => applySettingResult(current, entity, saved));
       refreshInBackground(refresh);
+      onDone?.();
       toast.success("Tanım kaydedildi.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Tanım kaydedilemedi.");

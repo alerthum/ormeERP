@@ -34,6 +34,23 @@ function refreshInBackground(refresh: () => Promise<void>) {
 type SettingEntity = "fabricTypes" | "colors" | "yarnCounts" | "processTypes" | "warehouses" | "partners";
 type EditableSetting = { id: string; name: string; kind?: WarehouseEntity["kind"]; type?: Partner["type"] };
 
+const warehouseKindLabels: Record<WarehouseEntity["kind"], string> = {
+  YARN: "İplik deposu",
+  KNITTER: "Fasoncu deposu",
+  RAW: "Ham kumaş deposu",
+  DYEHOUSE: "Boyahane deposu",
+  FINISHED: "Mamül depo",
+  STORE: "Satış mağazası",
+  WASTE: "Fire deposu",
+};
+
+const partnerTypeLabels: Record<Partner["type"], string> = {
+  KNITTER: "Fason örmeci",
+  DYEHOUSE: "Boyahane",
+  SUPPLIER: "Satıcı",
+  CUSTOMER: "Müşteri",
+};
+
 function removeSettingFromData(current: ErpData, entity: SettingEntity, recordId: string): ErpData {
   return { ...current, [entity]: current[entity].filter((item) => item.id !== recordId) };
 }
@@ -511,8 +528,8 @@ export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "
       <PageHeader eyebrow="ERP" title={map.title} description={map.desc} icon={map.icon} action={kind === "warehouses" || kind === "partners" ? <button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Tanım ekle</button> : <Link className={primaryButton} href="/settings"><Plus className="size-4" />Tanım ekle</Link>} />
       <DataTable rows={rows} columns={[
         { header: "Ad", cell: (row) => row.name },
-        ...(kind === "warehouses" ? [{ header: "Tip", cell: (row: NamedEntity) => ("kind" in row ? String(row.kind) : "-") }] : []),
-        ...(kind === "partners" ? [{ header: "Tip", cell: (row: NamedEntity) => ("type" in row ? String(row.type) : "-") }] : []),
+        ...(kind === "warehouses" ? [{ header: "Tip", cell: (row: NamedEntity) => ("kind" in row ? warehouseKindLabels[row.kind as WarehouseEntity["kind"]] : "-") }] : []),
+        ...(kind === "partners" ? [{ header: "Tip", cell: (row: NamedEntity) => ("type" in row ? partnerTypeLabels[row.type as Partner["type"]] : "-") }] : []),
         { header: "Durum", cell: () => <StatusBadge tone="green">Aktif</StatusBadge> },
         ...(manageDefinitions ? [{
           header: "İşlem",
@@ -540,8 +557,8 @@ export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "
         }] : []),
       ]} />
       <FormDrawer open={open} title="Tanım ekle" onClose={() => setOpen(false)}>
-        {kind === "warehouses" ? <SettingForm entity="warehouses" extra="warehouse" /> : null}
-        {kind === "partners" ? <SettingForm entity="partners" extra="partner" /> : null}
+        {kind === "warehouses" ? <SettingForm entity="warehouses" extra="warehouse" onDone={() => setOpen(false)} /> : null}
+        {kind === "partners" ? <SettingForm entity="partners" extra="partner" onDone={() => setOpen(false)} /> : null}
       </FormDrawer>
       <FormDrawer open={Boolean(editing)} title="Tanım düzenle" onClose={() => setEditing(null)}>
         <form className="grid gap-4" onSubmit={updateDefinition}>
@@ -828,7 +845,7 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
                 <div key={row.id} className="flex items-center justify-between gap-3 py-3">
                   <div>
                     <p className="font-semibold text-slate-950">{row.name}</p>
-                    {"kind" in row ? <p className="text-xs text-slate-400">{row.kind}</p> : null}
+                    {"kind" in row ? <p className="text-xs text-slate-400">{warehouseKindLabels[row.kind as WarehouseEntity["kind"]]}</p> : null}
                   </div>
                   <button
                     className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700"
