@@ -14,7 +14,7 @@ import { DyehouseProductionForm, OrderEditForm, OrderForm, PurchaseOrderEditForm
 import { PartyTimeline } from "@/components/party-timeline";
 import { useErpData } from "@/components/erp-data-provider";
 import { getDashboardMetrics, getName, getPurchaseProgress } from "@/services/erp-service";
-import type { Order, Party, PurchaseOrder, Role, Sale, StockCard, StockMovement, UserProfile } from "@/types/erp";
+import type { ErpData, NamedEntity, Order, Partner, Party, PurchaseOrder, Role, Sale, StockCard, StockMovement, UserProfile, Warehouse as WarehouseEntity } from "@/types/erp";
 import { formatDate, formatKg, formatPercent, wasteTone } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 
@@ -29,6 +29,24 @@ function requestSignal(ms = 8000) {
 
 function refreshInBackground(refresh: () => Promise<void>) {
   void refresh().catch(() => undefined);
+}
+
+type SettingEntity = "fabricTypes" | "colors" | "yarnCounts" | "processTypes" | "warehouses" | "partners";
+type EditableSetting = { id: string; name: string; kind?: WarehouseEntity["kind"]; type?: Partner["type"] };
+
+function removeSettingFromData(current: ErpData, entity: SettingEntity, recordId: string): ErpData {
+  return { ...current, [entity]: current[entity].filter((item) => item.id !== recordId) };
+}
+
+function replaceSettingInData(current: ErpData, entity: SettingEntity, row: EditableSetting): ErpData {
+  const base: NamedEntity = { id: row.id, name: row.name, isActive: true };
+  if (entity === "warehouses") {
+    return { ...current, warehouses: current.warehouses.map((item) => (item.id === row.id ? { ...item, ...base, kind: row.kind ?? item.kind } : item)) };
+  }
+  if (entity === "partners") {
+    return { ...current, partners: current.partners.map((item) => (item.id === row.id ? { ...item, ...base, type: row.type ?? item.type } : item)) };
+  }
+  return { ...current, [entity]: current[entity].map((item) => (item.id === row.id ? base : item)) };
 }
 
 async function apiDelete(endpoint: string) {
@@ -412,8 +430,10 @@ export function ReportsPage() {
 }
 
 export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "sales" | "reports" | "settings" }) {
-  const { data, refresh } = useErpData();
+  const { data, refresh, mutateData } = useErpData();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<EditableSetting | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<EditableSetting | null>(null);
   const map = {
     warehouses: { title: "Depo Yönetimi", desc: "Depo tanımları, bakiye kartları ve partili stok görünümü.", icon: Warehouse },
     partners: { title: "Fasoncu Cari Yönetimi", desc: "Fason örmeci, boyahane, satıcı ve müşteri kartları.", icon: Users },
@@ -448,18 +468,122 @@ export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "
       </div>
     );
   }
+  const manageDefinitions = kind === "warehouses" || kind === "partners";
   const rows = kind === "warehouses" ? data.warehouses : kind === "partners" ? data.partners : data.fabricTypes;
+  const entity: SettingEntity = kind === "warehouses" ? "warehouses" : kind === "partners" ? "partners" : "fabricTypes";
+
+  async function updateDefinition(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editing) return;
+    const form = new FormData(event.currentTarget);
+    try {
+      const nextRow = {
+        id: editing.id,
+        name: String(form.get("name") ?? editing.name),
+        kind: (form.get("kind") ?? editing.kind) as WarehouseEntity["kind"] | undefined,
+        type: (form.get("type") ?? editing.type) as Partner["type"] | undefined,
+      };
+      await apiPatch(`/api/settings/${entity}/${editing.id}`, nextRow);
+      mutateData((current) => replaceSettingInData(current, entity, nextRow));
+      refreshInBackground(refresh);
+      setEditing(null);
+      toast.success("Tanım güncellendi.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Tanım güncellenemedi.");
+    }
+  }
+
+  async function deleteDefinition() {
+    if (!deleteTarget) return;
+    try {
+      await apiDelete(`/api/settings/${entity}/${deleteTarget.id}`);
+      mutateData((current) => removeSettingFromData(current, entity, deleteTarget.id));
+      refreshInBackground(refresh);
+      setDeleteTarget(null);
+      toast.success("Tanım silindi.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Tanım silinemedi.");
+    }
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="ERP" title={map.title} description={map.desc} icon={map.icon} action={kind === "warehouses" || kind === "partners" ? <button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Tanım ekle</button> : <Link className={primaryButton} href="/settings"><Plus className="size-4" />Tanım ekle</Link>} />
       <DataTable rows={rows} columns={[
         { header: "Ad", cell: (row) => row.name },
+        ...(kind === "warehouses" ? [{ header: "Tip", cell: (row: NamedEntity) => ("kind" in row ? String(row.kind) : "-") }] : []),
+        ...(kind === "partners" ? [{ header: "Tip", cell: (row: NamedEntity) => ("type" in row ? String(row.type) : "-") }] : []),
         { header: "Durum", cell: () => <StatusBadge tone="green">Aktif</StatusBadge> },
+        ...(manageDefinitions ? [{
+          header: "İşlem",
+          cell: (row: NamedEntity) => (
+            <div className="flex flex-wrap gap-2">
+              <button
+                className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700"
+                onClick={() =>
+                  setEditing({
+                    id: row.id,
+                    name: row.name,
+                    kind: "kind" in row ? (row.kind as WarehouseEntity["kind"]) : undefined,
+                    type: "type" in row ? (row.type as Partner["type"]) : undefined,
+                  })
+                }
+                type="button"
+              >
+                Düzenle
+              </button>
+              <button className={dangerButton} onClick={() => setDeleteTarget({ id: row.id, name: row.name })} type="button">
+                Sil
+              </button>
+            </div>
+          ),
+        }] : []),
       ]} />
       <FormDrawer open={open} title="Tanım ekle" onClose={() => setOpen(false)}>
         {kind === "warehouses" ? <SettingForm entity="warehouses" extra="warehouse" /> : null}
         {kind === "partners" ? <SettingForm entity="partners" extra="partner" /> : null}
       </FormDrawer>
+      <FormDrawer open={Boolean(editing)} title="Tanım düzenle" onClose={() => setEditing(null)}>
+        <form className="grid gap-4" onSubmit={updateDefinition}>
+          <label className="space-y-2">
+            <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Ad</span>
+            <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="name" defaultValue={editing?.name} required />
+          </label>
+          {kind === "warehouses" ? (
+            <label className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Tip</span>
+              <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="kind" defaultValue={editing?.kind ?? "RAW"}>
+                <option value="YARN">İplik deposu</option>
+                <option value="KNITTER">Fasoncu deposu</option>
+                <option value="RAW">Ham kumaş deposu</option>
+                <option value="DYEHOUSE">Boyahane deposu</option>
+                <option value="FINISHED">Mamül depo</option>
+                <option value="STORE">Satış mağazası</option>
+                <option value="WASTE">Fire deposu</option>
+              </select>
+            </label>
+          ) : null}
+          {kind === "partners" ? (
+            <label className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Tip</span>
+              <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="type" defaultValue={editing?.type ?? "SUPPLIER"}>
+                <option value="KNITTER">Fason örmeci</option>
+                <option value="DYEHOUSE">Boyahane</option>
+                <option value="SUPPLIER">Satıcı</option>
+                <option value="CUSTOMER">Müşteri</option>
+              </select>
+            </label>
+          ) : null}
+          <button className={primaryButton} type="submit">Güncelle</button>
+        </form>
+      </FormDrawer>
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        title="Tanım silinsin mi?"
+        description={`${deleteTarget?.name ?? "Bu tanım"} başka bir sipariş, stok, üretim veya hareket kaydında kullanılıyorsa silinmeyecek.`}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={deleteDefinition}
+      />
     </div>
   );
 }
@@ -578,8 +702,9 @@ const startSteps = [
 ];
 
 export function SettingsGuidePage({ section }: { section?: "fabric-types" | "colors" | "yarn-counts" | "process-types" | "warehouses" }) {
-  const { data, refresh } = useErpData();
-  const [editing, setEditing] = useState<{ id: string; name: string; kind?: string } | null>(null);
+  const { data, refresh, mutateData } = useErpData();
+  const [editing, setEditing] = useState<EditableSetting | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<EditableSetting | null>(null);
   const activeGroup = section
     ? settingGroups.find((group) => group.href.endsWith(section))
     : undefined;
@@ -593,12 +718,17 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
       } as const)[section]
     : undefined;
 
-  async function deleteDefinition(entity: string, recordId: string) {
-    const response = await fetch(`/api/settings/${entity}/${recordId}`, { method: "DELETE" });
-    const result = (await response.json()) as { ok: boolean; error?: string };
-    if (!response.ok || !result.ok) throw new Error(result.error ?? "Tanım silinemedi.");
-    refreshInBackground(refresh);
-    toast.success("Tanım silindi.");
+  async function deleteDefinition() {
+    if (!settingConfig || !deleteTarget) return;
+    try {
+      await apiDelete(`/api/settings/${settingConfig.entity}/${deleteTarget.id}`);
+      mutateData((current) => removeSettingFromData(current, settingConfig.entity, deleteTarget.id));
+      refreshInBackground(refresh);
+      setDeleteTarget(null);
+      toast.success("Tanım silindi.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Tanım silinemedi.");
+    }
   }
 
   async function updateDefinition(event: React.FormEvent<HTMLFormElement>) {
@@ -606,10 +736,13 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
     if (!settingConfig || !editing) return;
     const form = new FormData(event.currentTarget);
     try {
-      await apiPatch(`/api/settings/${settingConfig.entity}/${editing.id}`, {
-        name: form.get("name"),
-        kind: form.get("kind") ?? editing.kind,
-      });
+      const nextRow = {
+        id: editing.id,
+        name: String(form.get("name") ?? editing.name),
+        kind: (form.get("kind") ?? editing.kind) as WarehouseEntity["kind"] | undefined,
+      };
+      await apiPatch(`/api/settings/${settingConfig.entity}/${editing.id}`, nextRow);
+      mutateData((current) => replaceSettingInData(current, settingConfig.entity, nextRow));
       setEditing(null);
       refreshInBackground(refresh);
       toast.success("Tanım güncellendi.");
@@ -704,11 +837,7 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
                   >
                     Düzenle
                   </button>
-                  <button
-                    className="ml-2 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700"
-                    onClick={() => deleteDefinition(settingConfig.entity, row.id).catch((error: unknown) => toast.error(error instanceof Error ? error.message : "Tanım silinemedi."))}
-                    type="button"
-                  >
+                  <button className="ml-2 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700" onClick={() => setDeleteTarget({ id: row.id, name: row.name })} type="button">
                     Sil
                   </button>
                 </div>
@@ -738,6 +867,13 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
               <button className={primaryButton} type="submit">Güncelle</button>
             </form>
           </FormDrawer>
+          <ConfirmModal
+            open={Boolean(deleteTarget)}
+            title="Tanım silinsin mi?"
+            description={`${deleteTarget?.name ?? "Bu tanım"} stok, sipariş, üretim, transfer veya hareket kayıtlarında kullanılıyorsa silinmeyecek.`}
+            onClose={() => setDeleteTarget(null)}
+            onConfirm={deleteDefinition}
+          />
         </div>
       ) : null}
 

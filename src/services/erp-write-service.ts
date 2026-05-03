@@ -253,8 +253,75 @@ export async function updateSetting(entity: SettingEntity, recordId: string, pay
 
 export async function deleteSetting(entity: SettingEntity, recordId: string) {
   const table = tableMap[entity];
+  const usageCount = await getSettingUsageCount(entity, recordId);
+  if (usageCount > 0) {
+    throw new Error(`Bu tanım ${usageCount} kayıt tarafından kullanılıyor. Önce bağlı hareketleri/siparişleri düzenleyin.`);
+  }
   await sql`delete from ${sql(table)} where id = ${recordId}`;
   return { id: recordId };
+}
+
+async function getSettingUsageCount(entity: SettingEntity, recordId: string) {
+  if (entity === "warehouses") {
+    const rows = await sql`
+      select
+        (select count(*) from stock_movements where warehouse_id = ${recordId}) +
+        (select count(*) from warehouse_balances where warehouse_id = ${recordId}) +
+        (select count(*) from transfers where from_warehouse_id = ${recordId} or to_warehouse_id = ${recordId}) +
+        (select count(*) from production_raw where warehouse_id = ${recordId}) +
+        (select count(*) from production_raw where consumed_items @> ${JSON.stringify([{ warehouseId: recordId }])}::jsonb) +
+        (select count(*) from production_dyehouse where input_warehouse_id = ${recordId} or output_warehouse_id = ${recordId}) +
+        (select count(*) from purchase_receipts where warehouse_id = ${recordId}) +
+        (select count(*) from sales where warehouse_id = ${recordId}) +
+        (select count(*) from parties where current_warehouse_id = ${recordId}) as count
+    `;
+    return Number(rows[0]?.count ?? 0);
+  }
+
+  if (entity === "partners") {
+    const rows = await sql`
+      select
+        (select count(*) from production_raw where knitter_partner_id = ${recordId}) +
+        (select count(*) from production_dyehouse where dyehouse_partner_id = ${recordId}) +
+        (select count(*) from purchase_orders where supplier_id = ${recordId}) +
+        (select count(*) from purchase_receipts where supplier_id = ${recordId}) as count
+    `;
+    return Number(rows[0]?.count ?? 0);
+  }
+
+  if (entity === "fabricTypes") {
+    const rows = await sql`
+      select
+        (select count(*) from stock_cards where fabric_type_id = ${recordId}) +
+        (select count(*) from orders where fabric_type_id = ${recordId}) as count
+    `;
+    return Number(rows[0]?.count ?? 0);
+  }
+
+  if (entity === "colors") {
+    const rows = await sql`
+      select
+        (select count(*) from stock_cards where color_id = ${recordId}) +
+        (select count(*) from orders where color_id = ${recordId}) as count
+    `;
+    return Number(rows[0]?.count ?? 0);
+  }
+
+  if (entity === "yarnCounts") {
+    const rows = await sql`
+      select
+        (select count(*) from stock_cards where yarn_count_id = ${recordId}) +
+        (select count(*) from orders where yarn_count_id = ${recordId}) as count
+    `;
+    return Number(rows[0]?.count ?? 0);
+  }
+
+  const rows = await sql`
+    select
+      (select count(*) from orders where process_type_ids @> ${JSON.stringify([recordId])}::jsonb) +
+      (select count(*) from production_dyehouse where process_type_ids @> ${JSON.stringify([recordId])}::jsonb) as count
+  `;
+  return Number(rows[0]?.count ?? 0);
 }
 
 export async function createRole(payload: Record<string, unknown>) {
