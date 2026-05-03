@@ -1038,6 +1038,12 @@ const settingGroups = [
     description: "Admin, üretim, depo, satın alma, satış ve raporlama yetki altyapısı.",
     items: ["Admin", "Üretim", "Depo", "Satın alma"],
   },
+  {
+    href: "/settings/roadmap",
+    title: "Gelişim günlüğü",
+    description: "Tamamlanan geliştirmeler, bekleyen işler, önem sırası ve proje ilerleme özeti.",
+    items: ["Timeline", "Roadmap", "Öncelik", "İlerleme"],
+  },
 ];
 
 const startSteps = [
@@ -1048,6 +1054,178 @@ const startSteps = [
   "Müşteri siparişi oluştur; sistem YM/MM stok eşleşmesini hazırlar.",
   "Ham üretim, boyahane, transfer ve satış akışını parti üzerinden takip et.",
 ];
+
+const developmentTimeline = [
+  {
+    date: "2026-05-02",
+    title: "Premium ERP MVP iskeleti kuruldu",
+    summary: "Next.js App Router, TypeScript, Tailwind, Supabase PostgreSQL/Drizzle şeması ve Vercel deploy yapısı hazırlandı.",
+    items: [
+      "Dashboard, sipariş, stok, depo, transfer, üretim, parti, satış, rapor ve ayarlar sayfa iskeletleri oluşturuldu.",
+      "ERP ilişkisel tablo modeli, migration dosyaları ve seed veri akışı kurgulandı.",
+      "YM/MM/IP/LYC/POLY stok kod sistemi, parti numarası ve sayaç mantığı temellendirildi.",
+      "Mobil bottom nav, desktop sidebar/header ve premium açık tema tasarım dili başlatıldı.",
+    ],
+  },
+  {
+    date: "2026-05-03",
+    title: "Canlı veritabanı, realtime ve gerçek işlem katmanı bağlandı",
+    summary: "Mock akıştan gerçek Supabase PostgreSQL API katmanına geçildi; kayıtlar tüm cihazlarda anlık yenilenecek hale getirildi.",
+    items: [
+      "Sipariş oluşturma, otomatik YM/MM stok eşleştirme, stok kartı, ayarlar, rol, kullanıcı ve satış kayıtları veritabanına bağlandı.",
+      "Supabase pooler için prepared statement hataları giderildi, connection ayarları ve refresh performansı iyileştirildi.",
+      "Ayarlar, depo, cari, stok, satıcı siparişi ve müşteri siparişi için kontrollü düzenle/sil akışları eklendi.",
+      "Müşteri siparişlerine çoklu filtre, akıllı ifade filtresi ve stok/kumaş/renk/Ne bazlı gruplama görünümü eklendi.",
+      "Transfer, ham üretim ve boyahane üretiminde yanlış kayıtlar için ters stok hareketiyle iptal mekanizması eklendi.",
+      "Satın alma tarafında hızlı IP/LYC/POLY alışı, siparişe bağlı mal kabul ve ayrı Alış İşlemleri menüsü oluşturuldu.",
+    ],
+  },
+];
+
+const completedMilestones = [
+  "Çalışan Next.js + TypeScript + Tailwind proje iskeleti",
+  "Supabase PostgreSQL, Supabase Auth ve Realtime altyapısı",
+  "Drizzle migration ve ilişkisel ERP tablo modeli",
+  "Dashboard KPI, grafik, satın alma ve fire özetleri",
+  "Müşteri siparişi, otomatik YM/MM stok açma ve sipariş detayları",
+  "Stok kartları, depo tanımları, stok hareketleri ve warehouse balance mantığı",
+  "Ham üretim, boyahane üretimi, transfer ve sevkiyat kayıtları",
+  "Satıcı siparişleri, kısmi mal kabul ve siparişsiz hızlı hammadde alışı",
+  "Ayar tanımları, rol/kullanıcı profili ve kontrollü silme/düzenleme",
+  "Gelişmiş raporlar, CSV dışa aktarım, mobil menü ve responsive PWA hissi",
+];
+
+const pendingRoadmap = [
+  {
+    priority: "P0",
+    title: "Üretim reçetesi ve çok kalemli tüketim",
+    description: "Ham üretimde birden fazla IP/LYC/POLY kalemini oran bazlı tüketme, kalan ipleri üretimlere dağıtma ve fasoncu depo kapanış mutabakatını detaylandırma.",
+  },
+  {
+    priority: "P0",
+    title: "Parti bazlı gelişmiş stok kullanılabilirlik kontrolü",
+    description: "YM/MM için parti zorunluluğunu tüm formlarda daha sert hale getirme, stok seçiminde yalnızca bakiyesi olan depo/parti kombinasyonlarını gösterme.",
+  },
+  {
+    priority: "P1",
+    title: "Alış, üretim, transfer ve satış kayıtlarında düzenleme/iptal ekranlarının derinleştirilmesi",
+    description: "Bugün iptal ters hareketle güvenli çalışıyor; düzenleme tarafında audit, revizyon geçmişi ve kullanıcı açıklaması eklenmeli.",
+  },
+  {
+    priority: "P1",
+    title: "Gelişmiş rapor ve pivot ekranları",
+    description: "Stok, parti, fasoncu, boyahane, satış ve satın alma listelerine grup bazlı toplamlar, dönem filtreleri ve kaydedilebilir rapor görünümleri eklenmeli.",
+  },
+  {
+    priority: "P1",
+    title: "Supabase Auth girişinin üretim seviyesine taşınması",
+    description: "Kullanıcı daveti, rol atama, RLS politikaları ve ekran bazlı yetki görünürlüğü tamamlanmalı.",
+  },
+  {
+    priority: "P2",
+    title: "Dosya, fotoğraf ve doküman yükleme",
+    description: "Supabase Storage ile sipariş, parti, stok kartı ve sevkiyat belgeleri bağlanmalı.",
+  },
+  {
+    priority: "P2",
+    title: "Bildirimler ve işlem merkezi",
+    description: "Kritik stok, geciken sipariş, termin yaklaşan satın alma ve yüksek fire için kullanıcı bildirimleri eklenmeli.",
+  },
+  {
+    priority: "P2",
+    title: "Mobil form deneyimini stepper yapıya taşıma",
+    description: "Sipariş, transfer, ham üretim, boyahane ve alış formları mobilde adım adım girişe dönüştürülmeli.",
+  },
+];
+
+export function RoadmapPage() {
+  const completion = 72;
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Ayarlar"
+        title="Gelişim Günlüğü ve Yol Haritası"
+        description="Projede yapılan geliştirmeler gün bazında izlenir; bekleyen işler önem sırasına göre takip edilir."
+        icon={BookOpen}
+      />
+
+      <div className="grid gap-4 md:grid-cols-4">
+        <StatCard title="Proje ilerleme" value={`%${completion}`} helper="Müşteri demosu için güçlü MVP seviyesinde" icon={CheckCircle2} tone="green" />
+        <StatCard title="Tamamlanan başlık" value={String(completedMilestones.length)} helper="Ana ERP modülleri ve altyapı" icon={BookOpen} />
+        <StatCard title="Bekleyen öncelik" value={String(pendingRoadmap.length)} helper="Üretimleşme ve derinleşme işleri" icon={SlidersHorizontal} tone="amber" />
+        <StatCard title="Son güncelleme" value="03.05.2026" helper="Gün bazında takip edilir" icon={Settings} tone="blue" />
+      </div>
+
+      <div className="premium-card rounded-2xl p-5">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="font-semibold text-slate-950">Tamamlanma özeti</h2>
+            <p className="mt-1 text-sm text-slate-500">MVP müşteriye gösterilebilir seviyede; derin üretim reçetesi, yetki/RLS ve dosya yönetimi sıradaki ana işler.</p>
+          </div>
+          <StatusBadge tone="green">{`%${completion}`}</StatusBadge>
+        </div>
+        <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
+          <div className="h-full rounded-full bg-blue-600" style={{ width: `${completion}%` }} />
+        </div>
+        <div className="mt-4 grid gap-2 md:grid-cols-2">
+          {completedMilestones.map((item) => (
+            <div key={item} className="flex items-center gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              <CheckCircle2 className="size-4 text-green-600" />
+              {item}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="premium-card rounded-2xl p-5">
+        <h2 className="font-semibold text-slate-950">Tarih ağacı</h2>
+        <p className="mt-1 text-sm text-slate-500">Ana tarih yanında günün en büyük değişikliği koyu başlık olarak görünür; altındaki ince satırlar o günün diğer kayıtlarıdır.</p>
+        <div className="mt-6 space-y-8">
+          {developmentTimeline.map((entry, index) => (
+            <div key={entry.date} className="grid gap-4 md:grid-cols-[160px_1fr]">
+              <div className="flex md:justify-end">
+                <div className="rounded-2xl bg-blue-50 px-4 py-3 text-sm font-bold text-blue-700">{formatDate(entry.date)}</div>
+              </div>
+              <div className="relative border-l-2 border-blue-100 pl-6">
+                <div className="absolute -left-[9px] top-2 size-4 rounded-full border-4 border-white bg-blue-600 shadow" />
+                <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                  <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-950">{entry.title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-slate-500">{entry.summary}</p>
+                    </div>
+                    <StatusBadge tone={index === developmentTimeline.length - 1 ? "green" : "blue"}>{entry.items.length} geliştirme</StatusBadge>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    {entry.items.map((item) => (
+                      <div key={item} className="rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">{item}</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="premium-card rounded-2xl p-5">
+        <h2 className="font-semibold text-slate-950">Bekleyen geliştirmeler</h2>
+        <p className="mt-1 text-sm text-slate-500">Tarihe bağlı değil; önem sırasına göre ele alınacak işler. Yeni geliştirme tamamlandığında bu sayfada ilgili madde işaretlenir.</p>
+        <div className="mt-5 space-y-3">
+          {pendingRoadmap.map((item) => (
+            <div key={item.title} className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm md:flex-row md:items-start">
+              <StatusBadge tone={item.priority === "P0" ? "red" : item.priority === "P1" ? "amber" : "blue"}>{item.priority}</StatusBadge>
+              <div>
+                <h3 className="font-semibold text-slate-950">{item.title}</h3>
+                <p className="mt-1 text-sm leading-6 text-slate-500">{item.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function SettingsGuidePage({ section }: { section?: "fabric-types" | "colors" | "yarn-counts" | "process-types" | "warehouses" }) {
   const { data, refresh, mutateData } = useErpData();
