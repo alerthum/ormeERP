@@ -16,12 +16,14 @@ interface ErpDataContextValue {
   data: ErpData;
   loading: boolean;
   refresh: () => Promise<void>;
+  mutateData: (updater: (current: ErpData) => ErpData) => void;
 }
 
 const ErpDataContext = createContext<ErpDataContextValue>({
   data: emptyErpData,
   loading: true,
   refresh: async () => undefined,
+  mutateData: () => undefined,
 });
 
 const realtimeTables = [
@@ -60,6 +62,10 @@ export function ErpDataProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   }, []);
 
+  const mutateData = useCallback((updater: (current: ErpData) => ErpData) => {
+    setData((current) => updater(current));
+  }, []);
+
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       refresh().catch((error: unknown) => {
@@ -89,7 +95,7 @@ export function ErpDataProvider({ children }: { children: React.ReactNode }) {
     };
   }, [refresh]);
 
-  const value = useMemo(() => ({ data, loading, refresh }), [data, loading, refresh]);
+  const value = useMemo(() => ({ data, loading, refresh, mutateData }), [data, loading, refresh, mutateData]);
 
   return <ErpDataContext.Provider value={value}>{children}</ErpDataContext.Provider>;
 }

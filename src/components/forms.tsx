@@ -6,7 +6,7 @@ import { useErpData } from "@/components/erp-data-provider";
 import { calculateDyehouseWaste, calculateRawWaste } from "@/services/erp-service";
 import { formatKg, formatPercent } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
-import type { Order, PurchaseOrder, StockCard } from "@/types/erp";
+import type { ErpData, NamedEntity, Order, Partner, PurchaseOrder, StockCard, Warehouse } from "@/types/erp";
 
 const inputClass = "w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50";
 const labelClass = "text-xs font-bold uppercase tracking-[0.14em] text-slate-400";
@@ -25,6 +25,58 @@ function requestSignal(ms = 8000) {
 
 function refreshInBackground(refresh: () => Promise<void>) {
   void refresh().catch(() => undefined);
+}
+
+type SettingEntity = "fabricTypes" | "colors" | "yarnCounts" | "processTypes" | "warehouses" | "partners";
+
+interface SettingResult {
+  id: string;
+  name: string;
+  kind?: Warehouse["kind"];
+  type?: Partner["type"];
+}
+
+function isSettingResult(value: unknown): value is SettingResult {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      "id" in value &&
+      "name" in value &&
+      typeof value.id === "string" &&
+      typeof value.name === "string",
+  );
+}
+
+function upsertById<T extends { id: string }>(items: T[], item: T) {
+  return items.some((current) => current.id === item.id)
+    ? items.map((current) => (current.id === item.id ? item : current))
+    : [...items, item];
+}
+
+function applySettingResult(current: ErpData, entity: SettingEntity, value: unknown): ErpData {
+  if (!isSettingResult(value)) return current;
+  const base: NamedEntity = { id: value.id, name: value.name, isActive: true };
+
+  switch (entity) {
+    case "fabricTypes":
+      return { ...current, fabricTypes: upsertById(current.fabricTypes, base) };
+    case "colors":
+      return { ...current, colors: upsertById(current.colors, base) };
+    case "yarnCounts":
+      return { ...current, yarnCounts: upsertById(current.yarnCounts, base) };
+    case "processTypes":
+      return { ...current, processTypes: upsertById(current.processTypes, base) };
+    case "warehouses":
+      return {
+        ...current,
+        warehouses: upsertById(current.warehouses, { ...base, kind: value.kind ?? "RAW" }),
+      };
+    case "partners":
+      return {
+        ...current,
+        partners: upsertById(current.partners, { ...base, type: value.type ?? "SUPPLIER", riskScore: 0 }),
+      };
+  }
 }
 
 async function postJson(endpoint: string, payload: Record<string, unknown>) {
@@ -72,20 +124,21 @@ function FormButton({ loading, children }: { loading: boolean; children: React.R
   );
 }
 
-export function SettingForm({ entity, extra }: { entity: "fabricTypes" | "colors" | "yarnCounts" | "processTypes" | "warehouses" | "partners"; extra?: "warehouse" | "partner" }) {
-  const { refresh } = useErpData();
+export function SettingForm({ entity, extra }: { entity: SettingEntity; extra?: "warehouse" | "partner" }) {
+  const { refresh, mutateData } = useErpData();
   const [loading, setLoading] = useState(false);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     const form = new FormData(event.currentTarget);
     try {
-      await postJson(`/api/settings/${entity}`, {
+      const saved = await postJson(`/api/settings/${entity}`, {
         name: String(form.get("name") ?? ""),
         kind: form.get("kind"),
         type: form.get("type"),
       });
       event.currentTarget.reset();
+      mutateData((current) => applySettingResult(current, entity, saved));
       refreshInBackground(refresh);
       toast.success("Tanım kaydedildi.");
     } catch (error) {
