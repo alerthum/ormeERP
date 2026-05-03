@@ -31,7 +31,7 @@ function optionalString(value: unknown) {
 
 function numberValue(value: unknown, field: string) {
   const parsed = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(parsed)) throw new Error(`${field} sayısal olmalı.`);
+  if (!Number.isFinite(parsed)) throw new Error(`${field} sayÄ±sal olmalÄ±.`);
   return parsed;
 }
 
@@ -131,7 +131,7 @@ async function findOrCreateFabricStock(
   const name =
     type === "YM"
       ? `${fabricName} Ham ${yarnName} ${colorName} ${input.rawWidth}cm ${input.rawGsm}gsm`
-      : `${fabricName} Mamül ${yarnName} ${colorName} ${input.finishWidth}cm ${input.finishGsm}gsm`;
+      : `${fabricName} MamÃ¼l ${yarnName} ${colorName} ${input.finishWidth}cm ${input.finishGsm}gsm`;
 
   await tx`
     insert into stock_cards (
@@ -255,7 +255,7 @@ export async function deleteSetting(entity: SettingEntity, recordId: string) {
   const table = tableMap[entity];
   const usageCount = await getSettingUsageCount(entity, recordId);
   if (usageCount > 0) {
-    throw new Error(`Bu tanım ${usageCount} kayıt tarafından kullanılıyor. Önce bağlı hareketleri/siparişleri düzenleyin.`);
+    throw new Error(`Bu tanÄ±m ${usageCount} kayÄ±t tarafÄ±ndan kullanÄ±lÄ±yor. Ã–nce baÄŸlÄ± hareketleri/sipariÅŸleri dÃ¼zenleyin.`);
   }
   await sql`delete from ${sql(table)} where id = ${recordId}`;
   return { id: recordId };
@@ -329,7 +329,7 @@ export async function createRole(payload: Record<string, unknown>) {
   const permissions = Array.isArray(payload.permissions) ? payload.permissions.map(String) : [];
   await sql`
     insert into roles (id, name, description, permissions, is_active, created_at, updated_at)
-    values (${recordId}, ${requireString(payload.name, "Rol adı")}, ${optionalString(payload.description) ?? ""}, ${JSON.stringify(permissions)}, true, now(), now())
+    values (${recordId}, ${requireString(payload.name, "Rol adÄ±")}, ${optionalString(payload.description) ?? ""}, ${JSON.stringify(permissions)}, true, now(), now())
   `;
   return { id: recordId };
 }
@@ -338,7 +338,7 @@ export async function updateRole(recordId: string, payload: Record<string, unkno
   const permissions = Array.isArray(payload.permissions) ? payload.permissions.map(String) : [];
   await sql`
     update roles
-    set name = ${requireString(payload.name, "Rol adı")},
+    set name = ${requireString(payload.name, "Rol adÄ±")},
         description = ${optionalString(payload.description) ?? ""},
         permissions = ${JSON.stringify(permissions)},
         is_active = ${payload.isActive === undefined ? true : boolValue(payload.isActive)},
@@ -369,7 +369,7 @@ export async function deactivateUserProfile(recordId: string) {
 
 export async function createStockCard(payload: Record<string, unknown>) {
   const type = requireString(payload.type, "Stok tipi") as StockType;
-  if (!["YM", "MM", "IP", "LYC", "POLY"].includes(type)) throw new Error("Geçersiz stok tipi.");
+  if (!["YM", "MM", "IP", "LYC", "POLY"].includes(type)) throw new Error("GeÃ§ersiz stok tipi.");
 
   return sql.begin(async (tx) => {
     const code = typeof payload.code === "string" && payload.code.trim() ? payload.code.trim() : await nextCode(tx, type);
@@ -381,7 +381,7 @@ export async function createStockCard(payload: Record<string, unknown>) {
         created_at, updated_at, is_active
       )
       values (
-        ${recordId}, ${code}, ${type}, ${requireString(payload.name, "Stok adı")},
+        ${recordId}, ${code}, ${type}, ${requireString(payload.name, "Stok adÄ±")},
         ${optionalString(payload.fabricTypeId)}, ${optionalString(payload.colorId)}, ${optionalString(payload.yarnCountId)},
         ${boolValue(payload.hasPolyester)}, ${boolValue(payload.hasLycra)},
         ${payload.rawWidth ? numberValue(payload.rawWidth, "Ham en") : null},
@@ -398,11 +398,11 @@ export async function createStockCard(payload: Record<string, unknown>) {
 
 export async function updateStockCard(recordId: string, payload: Record<string, unknown>) {
   const type = requireString(payload.type, "Stok tipi") as StockType;
-  if (!["YM", "MM", "IP", "LYC", "POLY"].includes(type)) throw new Error("Geçersiz stok tipi.");
+  if (!["YM", "MM", "IP", "LYC", "POLY"].includes(type)) throw new Error("GeÃ§ersiz stok tipi.");
   await sql`
     update stock_cards
     set type = ${type},
-        name = ${requireString(payload.name, "Stok adı")},
+        name = ${requireString(payload.name, "Stok adÄ±")},
         fabric_type_id = ${optionalString(payload.fabricTypeId)},
         color_id = ${optionalString(payload.colorId)},
         yarn_count_id = ${optionalString(payload.yarnCountId)},
@@ -422,7 +422,7 @@ export async function updateStockCard(recordId: string, payload: Record<string, 
 export async function createCustomerOrder(payload: Record<string, unknown>) {
   return sql.begin(async (tx) => {
     const orderInput = {
-      fabricTypeId: requireString(payload.fabricTypeId, "Kumaş cinsi"),
+      fabricTypeId: requireString(payload.fabricTypeId, "KumaÅŸ cinsi"),
       colorId: requireString(payload.colorId, "Renk"),
       yarnCountId: requireString(payload.yarnCountId, "Ne"),
       hasPolyester: boolValue(payload.hasPolyester),
@@ -443,12 +443,12 @@ export async function createCustomerOrder(payload: Record<string, unknown>) {
         ym_stock_id, mm_stock_id, status, process_type_ids, description, created_at, updated_at
       )
       values (
-        ${recordId}, ${orderNo}, ${requireString(payload.customerName, "Müşteri")},
-        ${requireString(payload.orderDate ?? new Date().toISOString().slice(0, 10), "Sipariş tarihi")},
+        ${recordId}, ${orderNo}, ${requireString(payload.customerName, "MÃ¼ÅŸteri")},
+        ${requireString(payload.orderDate ?? new Date().toISOString().slice(0, 10), "SipariÅŸ tarihi")},
         ${requireString(payload.dueDate, "Termin tarihi")},
         ${orderInput.fabricTypeId}, ${orderInput.colorId}, ${orderInput.yarnCountId},
         ${orderInput.hasPolyester}, ${orderInput.hasLycra}, ${orderInput.rawWidth}, ${orderInput.rawGsm},
-        ${orderInput.finishWidth}, ${orderInput.finishGsm}, ${numberValue(payload.quantityKg, "Sipariş kg")},
+        ${orderInput.finishWidth}, ${orderInput.finishGsm}, ${numberValue(payload.quantityKg, "SipariÅŸ kg")},
         ${ymStockId}, ${mmStockId}, 'Taslak', ${JSON.stringify(payload.processTypeIds ?? [])},
         ${optionalString(payload.description) ?? ""}, now(), now()
       )
@@ -460,10 +460,10 @@ export async function createCustomerOrder(payload: Record<string, unknown>) {
 export async function updateCustomerOrder(recordId: string, payload: Record<string, unknown>) {
   await sql`
     update orders
-    set customer_name = ${requireString(payload.customerName, "Müşteri")},
-        order_date = ${requireString(payload.orderDate, "Sipariş tarihi")},
+    set customer_name = ${requireString(payload.customerName, "MÃ¼ÅŸteri")},
+        order_date = ${requireString(payload.orderDate, "SipariÅŸ tarihi")},
         due_date = ${requireString(payload.dueDate, "Termin tarihi")},
-        quantity_kg = ${numberValue(payload.quantityKg, "Sipariş kg")},
+        quantity_kg = ${numberValue(payload.quantityKg, "SipariÅŸ kg")},
         status = ${requireString(payload.status ?? "Taslak", "Durum")},
         description = ${optionalString(payload.description) ?? ""},
         updated_at = now()
@@ -475,17 +475,17 @@ export async function updateCustomerOrder(recordId: string, payload: Record<stri
 export async function createPurchaseOrder(payload: Record<string, unknown>) {
   return sql.begin(async (tx) => {
     const item = payload.item as Record<string, unknown> | undefined;
-    if (!item) throw new Error("Satıcı sipariş kalemi zorunlu.");
+    if (!item) throw new Error("SatÄ±cÄ± sipariÅŸ kalemi zorunlu.");
     const stockType = requireString(item.stockType, "Hammadde tipi") as StockType;
-    if (!["IP", "LYC", "POLY"].includes(stockType)) throw new Error("Satıcı siparişi yalnızca IP, LYC veya POLY için açılır.");
-    const orderedKg = numberValue(item.orderedKg, "Sipariş kg");
+    if (!["IP", "LYC", "POLY"].includes(stockType)) throw new Error("SatÄ±cÄ± sipariÅŸi yalnÄ±zca IP, LYC veya POLY iÃ§in aÃ§Ä±lÄ±r.");
+    const orderedKg = numberValue(item.orderedKg, "SipariÅŸ kg");
     const recordId = id("po");
     const purchaseOrderNo = await nextBusinessNo(tx, "purchaseOrder");
     const poItem = {
       id: id("poi"),
-      stockId: requireString(item.stockId, "Stok kartı"),
+      stockId: requireString(item.stockId, "Stok kartÄ±"),
       stockCode: requireString(item.stockCode, "Stok kodu"),
-      stockName: requireString(item.stockName, "Stok adı"),
+      stockName: requireString(item.stockName, "Stok adÄ±"),
       stockType,
       yarnCountId: optionalString(item.yarnCountId),
       colorId: optionalString(item.colorId),
@@ -502,8 +502,8 @@ export async function createPurchaseOrder(payload: Record<string, unknown>) {
         total_ordered_kg, total_received_kg, total_remaining_kg, description, created_at, updated_at
       )
       values (
-        ${recordId}, ${purchaseOrderNo}, ${requireString(payload.supplierId, "Satıcı")},
-        ${requireString(payload.orderDate ?? new Date().toISOString().slice(0, 10), "Sipariş tarihi")},
+        ${recordId}, ${purchaseOrderNo}, ${requireString(payload.supplierId, "SatÄ±cÄ±")},
+        ${requireString(payload.orderDate ?? new Date().toISOString().slice(0, 10), "SipariÅŸ tarihi")},
         ${requireString(payload.dueDate, "Termin tarihi")}, 'Taslak', ${JSON.stringify([poItem])},
         ${orderedKg}, 0, ${orderedKg}, ${optionalString(payload.description) ?? ""}, now(), now()
       )
@@ -514,19 +514,19 @@ export async function createPurchaseOrder(payload: Record<string, unknown>) {
 
 export async function updatePurchaseOrder(recordId: string, payload: Record<string, unknown>) {
   const rows = await sql`select items, total_received_kg from purchase_orders where id = ${recordId} limit 1`;
-  if (!rows[0]) throw new Error("Satıcı siparişi bulunamadı.");
+  if (!rows[0]) throw new Error("SatÄ±cÄ± sipariÅŸi bulunamadÄ±.");
   const items = (rows[0].items as Array<Record<string, unknown>>) ?? [];
   const firstItem = items[0];
-  if (!firstItem) throw new Error("Satıcı sipariş kalemi bulunamadı.");
-  const orderedKg = numberValue(payload.orderedKg, "Sipariş kg");
+  if (!firstItem) throw new Error("SatÄ±cÄ± sipariÅŸ kalemi bulunamadÄ±.");
+  const orderedKg = numberValue(payload.orderedKg, "SipariÅŸ kg");
   const receivedKg = Number(firstItem.receivedKg ?? 0);
   const nextItems = [{ ...firstItem, orderedKg, remainingKg: Math.max(orderedKg - receivedKg, 0), unitPrice: payload.unitPrice ? numberValue(payload.unitPrice, "Birim fiyat") : null, currency: optionalString(payload.currency) ?? "TRY" }];
   const totalReceived = Number(rows[0].total_received_kg ?? 0);
   const totalRemaining = Math.max(orderedKg - totalReceived, 0);
   await sql`
     update purchase_orders
-    set supplier_id = ${requireString(payload.supplierId, "Satıcı")},
-        order_date = ${requireString(payload.orderDate, "Sipariş tarihi")},
+    set supplier_id = ${requireString(payload.supplierId, "SatÄ±cÄ±")},
+        order_date = ${requireString(payload.orderDate, "SipariÅŸ tarihi")},
         due_date = ${requireString(payload.dueDate, "Termin tarihi")},
         status = ${requireString(payload.status ?? "Taslak", "Durum")},
         items = ${JSON.stringify(nextItems)},
@@ -541,15 +541,15 @@ export async function updatePurchaseOrder(recordId: string, payload: Record<stri
 
 export async function createPurchaseReceipt(payload: Record<string, unknown>) {
   return sql.begin(async (tx) => {
-    const purchaseOrderId = requireString(payload.purchaseOrderId, "Satıcı siparişi");
-    const itemId = requireString(payload.purchaseOrderItemId, "Sipariş kalemi");
+    const purchaseOrderId = requireString(payload.purchaseOrderId, "SatÄ±cÄ± sipariÅŸi");
+    const itemId = requireString(payload.purchaseOrderItemId, "SipariÅŸ kalemi");
     const stockId = requireString(payload.stockId, "Stok");
     const receivedKg = numberValue(payload.receivedKg, "Gelen kg");
     const warehouseId = requireString(payload.warehouseId, "Depo");
     const receiptId = id("receipt");
     const receiptNo = await nextBusinessNo(tx, "receipt");
     const orders = await tx`select items, supplier_id, total_received_kg, total_ordered_kg from purchase_orders where id = ${purchaseOrderId} limit 1`;
-    if (!orders[0]) throw new Error("Satıcı siparişi bulunamadı.");
+    if (!orders[0]) throw new Error("SatÄ±cÄ± sipariÅŸi bulunamadÄ±.");
     const items = orders[0].items as Array<Record<string, unknown>>;
     const nextItems = items.map((item) => {
       if (item.id !== itemId) return item;
@@ -560,7 +560,7 @@ export async function createPurchaseReceipt(payload: Record<string, unknown>) {
     const totalReceived = Number(orders[0].total_received_kg ?? 0) + receivedKg;
     const totalOrdered = Number(orders[0].total_ordered_kg ?? 0);
     const remaining = Math.max(totalOrdered - totalReceived, 0);
-    const status = remaining === 0 ? "Tamamlandı" : "Kısmi Geldi";
+    const status = remaining === 0 ? "TamamlandÄ±" : "KÄ±smi Geldi";
     await tx`
       insert into purchase_receipts (id, purchase_order_id, receipt_no, receipt_date, warehouse_id, supplier_id, items, description, created_at, created_by)
       values (
@@ -578,10 +578,10 @@ export async function createPurchaseReceipt(payload: Record<string, unknown>) {
       date: requireString(payload.receiptDate ?? new Date().toISOString().slice(0, 10), "Mal kabul tarihi"),
       stockId,
       warehouseId,
-      movementType: "Giriş",
+      movementType: "GiriÅŸ",
       direction: "IN",
       quantity: receivedKg,
-      description: "Satıcı siparişi mal kabul",
+      description: "SatÄ±cÄ± sipariÅŸi mal kabul",
       referenceType: "purchase_receipt",
       referenceId: receiptId,
     });
@@ -591,7 +591,7 @@ export async function createPurchaseReceipt(payload: Record<string, unknown>) {
 
 export async function createDirectRawMaterialPurchase(payload: Record<string, unknown>) {
   return sql.begin(async (tx) => {
-    const stockId = requireString(payload.stockId, "Hammadde stok kartı");
+    const stockId = requireString(payload.stockId, "Hammadde stok kartÄ±");
     const stockRows = await tx`
       select id, code, name, type, yarn_count_id, color_id
       from stock_cards
@@ -599,14 +599,14 @@ export async function createDirectRawMaterialPurchase(payload: Record<string, un
       limit 1
     `;
     const stock = stockRows[0];
-    if (!stock) throw new Error("Hammadde stok kartı bulunamadı.");
+    if (!stock) throw new Error("Hammadde stok kartÄ± bulunamadÄ±.");
     const stockType = String(stock.type) as StockType;
-    if (!["IP", "LYC", "POLY"].includes(stockType)) throw new Error("Doğrudan alış yalnızca IP, LYC veya POLY stokları için yapılır.");
+    if (!["IP", "LYC", "POLY"].includes(stockType)) throw new Error("DoÄŸrudan alÄ±ÅŸ yalnÄ±zca IP, LYC veya POLY stoklarÄ± iÃ§in yapÄ±lÄ±r.");
 
     const quantityKg = numberValue(payload.quantityKg, "Gelen kg");
-    const supplierId = requireString(payload.supplierId, "Satıcı");
+    const supplierId = requireString(payload.supplierId, "SatÄ±cÄ±");
     const warehouseId = requireString(payload.warehouseId, "Depo");
-    const date = requireString(payload.receiptDate ?? new Date().toISOString().slice(0, 10), "Alış tarihi");
+    const date = requireString(payload.receiptDate ?? new Date().toISOString().slice(0, 10), "AlÄ±ÅŸ tarihi");
     const purchaseOrderId = id("po");
     const purchaseOrderNo = await nextBusinessNo(tx, "purchaseOrder");
     const receiptId = id("receipt");
@@ -625,7 +625,7 @@ export async function createDirectRawMaterialPurchase(payload: Record<string, un
       remainingKg: 0,
       unitPrice: payload.unitPrice ? numberValue(payload.unitPrice, "Birim fiyat") : null,
       currency: optionalString(payload.currency) ?? "TRY",
-      description: optionalString(payload.description) ?? "Siparişsiz hızlı hammadde alışı",
+      description: optionalString(payload.description) ?? "SipariÅŸsiz hÄ±zlÄ± hammadde alÄ±ÅŸÄ±",
     };
 
     await tx`
@@ -634,9 +634,9 @@ export async function createDirectRawMaterialPurchase(payload: Record<string, un
         total_ordered_kg, total_received_kg, total_remaining_kg, description, created_at, updated_at
       )
       values (
-        ${purchaseOrderId}, ${purchaseOrderNo}, ${supplierId}, ${date}, ${date}, 'Tamamlandı',
+        ${purchaseOrderId}, ${purchaseOrderNo}, ${supplierId}, ${date}, ${date}, 'TamamlandÄ±',
         ${JSON.stringify([item])}, ${quantityKg}, ${quantityKg}, 0,
-        ${optionalString(payload.description) ?? "Siparişsiz hızlı hammadde alışı"}, now(), now()
+        ${optionalString(payload.description) ?? "SipariÅŸsiz hÄ±zlÄ± hammadde alÄ±ÅŸÄ±"}, now(), now()
       )
     `;
     await tx`
@@ -644,17 +644,17 @@ export async function createDirectRawMaterialPurchase(payload: Record<string, un
       values (
         ${receiptId}, ${purchaseOrderId}, ${receiptNo}, ${date}, ${warehouseId}, ${supplierId},
         ${JSON.stringify([{ purchaseOrderItemId, stockId, receivedKg: quantityKg, lotNo: optionalString(payload.lotNo), description: optionalString(payload.description) }])},
-        ${optionalString(payload.description) ?? "Siparişsiz hızlı hammadde alışı"}, now(), 'system'
+        ${optionalString(payload.description) ?? "SipariÅŸsiz hÄ±zlÄ± hammadde alÄ±ÅŸÄ±"}, now(), 'system'
       )
     `;
     await addMovement(tx, {
       date,
       stockId,
       warehouseId,
-      movementType: "Giriş",
+      movementType: "GiriÅŸ",
       direction: "IN",
       quantity: quantityKg,
-      description: "Siparişsiz hammadde alışı",
+      description: "SipariÅŸsiz hammadde alÄ±ÅŸÄ±",
       referenceType: "direct_purchase_receipt",
       referenceId: receiptId,
     });
@@ -678,8 +678,8 @@ export async function createTransfer(payload: Record<string, unknown>) {
       const stockId = requireString(item.stockId, "Stok");
       const partyId = optionalString(item.partyId);
       const quantity = numberValue(item.quantity, "Miktar");
-      await addMovement(tx, { date, stockId, warehouseId: fromWarehouseId, partyId, movementType: "Transfer", direction: "OUT", quantity, description: "Depolar arası transfer çıkışı", referenceType: "transfer", referenceId: transferId });
-      await addMovement(tx, { date, stockId, warehouseId: toWarehouseId, partyId, movementType: "Transfer", direction: "IN", quantity, description: "Depolar arası transfer girişi", referenceType: "transfer", referenceId: transferId });
+      await addMovement(tx, { date, stockId, warehouseId: fromWarehouseId, partyId, movementType: "Transfer", direction: "OUT", quantity, description: "Depolar arasÄ± transfer Ã§Ä±kÄ±ÅŸÄ±", referenceType: "transfer", referenceId: transferId });
+      await addMovement(tx, { date, stockId, warehouseId: toWarehouseId, partyId, movementType: "Transfer", direction: "IN", quantity, description: "Depolar arasÄ± transfer giriÅŸi", referenceType: "transfer", referenceId: transferId });
     }
     return { id: transferId };
   });
@@ -688,7 +688,7 @@ export async function createTransfer(payload: Record<string, unknown>) {
 export async function cancelTransfer(recordId: string) {
   return sql.begin(async (tx) => {
     const existingCancel = await tx`select id from stock_movements where reference_type = 'transfer_cancel' and reference_id = ${recordId} limit 1`;
-    if (existingCancel[0]) return { id: recordId, status: "İptal" };
+    if (existingCancel[0]) return { id: recordId, status: "Ä°ptal" };
 
     const rows = await tx`
       select id, date, from_warehouse_id, to_warehouse_id, items, description
@@ -697,7 +697,7 @@ export async function cancelTransfer(recordId: string) {
       limit 1
     `;
     const transfer = rows[0];
-    if (!transfer) throw new Error("Transfer kaydı bulunamadı.");
+    if (!transfer) throw new Error("Transfer kaydÄ± bulunamadÄ±.");
 
     const cancelDate = new Date().toISOString().slice(0, 10);
     const items = (Array.isArray(transfer.items) ? transfer.items : []) as Array<Record<string, unknown>>;
@@ -710,10 +710,10 @@ export async function cancelTransfer(recordId: string) {
         stockId,
         warehouseId: String(transfer.to_warehouse_id),
         partyId,
-        movementType: "Düzeltme",
+        movementType: "DÃ¼zeltme",
         direction: "OUT",
         quantity,
-        description: "Transfer iptal çıkışı",
+        description: "Transfer iptal Ã§Ä±kÄ±ÅŸÄ±",
         referenceType: "transfer_cancel",
         referenceId: recordId,
       });
@@ -722,7 +722,7 @@ export async function cancelTransfer(recordId: string) {
         stockId,
         warehouseId: String(transfer.from_warehouse_id),
         partyId,
-        movementType: "Düzeltme",
+        movementType: "DÃ¼zeltme",
         direction: "IN",
         quantity,
         description: "Transfer iptal iadesi",
@@ -733,20 +733,20 @@ export async function cancelTransfer(recordId: string) {
 
     await tx`
       update transfers
-      set description = trim(concat(coalesce(description, ''), ' [İPTAL: ', ${cancelDate}, ']'))
+      set description = trim(concat(coalesce(description, ''), ' [Ä°PTAL: ', ${cancelDate}, ']'))
       where id = ${recordId}
     `;
-    return { id: recordId, status: "İptal" };
+    return { id: recordId, status: "Ä°ptal" };
   });
 }
 
 export async function createRawProduction(payload: Record<string, unknown>) {
   return sql.begin(async (tx) => {
     const productionId = id("raw");
-    const date = requireString(payload.date ?? new Date().toISOString().slice(0, 10), "Üretim tarihi");
-    const orderId = requireString(payload.orderId, "Sipariş");
+    const date = requireString(payload.date ?? new Date().toISOString().slice(0, 10), "Ãœretim tarihi");
+    const orderId = requireString(payload.orderId, "SipariÅŸ");
     const orderRows = await tx`select ym_stock_id, mm_stock_id from orders where id = ${orderId} limit 1`;
-    if (!orderRows[0]) throw new Error("Sipariş bulunamadı.");
+    if (!orderRows[0]) throw new Error("SipariÅŸ bulunamadÄ±.");
     const partyId = optionalString(payload.partyId) ?? id("party");
     let partyNo = optionalString(payload.partyNo);
     if (!optionalString(payload.partyId)) {
@@ -755,15 +755,15 @@ export async function createRawProduction(payload: Record<string, unknown>) {
         insert into parties (id, party_no, order_id, ym_stock_id, mm_stock_id, status, current_warehouse_id, timeline, created_at, updated_at)
         values (
           ${partyId}, ${partyNo}, ${orderId}, ${String(orderRows[0].ym_stock_id)}, ${String(orderRows[0].mm_stock_id)},
-          'Örmede', ${requireString(payload.warehouseId, "Ham depo")},
-          ${JSON.stringify([{ date, title: "Parti oluşturuldu", description: "Ham üretim kaydı ile otomatik açıldı.", tone: "blue" }])},
+          'Ã–rmede', ${requireString(payload.warehouseId, "Ham depo")},
+          ${JSON.stringify([{ date, title: "Parti oluÅŸturuldu", description: "Ham Ã¼retim kaydÄ± ile otomatik aÃ§Ä±ldÄ±.", tone: "blue" }])},
           now(), now()
         )
       `;
     }
     const consumedItems = (payload.consumedItems as Array<Record<string, unknown>> | undefined) ?? [];
-    const consumedKg = consumedItems.reduce((sum, item) => sum + numberValue(item.quantityKg, "Tüketim kg"), 0);
-    const producedRawKg = numberValue(payload.producedRawKg, "Üretilen ham kg");
+    const consumedKg = consumedItems.reduce((sum, item) => sum + numberValue(item.quantityKg, "TÃ¼ketim kg"), 0);
+    const producedRawKg = numberValue(payload.producedRawKg, "Ãœretilen ham kg");
     const waste = calculateRawWaste(consumedKg, producedRawKg);
     await tx`
       insert into production_raw (
@@ -771,7 +771,7 @@ export async function createRawProduction(payload: Record<string, unknown>) {
         consumed_items, waste_kg, waste_percent, description, created_at
       )
       values (
-        ${productionId}, ${date}, ${orderId}, ${partyId}, ${requireString(payload.knitterPartnerId, "Fason örmeci")},
+        ${productionId}, ${date}, ${orderId}, ${partyId}, ${requireString(payload.knitterPartnerId, "Fason Ã¶rmeci")},
         ${requireString(payload.warehouseId, "Ham depo")}, ${String(orderRows[0].ym_stock_id)}, ${producedRawKg},
         ${JSON.stringify(consumedItems)}, ${waste.wasteKg}, ${waste.wastePercent}, ${optionalString(payload.description) ?? ""}, now()
       )
@@ -779,14 +779,14 @@ export async function createRawProduction(payload: Record<string, unknown>) {
     for (const item of consumedItems) {
       await addMovement(tx, {
         date,
-        stockId: requireString(item.stockId, "Tüketilen stok"),
-        warehouseId: requireString(item.warehouseId, "Tüketim deposu"),
+        stockId: requireString(item.stockId, "TÃ¼ketilen stok"),
+        warehouseId: requireString(item.warehouseId, "TÃ¼ketim deposu"),
         partyId,
         orderId,
-        movementType: "Üretim tüketim",
+        movementType: "Ãœretim tÃ¼ketim",
         direction: "OUT",
-        quantity: numberValue(item.quantityKg, "Tüketim kg"),
-        description: "Ham üretimde iplik tüketimi",
+        quantity: numberValue(item.quantityKg, "TÃ¼ketim kg"),
+        description: "Ham Ã¼retimde iplik tÃ¼ketimi",
         referenceType: "production_raw",
         referenceId: productionId,
       });
@@ -797,10 +797,10 @@ export async function createRawProduction(payload: Record<string, unknown>) {
       warehouseId: requireString(payload.warehouseId, "Ham depo"),
       partyId,
       orderId,
-      movementType: "Üretim giriş",
+      movementType: "Ãœretim giriÅŸ",
       direction: "IN",
       quantity: producedRawKg,
-      description: "Ham kumaş üretim girişi",
+      description: "Ham kumaÅŸ Ã¼retim giriÅŸi",
       referenceType: "production_raw",
       referenceId: productionId,
     });
@@ -822,7 +822,7 @@ export async function createRawProduction(payload: Record<string, unknown>) {
 export async function cancelRawProduction(recordId: string) {
   return sql.begin(async (tx) => {
     const existingCancel = await tx`select id from stock_movements where reference_type = 'production_raw_cancel' and reference_id = ${recordId} limit 1`;
-    if (existingCancel[0]) return { id: recordId, status: "İptal" };
+    if (existingCancel[0]) return { id: recordId, status: "Ä°ptal" };
 
     const rows = await tx`
       select id, date, order_id, party_id, warehouse_id, ym_stock_id, produced_raw_kg, consumed_items, waste_kg, description
@@ -831,7 +831,7 @@ export async function cancelRawProduction(recordId: string) {
       limit 1
     `;
     const production = rows[0];
-    if (!production) throw new Error("Ham üretim kaydı bulunamadı.");
+    if (!production) throw new Error("Ham Ã¼retim kaydÄ± bulunamadÄ±.");
 
     const cancelDate = new Date().toISOString().slice(0, 10);
     const orderId = String(production.order_id);
@@ -839,7 +839,7 @@ export async function cancelRawProduction(recordId: string) {
     const producedRawKg = Number(production.produced_raw_kg);
     const wasteKg = Number(production.waste_kg);
     const consumedItems = (Array.isArray(production.consumed_items) ? production.consumed_items : []) as Array<Record<string, unknown>>;
-    const consumedKg = consumedItems.reduce((sum, item) => sum + numberValue(item.quantityKg, "Tüketim kg"), 0);
+    const consumedKg = consumedItems.reduce((sum, item) => sum + numberValue(item.quantityKg, "TÃ¼ketim kg"), 0);
 
     await addMovement(tx, {
       date: cancelDate,
@@ -847,10 +847,10 @@ export async function cancelRawProduction(recordId: string) {
       warehouseId: String(production.warehouse_id),
       partyId,
       orderId,
-      movementType: "Düzeltme",
+      movementType: "DÃ¼zeltme",
       direction: "OUT",
       quantity: producedRawKg,
-      description: "Ham üretim iptal çıkışı",
+      description: "Ham Ã¼retim iptal Ã§Ä±kÄ±ÅŸÄ±",
       referenceType: "production_raw_cancel",
       referenceId: recordId,
     });
@@ -858,14 +858,14 @@ export async function cancelRawProduction(recordId: string) {
     for (const item of consumedItems) {
       await addMovement(tx, {
         date: cancelDate,
-        stockId: requireString(item.stockId, "Tüketilen stok"),
-        warehouseId: requireString(item.warehouseId, "Tüketim deposu"),
+        stockId: requireString(item.stockId, "TÃ¼ketilen stok"),
+        warehouseId: requireString(item.warehouseId, "TÃ¼ketim deposu"),
         partyId,
         orderId,
-        movementType: "Düzeltme",
+        movementType: "DÃ¼zeltme",
         direction: "IN",
-        quantity: numberValue(item.quantityKg, "Tüketim kg"),
-        description: "Ham üretim iptal iplik iadesi",
+        quantity: numberValue(item.quantityKg, "TÃ¼ketim kg"),
+        description: "Ham Ã¼retim iptal iplik iadesi",
         referenceType: "production_raw_cancel",
         referenceId: recordId,
       });
@@ -877,18 +877,18 @@ export async function cancelRawProduction(recordId: string) {
           raw_consumed_kg = greatest(raw_consumed_kg - ${consumedKg}, 0),
           raw_waste_kg = greatest(raw_waste_kg - ${wasteKg}, 0),
           raw_waste_percent = case when greatest(raw_consumed_kg - ${consumedKg}, 0) > 0 then (greatest(raw_waste_kg - ${wasteKg}, 0) / greatest(raw_consumed_kg - ${consumedKg}, 0)) * 100 else 0 end,
-          status = case when greatest(raw_produced_kg - ${producedRawKg}, 0) > 0 then status else 'Onaylandı' end,
-          timeline = timeline || ${JSON.stringify([{ date: cancelDate, title: "Ham üretim iptal", description: `${producedRawKg} kg ham üretim ters hareketle iptal edildi.`, tone: "red" }])}::jsonb,
+          status = case when greatest(raw_produced_kg - ${producedRawKg}, 0) > 0 then status else 'OnaylandÄ±' end,
+          timeline = timeline || ${JSON.stringify([{ date: cancelDate, title: "Ham Ã¼retim iptal", description: `${producedRawKg} kg ham Ã¼retim ters hareketle iptal edildi.`, tone: "red" }])}::jsonb,
           updated_at = now()
       where id = ${partyId}
     `;
-    await tx`update orders set status = 'Onaylandı', updated_at = now() where id = ${orderId}`;
+    await tx`update orders set status = 'OnaylandÄ±', updated_at = now() where id = ${orderId}`;
     await tx`
       update production_raw
-      set description = trim(concat(coalesce(description, ''), ' [İPTAL: ', ${cancelDate}, ']'))
+      set description = trim(concat(coalesce(description, ''), ' [Ä°PTAL: ', ${cancelDate}, ']'))
       where id = ${recordId}
     `;
-    return { id: recordId, status: "İptal" };
+    return { id: recordId, status: "Ä°ptal" };
   });
 }
 
@@ -898,9 +898,9 @@ export async function createDyehouseProduction(payload: Record<string, unknown>)
     const date = requireString(payload.date ?? new Date().toISOString().slice(0, 10), "Boyahane tarihi");
     const partyId = requireString(payload.partyId, "Parti");
     const partyRows = await tx`select order_id, ym_stock_id, mm_stock_id from parties where id = ${partyId} limit 1`;
-    if (!partyRows[0]) throw new Error("Parti bulunamadı.");
+    if (!partyRows[0]) throw new Error("Parti bulunamadÄ±.");
     const inputRawKg = numberValue(payload.inputRawKg, "Giden ham kg");
-    const finishedKg = numberValue(payload.finishedKg, "Dönen mamül kg");
+    const finishedKg = numberValue(payload.finishedKg, "DÃ¶nen mamÃ¼l kg");
     const waste = calculateDyehouseWaste(inputRawKg, finishedKg);
     await tx`
       insert into production_dyehouse (
@@ -910,25 +910,25 @@ export async function createDyehouseProduction(payload: Record<string, unknown>)
       )
       values (
         ${productionId}, ${date}, ${String(partyRows[0].order_id)}, ${partyId}, ${requireString(payload.dyehousePartnerId, "Boyahane")},
-        ${requireString(payload.inputWarehouseId, "Giriş deposu")}, ${requireString(payload.outputWarehouseId, "Çıkış deposu")},
+        ${requireString(payload.inputWarehouseId, "GiriÅŸ deposu")}, ${requireString(payload.outputWarehouseId, "Ã‡Ä±kÄ±ÅŸ deposu")},
         ${String(partyRows[0].ym_stock_id)}, ${String(partyRows[0].mm_stock_id)}, ${inputRawKg}, ${finishedKg}, ${waste.wasteKg}, ${waste.wastePercent},
         ${JSON.stringify(payload.processTypeIds ?? [])}, ${numberValue(payload.finishWidth, "Finish en")}, ${numberValue(payload.finishGsm, "Finish gramaj")},
         ${optionalString(payload.description) ?? ""}, now()
       )
     `;
-    await addMovement(tx, { date, stockId: String(partyRows[0].ym_stock_id), warehouseId: requireString(payload.inputWarehouseId, "Giriş deposu"), partyId, orderId: String(partyRows[0].order_id), movementType: "Üretim tüketim", direction: "OUT", quantity: inputRawKg, description: "Boyahanede ham kumaş tüketimi", referenceType: "production_dyehouse", referenceId: productionId });
-    await addMovement(tx, { date, stockId: String(partyRows[0].mm_stock_id), warehouseId: requireString(payload.outputWarehouseId, "Çıkış deposu"), partyId, orderId: String(partyRows[0].order_id), movementType: "Üretim giriş", direction: "IN", quantity: finishedKg, description: "Boyahaneden mamül kumaş girişi", referenceType: "production_dyehouse", referenceId: productionId });
+    await addMovement(tx, { date, stockId: String(partyRows[0].ym_stock_id), warehouseId: requireString(payload.inputWarehouseId, "GiriÅŸ deposu"), partyId, orderId: String(partyRows[0].order_id), movementType: "Ãœretim tÃ¼ketim", direction: "OUT", quantity: inputRawKg, description: "Boyahanede ham kumaÅŸ tÃ¼ketimi", referenceType: "production_dyehouse", referenceId: productionId });
+    await addMovement(tx, { date, stockId: String(partyRows[0].mm_stock_id), warehouseId: requireString(payload.outputWarehouseId, "Ã‡Ä±kÄ±ÅŸ deposu"), partyId, orderId: String(partyRows[0].order_id), movementType: "Ãœretim giriÅŸ", direction: "IN", quantity: finishedKg, description: "Boyahaneden mamÃ¼l kumaÅŸ giriÅŸi", referenceType: "production_dyehouse", referenceId: productionId });
     await tx`
       update parties
       set dyehouse_input_kg = dyehouse_input_kg + ${inputRawKg},
           finished_kg = finished_kg + ${finishedKg},
           dyehouse_waste_kg = dyehouse_waste_kg + ${waste.wasteKg},
           dyehouse_waste_percent = case when dyehouse_input_kg + ${inputRawKg} > 0 then ((dyehouse_waste_kg + ${waste.wasteKg}) / (dyehouse_input_kg + ${inputRawKg})) * 100 else 0 end,
-          status = 'Mamül Hazır',
+          status = 'MamÃ¼l HazÄ±r',
           updated_at = now()
       where id = ${partyId}
     `;
-    await tx`update orders set status = 'Mamül Hazır', updated_at = now() where id = ${String(partyRows[0].order_id)}`;
+    await tx`update orders set status = 'MamÃ¼l HazÄ±r', updated_at = now() where id = ${String(partyRows[0].order_id)}`;
     return { id: productionId, waste };
   });
 }
@@ -936,7 +936,7 @@ export async function createDyehouseProduction(payload: Record<string, unknown>)
 export async function cancelDyehouseProduction(recordId: string) {
   return sql.begin(async (tx) => {
     const existingCancel = await tx`select id from stock_movements where reference_type = 'production_dyehouse_cancel' and reference_id = ${recordId} limit 1`;
-    if (existingCancel[0]) return { id: recordId, status: "İptal" };
+    if (existingCancel[0]) return { id: recordId, status: "Ä°ptal" };
 
     const rows = await tx`
       select id, order_id, party_id, input_warehouse_id, output_warehouse_id, ym_stock_id, mm_stock_id, input_raw_kg, finished_kg, waste_kg, description
@@ -945,7 +945,7 @@ export async function cancelDyehouseProduction(recordId: string) {
       limit 1
     `;
     const production = rows[0];
-    if (!production) throw new Error("Boyahane üretim kaydı bulunamadı.");
+    if (!production) throw new Error("Boyahane Ã¼retim kaydÄ± bulunamadÄ±.");
 
     const cancelDate = new Date().toISOString().slice(0, 10);
     const orderId = String(production.order_id);
@@ -960,10 +960,10 @@ export async function cancelDyehouseProduction(recordId: string) {
       warehouseId: String(production.output_warehouse_id),
       partyId,
       orderId,
-      movementType: "Düzeltme",
+      movementType: "DÃ¼zeltme",
       direction: "OUT",
       quantity: finishedKg,
-      description: "Boyahane üretim iptal mamül çıkışı",
+      description: "Boyahane Ã¼retim iptal mamÃ¼l Ã§Ä±kÄ±ÅŸÄ±",
       referenceType: "production_dyehouse_cancel",
       referenceId: recordId,
     });
@@ -973,10 +973,10 @@ export async function cancelDyehouseProduction(recordId: string) {
       warehouseId: String(production.input_warehouse_id),
       partyId,
       orderId,
-      movementType: "Düzeltme",
+      movementType: "DÃ¼zeltme",
       direction: "IN",
       quantity: inputRawKg,
-      description: "Boyahane üretim iptal ham iadesi",
+      description: "Boyahane Ã¼retim iptal ham iadesi",
       referenceType: "production_dyehouse_cancel",
       referenceId: recordId,
     });
@@ -988,17 +988,17 @@ export async function cancelDyehouseProduction(recordId: string) {
           dyehouse_waste_kg = greatest(dyehouse_waste_kg - ${wasteKg}, 0),
           dyehouse_waste_percent = case when greatest(dyehouse_input_kg - ${inputRawKg}, 0) > 0 then (greatest(dyehouse_waste_kg - ${wasteKg}, 0) / greatest(dyehouse_input_kg - ${inputRawKg}, 0)) * 100 else 0 end,
           status = case when greatest(finished_kg - ${finishedKg}, 0) > 0 then status else 'Ham Geldi' end,
-          timeline = timeline || ${JSON.stringify([{ date: cancelDate, title: "Boyahane iptal", description: `${finishedKg} kg mamül girişi ters hareketle iptal edildi.`, tone: "red" }])}::jsonb,
+          timeline = timeline || ${JSON.stringify([{ date: cancelDate, title: "Boyahane iptal", description: `${finishedKg} kg mamÃ¼l giriÅŸi ters hareketle iptal edildi.`, tone: "red" }])}::jsonb,
           updated_at = now()
       where id = ${partyId}
     `;
     await tx`update orders set status = 'Ham Geldi', updated_at = now() where id = ${orderId}`;
     await tx`
       update production_dyehouse
-      set description = trim(concat(coalesce(description, ''), ' [İPTAL: ', ${cancelDate}, ']'))
+      set description = trim(concat(coalesce(description, ''), ' [Ä°PTAL: ', ${cancelDate}, ']'))
       where id = ${recordId}
     `;
-    return { id: recordId, status: "İptal" };
+    return { id: recordId, status: "Ä°ptal" };
   });
 }
 
@@ -1010,8 +1010,8 @@ export async function createSale(payload: Record<string, unknown>) {
     const partyId = requireString(payload.partyId, "Parti");
     const stockId = requireString(payload.stockId, "Stok");
     const warehouseId = requireString(payload.warehouseId, "Depo");
-    const quantityKg = numberValue(payload.quantityKg, "Satış kg");
-    const customerName = requireString(payload.customerName, "Müşteri");
+    const quantityKg = numberValue(payload.quantityKg, "SatÄ±ÅŸ kg");
+    const customerName = requireString(payload.customerName, "MÃ¼ÅŸteri");
     const partyRows = await tx`select order_id from parties where id = ${partyId} limit 1`;
     const orderId = optionalString(payload.orderId) ?? (partyRows[0]?.order_id ? String(partyRows[0].order_id) : null);
 
@@ -1033,10 +1033,10 @@ export async function createSale(payload: Record<string, unknown>) {
       warehouseId,
       partyId,
       orderId,
-      movementType: "Çıkış",
+      movementType: "Ã‡Ä±kÄ±ÅŸ",
       direction: "OUT",
       quantity: quantityKg,
-      description: "Satış / sevkiyat çıkışı",
+      description: "SatÄ±ÅŸ / sevkiyat Ã§Ä±kÄ±ÅŸÄ±",
       referenceType: "sale",
       referenceId: saleId,
     });
@@ -1044,7 +1044,7 @@ export async function createSale(payload: Record<string, unknown>) {
     await tx`
       update parties
       set status = 'Sevk Edildi',
-          timeline = timeline || ${JSON.stringify([{ date, title: "Sevkiyat", description: `${saleNo} ile ${quantityKg} kg çıkış yapıldı.`, tone: "green" }])}::jsonb,
+          timeline = timeline || ${JSON.stringify([{ date, title: "Sevkiyat", description: `${saleNo} ile ${quantityKg} kg Ã§Ä±kÄ±ÅŸ yapÄ±ldÄ±.`, tone: "green" }])}::jsonb,
           updated_at = now()
       where id = ${partyId}
     `;
@@ -1064,8 +1064,8 @@ export async function cancelSale(recordId: string) {
       limit 1
     `;
     const sale = rows[0];
-    if (!sale) throw new Error("Sevkiyat kaydı bulunamadı.");
-    if (String(sale.status) === "İptal") return { id: recordId, status: "İptal" };
+    if (!sale) throw new Error("Sevkiyat kaydÄ± bulunamadÄ±.");
+    if (String(sale.status) === "Ä°ptal") return { id: recordId, status: "Ä°ptal" };
 
     await addMovement(tx, {
       date: new Date().toISOString().slice(0, 10),
@@ -1073,21 +1073,21 @@ export async function cancelSale(recordId: string) {
       warehouseId: String(sale.warehouse_id),
       partyId: String(sale.party_id),
       orderId: sale.order_id ? String(sale.order_id) : null,
-      movementType: "Düzeltme",
+      movementType: "DÃ¼zeltme",
       direction: "IN",
       quantity: Number(sale.quantity_kg),
       description: `Sevkiyat iptal iadesi: ${String(sale.sale_no)}`,
       referenceType: "sale_cancel",
       referenceId: recordId,
     });
-    await tx`update sales set status = 'İptal' where id = ${recordId}`;
+    await tx`update sales set status = 'Ä°ptal' where id = ${recordId}`;
     await tx`
       update parties
-      set timeline = timeline || ${JSON.stringify([{ date: new Date().toISOString().slice(0, 10), title: "Sevkiyat iptal", description: `${String(sale.sale_no)} için stok iadesi işlendi.`, tone: "red" }])}::jsonb,
+      set timeline = timeline || ${JSON.stringify([{ date: new Date().toISOString().slice(0, 10), title: "Sevkiyat iptal", description: `${String(sale.sale_no)} iÃ§in stok iadesi iÅŸlendi.`, tone: "red" }])}::jsonb,
           updated_at = now()
       where id = ${String(sale.party_id)}
     `;
-    return { id: recordId, status: "İptal" };
+    return { id: recordId, status: "Ä°ptal" };
   });
 }
 
@@ -1107,15 +1107,15 @@ export async function deleteCustomerOrder(recordId: string) {
   `;
   const usageCount = Number(rows[0]?.count ?? 0);
   if (usageCount > 0) {
-    throw new Error(`Bu sipariş ${usageCount} üretim/hareket kaydında kullanılıyor. Silmek yerine durumunu iptal edin.`);
+    throw new Error(`Bu sipariÅŸ ${usageCount} Ã¼retim/hareket kaydÄ±nda kullanÄ±lÄ±yor. Silmek yerine durumunu iptal edin.`);
   }
   await sql`delete from orders where id = ${recordId}`;
   return { id: recordId };
 }
 
 export async function cancelPurchaseOrder(recordId: string) {
-  await sql`update purchase_orders set status = 'İptal', updated_at = now() where id = ${recordId}`;
-  return { id: recordId, status: "İptal" };
+  await sql`update purchase_orders set status = 'Ä°ptal', updated_at = now() where id = ${recordId}`;
+  return { id: recordId, status: "Ä°ptal" };
 }
 
 export async function deletePurchaseOrder(recordId: string) {
@@ -1126,7 +1126,7 @@ export async function deletePurchaseOrder(recordId: string) {
   `;
   const usageCount = Number(rows[0]?.count ?? 0);
   if (usageCount > 0) {
-    throw new Error(`Bu satıcı siparişi ${usageCount} mal kabul/hareket kaydında kullanılıyor. Silmek yerine iptal edin.`);
+    throw new Error(`Bu satÄ±cÄ± sipariÅŸi ${usageCount} mal kabul/hareket kaydÄ±nda kullanÄ±lÄ±yor. Silmek yerine iptal edin.`);
   }
   await sql`delete from purchase_orders where id = ${recordId}`;
   return { id: recordId };
@@ -1151,4 +1151,149 @@ export async function deactivateStockCard(recordId: string) {
   }
   await sql`update stock_cards set is_active = false, updated_at = now() where id = ${recordId}`;
   return { id: recordId, deleted: false };
+}
+export async function cancelPurchaseReceipt(recordId: string) {
+  return sql.begin(async (tx) => {
+    const rows = await tx`select id, purchase_order_id, warehouse_id, items, description from purchase_receipts where id = ${recordId} limit 1`;
+    const receipt = rows[0];
+    if (!receipt) throw new Error("Mal kabul kaydı bulunamadı.");
+    if (String(receipt.description).startsWith("[İPTAL]")) return { id: recordId, status: "İptal" };
+
+    const items = (Array.isArray(receipt.items) ? receipt.items : []) as Array<Record<string, unknown>>;
+    const purchaseOrderId = String(receipt.purchase_order_id);
+    const cancelDate = new Date().toISOString().slice(0, 10);
+
+    for (const item of items) {
+      const stockId = requireString(item.stockId, "Stok");
+      const quantity = numberValue(item.receivedKg, "Miktar");
+      await addMovement(tx, {
+        date: cancelDate,
+        stockId,
+        warehouseId: String(receipt.warehouse_id),
+        movementType: "İptal",
+        direction: "OUT",
+        quantity,
+        description: "Mal kabul iptal çıkışı",
+        referenceType: "purchase_receipt_cancel",
+        referenceId: recordId,
+      });
+    }
+
+    await tx`update purchase_receipts set description = '[İPTAL] ' || description where id = ${recordId}`;
+
+    // Update purchase order
+    const orderRows = await tx`select items, total_received_kg, total_ordered_kg from purchase_orders where id = ${purchaseOrderId} limit 1`;
+    if (orderRows[0]) {
+      const orderItems = (Array.isArray(orderRows[0].items) ? orderRows[0].items : []) as Array<Record<string, unknown>>;
+      let totalReceived = Number(orderRows[0].total_received_kg ?? 0);
+      
+      const nextItems = orderItems.map((oItem) => {
+        const matchingReceiptItem = items.find((i) => i.purchaseOrderItemId === oItem.id);
+        if (matchingReceiptItem) {
+          const removedQty = numberValue(matchingReceiptItem.receivedKg, "Miktar");
+          const nextReceived = Math.max(Number(oItem.receivedKg ?? 0) - removedQty, 0);
+          const ordered = Number(oItem.orderedKg ?? 0);
+          totalReceived = Math.max(totalReceived - removedQty, 0);
+          return { ...oItem, receivedKg: nextReceived, remainingKg: Math.max(ordered - nextReceived, 0) };
+        }
+        return oItem;
+      });
+
+      const totalOrdered = Number(orderRows[0].total_ordered_kg ?? 0);
+      const remaining = Math.max(totalOrdered - totalReceived, 0);
+      const status = totalReceived === 0 ? "Açık" : (remaining === 0 ? "Tamamlandı" : "Kısmi Geldi");
+      
+      await tx`
+        update purchase_orders
+        set items = ${JSON.stringify(nextItems)}, total_received_kg = ${totalReceived}, total_remaining_kg = ${remaining}, status = ${status}, updated_at = now()
+        where id = ${purchaseOrderId}
+      `;
+    }
+
+    return { id: recordId, status: "İptal" };
+  });
+}
+
+export async function updatePurchaseReceipt(recordId: string, payload: Record<string, unknown>) {
+  return sql.begin(async (tx) => {
+    const rows = await tx`select id, purchase_order_id, warehouse_id, items, description from purchase_receipts where id = ${recordId} limit 1`;
+    const receipt = rows[0];
+    if (!receipt) throw new Error("Mal kabul kaydı bulunamadı.");
+    if (String(receipt.description).startsWith("[İPTAL]")) throw new Error("İptal edilmiş kayıt düzenlenemez.");
+
+    const newDate = requireString(payload.receiptDate, "Tarih");
+    const newWarehouseId = requireString(payload.warehouseId, "Depo");
+    const newReceivedKg = numberValue(payload.receivedKg, "Miktar");
+    const newDescription = optionalString(payload.description) ?? "";
+    const newLotNo = optionalString(payload.lotNo);
+
+    const oldItems = (Array.isArray(receipt.items) ? receipt.items : []) as Array<Record<string, unknown>>;
+    const oldItem = oldItems[0];
+    if (!oldItem) throw new Error("Fiş kalemi bulunamadı.");
+
+    const oldQty = numberValue(oldItem.receivedKg, "Eski Miktar");
+    const diffQty = newReceivedKg - oldQty;
+
+    await addMovement(tx, {
+      date: new Date().toISOString().slice(0, 10),
+      stockId: String(oldItem.stockId),
+      warehouseId: String(receipt.warehouse_id),
+      movementType: "Düzeltme Çıkışı",
+      direction: "OUT",
+      quantity: oldQty,
+      description: "Mal kabul düzeltme çıkışı",
+      referenceType: "purchase_receipt_edit",
+      referenceId: recordId,
+    });
+
+    await addMovement(tx, {
+      date: newDate,
+      stockId: payload.stockId ? String(payload.stockId) : String(oldItem.stockId),
+      warehouseId: newWarehouseId,
+      movementType: "Düzeltme Girişi",
+      direction: "IN",
+      quantity: newReceivedKg,
+      description: "Mal kabul düzeltme girişi",
+      referenceType: "purchase_receipt",
+      referenceId: recordId,
+    });
+
+    // Update receipt
+    const newSupplierId = payload.supplierId ? String(payload.supplierId) : String(receipt.supplier_id);
+    const newStockId = payload.stockId ? String(payload.stockId) : String(oldItem.stockId);
+    const newUnitPrice = payload.unitPrice ? Number(payload.unitPrice) : Number(oldItem.unitPrice || 0);
+
+    const updatedItems = [{ ...oldItem, stockId: newStockId, receivedKg: newReceivedKg, unitPrice: newUnitPrice, lotNo: newLotNo, description: newDescription }];
+    await tx`update purchase_receipts set receipt_date = ${newDate}, warehouse_id = ${newWarehouseId}, supplier_id = ${newSupplierId}, items = ${JSON.stringify(updatedItems)}, description = ${newDescription} where id = ${recordId}`;
+
+    // Update purchase order
+    const purchaseOrderId = String(receipt.purchase_order_id);
+    const orderRows = await tx`select items, total_received_kg, total_ordered_kg from purchase_orders where id = ${purchaseOrderId} limit 1`;
+    if (orderRows[0]) {
+      const orderItems = (Array.isArray(orderRows[0].items) ? orderRows[0].items : []) as Array<Record<string, unknown>>;
+      let totalReceived = Number(orderRows[0].total_received_kg ?? 0);
+      
+      const nextItems = orderItems.map((oItem) => {
+        if (oItem.id === oldItem.purchaseOrderItemId) {
+          const nextReceived = Math.max(Number(oItem.receivedKg ?? 0) + diffQty, 0);
+          const ordered = Number(oItem.orderedKg ?? 0);
+          totalReceived = Math.max(totalReceived + diffQty, 0);
+          return { ...oItem, receivedKg: nextReceived, remainingKg: Math.max(ordered - nextReceived, 0) };
+        }
+        return oItem;
+      });
+
+      const totalOrdered = Number(orderRows[0].total_ordered_kg ?? 0);
+      const remaining = Math.max(totalOrdered - totalReceived, 0);
+      const status = totalReceived === 0 ? "Açık" : (remaining === 0 ? "Tamamlandı" : "Kısmi Geldi");
+      
+      await tx`
+        update purchase_orders
+        set items = ${JSON.stringify(nextItems)}, total_received_kg = ${totalReceived}, total_remaining_kg = ${remaining}, status = ${status}, updated_at = now()
+        where id = ${purchaseOrderId}
+      `;
+    }
+
+    return { id: recordId };
+  });
 }

@@ -10,7 +10,7 @@ import { StatusBadge, statusTone } from "@/components/ui/status-badge";
 import { StatCard } from "@/components/ui/stat-card";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { FormDrawer } from "@/components/ui/form-drawer";
-import { DirectPurchaseForm, DyehouseProductionForm, OrderEditForm, OrderForm, PurchaseOrderEditForm, PurchaseOrderForm, PurchaseReceiptForm, RawProductionForm, RoleForm, SaleForm, SettingForm, StockCardEditForm, StockCardForm, TransferForm, UserProfileForm } from "@/components/forms";
+import { DirectPurchaseForm, DyehouseProductionForm, OrderEditForm, OrderForm, PurchaseOrderEditForm, PurchaseOrderForm, PurchaseReceiptEditForm, PurchaseReceiptForm, RawProductionForm, RoleForm, SaleForm, SettingForm, StockCardEditForm, StockCardForm, TransferForm, UserProfileForm } from "@/components/forms";
 import { PartyTimeline } from "@/components/party-timeline";
 import { useErpData } from "@/components/erp-data-provider";
 import { getDashboardMetrics, getName, getPurchaseProgress } from "@/services/erp-service";
@@ -330,6 +330,16 @@ export function PurchaseOrdersPage() {
   const [orderOpen, setOrderOpen] = useState(false);
   const [editing, setEditing] = useState<PurchaseOrder | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<PurchaseOrder | null>(null);
+  const [filters, setFilters] = useState({ status: "ALL", supplierId: "ALL" });
+  const setFilter = (key: string, value: string) => setFilters((curr) => ({ ...curr, [key]: value }));
+  
+  const filteredOrders = useMemo(() => data.purchaseOrders.filter((row) => {
+    if (filters.status !== "ALL" && row.status !== filters.status) return false;
+    if (filters.supplierId !== "ALL" && row.supplierId !== filters.supplierId) return false;
+    return true;
+  }), [data.purchaseOrders, filters]);
+  
+  const uniqueSuppliers = Array.from(new Set(data.purchaseOrders.map(o => o.supplierId)));
   async function deletePurchase() {
     if (!deleteTarget) return;
     try {
@@ -354,8 +364,27 @@ export function PurchaseOrdersPage() {
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Satın alma" title="Satıcı Siparişleri" description="IP, LYC ve POLY için açık satıcı siparişleri, termin ve bekleyen kg takibi." icon={PackagePlus} action={<button className={primaryButton} onClick={() => setOrderOpen(true)}><Plus className="size-4" />Satıcı siparişi</button>} />
+      <div className="premium-card rounded-2xl p-5 mb-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="font-semibold text-slate-950">Satıcı Sipariş Filtreleri</h2>
+            <p className="mt-1 text-sm text-slate-500">Durum ve tedarikçiye göre daraltın.</p>
+          </div>
+          <button className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600" onClick={() => setFilters({ status: "ALL", supplierId: "ALL" })} type="button">Filtreleri temizle</button>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.status} onChange={(e) => setFilter("status", e.target.value)}>
+            <option value="ALL">Tüm durumlar</option><option value="Taslak">Taslak</option><option value="Açık">Açık</option><option value="Kısmi Geldi">Kısmi Geldi</option><option value="Tamamlandı">Tamamlandı</option><option value="İptal">İptal</option>
+          </select>
+          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.supplierId} onChange={(e) => setFilter("supplierId", e.target.value)}>
+            <option value="ALL">Tüm Satıcılar</option>
+            {uniqueSuppliers.map(id => <option key={id} value={id}>{getName(data.partners, id)}</option>)}
+          </select>
+        </div>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-3">
-        {data.purchaseOrders.map((order) => (
+        {filteredOrders.map((order) => (
           <div key={order.id} className="premium-card rounded-2xl p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -373,7 +402,7 @@ export function PurchaseOrdersPage() {
           </div>
         ))}
       </div>
-      <DataTable rows={data.purchaseOrders} columns={columns} searchPlaceholder="Satıcı siparişi, tedarikçi, durum veya stokta ara" getSearchText={(row) => [row.purchaseOrderNo, getName(data.partners, row.supplierId), row.status, normalizeItems(row.items).map((item) => `${item.stockCode} ${item.stockName}`).join(" ")].join(" ")} />
+      <DataTable rows={filteredOrders} columns={columns} searchPlaceholder="Satıcı siparişi, tedarikçi, durum veya stokta ara" getSearchText={(row) => [row.purchaseOrderNo, getName(data.partners, row.supplierId), row.status, normalizeItems(row.items).map((item) => `${item.stockCode} ${item.stockName}`).join(" ")].join(" ")} />
       <FormDrawer open={orderOpen} title="Yeni satıcı siparişi" onClose={() => setOrderOpen(false)}><PurchaseOrderForm /></FormDrawer>
       <FormDrawer open={Boolean(editing)} title="Satıcı siparişi düzenle" onClose={() => setEditing(null)}>{editing ? <PurchaseOrderEditForm order={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
       <ConfirmModal
@@ -391,8 +420,33 @@ export function PurchasesPage() {
   const { data } = useErpData();
   const [directOpen, setDirectOpen] = useState(false);
   const [receiptOpen, setReceiptOpen] = useState(false);
+  const [editingReceipt, setEditingReceipt] = useState<PurchaseReceipt | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<PurchaseReceipt | null>(null);
+  const { refresh } = useErpData();
+
+  async function cancelReceipt() {
+    if (!cancelTarget) return;
+    try {
+      await apiDelete(`/api/purchase-receipts/${cancelTarget.id}`);
+      refreshInBackground(refresh);
+      setCancelTarget(null);
+      toast.success("Mal kabul iptal edildi ve stok iadesi işlendi.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Mal kabul iptal edilemedi.");
+    }
+  }
+
+  const [filters, setFilters] = useState({ type: "ALL", warehouseId: "ALL" });
+  const setFilter = (key: string, value: string) => setFilters((curr) => ({ ...curr, [key]: value }));
   const openOrders = data.purchaseOrders.filter((order) => order.status !== "Tamamlandı" && order.status !== "İptal");
   const directReceiptIds = new Set(data.stockMovements.filter((movement) => movement.referenceType === "direct_purchase_receipt").map((movement) => movement.referenceId));
+  const filteredReceipts = useMemo(() => data.purchaseReceipts.filter((row) => {
+    const isDirect = directReceiptIds.has(row.id);
+    if (filters.type === "Hızlı" && !isDirect) return false;
+    if (filters.type === "Siparişe Bağlı" && isDirect) return false;
+    if (filters.warehouseId !== "ALL" && row.warehouseId !== filters.warehouseId) return false;
+    return true;
+  }), [data.purchaseReceipts, filters, directReceiptIds]);
   const receiptColumns: Column<PurchaseReceipt>[] = [
     { header: "Fiş", cell: (row) => <span className="font-semibold text-blue-700">{row.receiptNo}</span> },
     { header: "Tarih", cell: (row) => formatDate(row.receiptDate) },
@@ -401,6 +455,16 @@ export function PurchasesPage() {
     { header: "Stok", cell: (row) => normalizeItems(row.items).map((item) => getName(data.stockCards, item.stockId)).join(", ") },
     { header: "Kg", cell: (row) => formatKg(normalizeItems(row.items).reduce((sum, item) => sum + (item.receivedKg || 0), 0)) },
     { header: "Tür", cell: (row) => <StatusBadge tone={directReceiptIds.has(row.id) ? "blue" : "green"}>{directReceiptIds.has(row.id) ? "Hızlı alış" : "Siparişe bağlı"}</StatusBadge> },
+    {
+      header: "İşlem",
+      className: "text-right",
+      cell: (row) => (
+        <div className="flex justify-end gap-2">
+          <button className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" disabled={String(row.description).startsWith("[İPTAL]")} onClick={() => setEditingReceipt(row)} type="button">Düzenle</button>
+          <button className={dangerButton} disabled={String(row.description).startsWith("[İPTAL]")} onClick={() => setCancelTarget(row)} type="button">{String(row.description).startsWith("[İPTAL]") ? "İptal edildi" : "İptal et"}</button>
+        </div>
+      ),
+    },
   ];
   return (
     <div className="space-y-6">
@@ -417,7 +481,25 @@ export function PurchasesPage() {
         <StatCard title="Toplam gelen" value={formatKg(data.purchaseReceipts.reduce((sum, receipt) => sum + normalizeItems(receipt.items).reduce((itemSum, item) => itemSum + (item.receivedKg || 0), 0), 0))} helper="Tüm alış fişleri" icon={PackageCheck} tone="green" />
         <StatCard title="Hızlı alış" value={String(data.purchaseReceipts.filter((receipt) => directReceiptIds.has(receipt.id)).length)} helper="Siparişsiz giriş" icon={CheckCircle2} tone="blue" />
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="premium-card rounded-2xl p-5 mb-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="font-semibold text-slate-950">Alış İşlemleri Filtreleri</h2>
+            <p className="mt-1 text-sm text-slate-500">İşlem türü ve depoya göre daraltın.</p>
+          </div>
+          <button className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600" onClick={() => setFilters({ type: "ALL", warehouseId: "ALL" })} type="button">Filtreleri temizle</button>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.type} onChange={(e) => setFilter("type", e.target.value)}>
+            <option value="ALL">Tüm türler</option><option value="Hızlı">Hızlı alış</option><option value="Siparişe Bağlı">Siparişe bağlı</option>
+          </select>
+          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.warehouseId} onChange={(e) => setFilter("warehouseId", e.target.value)}>
+            <option value="ALL">Tüm depolar</option>
+            {data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 mb-6">
         <div className="premium-card rounded-2xl p-5">
           <h2 className="font-semibold text-slate-950">Hızlı alış</h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">Sipariş açmadan IP, LYC veya POLY stoğunu doğrudan seçilen depoya alır. Sistem tamamlanmış satıcı siparişi, mal kabul ve stok girişi kaydını birlikte oluşturur.</p>
@@ -430,13 +512,21 @@ export function PurchasesPage() {
         </div>
       </div>
       <DataTable
-        rows={data.purchaseReceipts}
+        rows={filteredReceipts}
         columns={receiptColumns}
         searchPlaceholder="Fiş, satıcı, depo veya stokta ara"
         getSearchText={(row) => [row.receiptNo, getName(data.partners, row.supplierId), getName(data.warehouses, row.warehouseId), normalizeItems(row.items).map((item) => getName(data.stockCards, item.stockId)).join(" "), row.description].join(" ")}
       />
       <FormDrawer open={directOpen} title="Hızlı hammadde alışı" onClose={() => setDirectOpen(false)}><DirectPurchaseForm /></FormDrawer>
       <FormDrawer open={receiptOpen} title="Siparişe bağlı mal kabul" onClose={() => setReceiptOpen(false)}><PurchaseReceiptForm /></FormDrawer>
+      <FormDrawer open={Boolean(editingReceipt)} title="Mal kabul düzenle" onClose={() => setEditingReceipt(null)}>{editingReceipt ? <PurchaseReceiptEditForm receipt={editingReceipt} onDone={() => setEditingReceipt(null)} /> : null}</FormDrawer>
+      <ConfirmModal
+        open={Boolean(cancelTarget)}
+        title="Mal kabul iptal edilsin mi?"
+        description="Bu işlem geri alınamaz. Stok girişi iptal edilecek ve miktar satıcı siparişine geri yüklenecektir."
+        onClose={() => setCancelTarget(null)}
+        onConfirm={cancelReceipt}
+      />
     </div>
   );
 }
@@ -445,6 +535,7 @@ export function StocksPage() {
   const { data, refresh, mutateData } = useErpData();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<StockCard | null>(null);
+  const [actionTarget, setActionTarget] = useState<StockCard | null>(null);
   async function deactivateStock(id: string) {
     try {
       const response = await fetch(`/api/stocks/${id}`, { method: "DELETE" });
@@ -462,6 +553,36 @@ export function StocksPage() {
       toast.error(error instanceof Error ? error.message : "Stok kartı pasife alınamadı.");
     }
   }
+
+  const [filters, setFilters] = useState({ type: "ALL", isActive: "Aktif" });
+  const setFilter = (key: string, value: string) => setFilters((curr) => ({ ...curr, [key]: value }));
+
+  const filteredStocks = useMemo(() => data.stockCards.filter((row) => {
+    if (filters.type !== "ALL" && row.type !== filters.type) return false;
+    if (filters.isActive === "Aktif" && row.isActive === false) return false;
+    if (filters.isActive === "Pasif" && row.isActive !== false) return false;
+    return true;
+  }), [data.stockCards, filters]);
+
+  const hasUsage = actionTarget && (
+    data.stockMovements.some(m => m.stockId === actionTarget.id) ||
+    data.orders.some(o => o.ymStockId === actionTarget.id || o.mmStockId === actionTarget.id) ||
+    data.parties.some(p => p.ymStockId === actionTarget.id || p.mmStockId === actionTarget.id) ||
+    data.purchaseOrders.some(po => normalizeItems(po.items).some(i => i.stockId === actionTarget.id))
+  );
+
+  const handleDelete = () => {
+    if (hasUsage) {
+       toast.error("Bu stok kartının hareketi var, silinemez! Sadece pasife çekebilirsiniz.");
+       return;
+    }
+    deactivateStock(actionTarget!.id);
+    setActionTarget(null);
+  };
+  const handleDeactivate = () => {
+    deactivateStock(actionTarget!.id);
+    setActionTarget(null);
+  };
   const columns: Column<StockCard>[] = [
     { header: "Kod", cell: (row) => <Link className="font-semibold text-blue-700" href={`/stocks/${row.id}`}>{row.code}</Link> },
     { header: "Ad", cell: (row) => row.name },
@@ -469,14 +590,52 @@ export function StocksPage() {
     { header: "Ne", cell: (row) => getName(data.yarnCounts, row.yarnCountId) },
     { header: "Stok", cell: (row) => formatKg(row.currentStockKg) },
     { header: "Kritik", cell: (row) => formatKg(row.criticalStockKg) },
-    { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end gap-2"><button className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditing(row)} type="button">Düzenle</button><button className={dangerButton} onClick={() => deactivateStock(row.id)} type="button">Sil/Pasif</button></div> },
+    { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end gap-2"><button className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditing(row)} type="button">Düzenle</button><button className={dangerButton} onClick={() => setActionTarget(row)} type="button">Sil/Pasif</button></div> },
   ];
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Stok" title="Stok Kartları" description="YM/MM partili izlenir; IP/LYC/POLY satın alma ve üretim tüketimiyle takip edilir." icon={Boxes} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Stok kartı</button>} />
-      <DataTable rows={data.stockCards} columns={columns} searchPlaceholder="Stok kodu, ad, tip veya özellikte ara" getSearchText={(row) => [row.code, row.name, row.type, getName(data.fabricTypes, row.fabricTypeId), getName(data.colors, row.colorId), getName(data.yarnCounts, row.yarnCountId)].join(" ")} />
+      <div className="premium-card rounded-2xl p-5 mb-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="font-semibold text-slate-950">Stok Kartı Filtreleri</h2>
+            <p className="mt-1 text-sm text-slate-500">Stok tipi ve durumuna göre daraltın.</p>
+          </div>
+          <button className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600" onClick={() => setFilters({ type: "ALL", isActive: "Aktif" })} type="button">Filtreleri temizle</button>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.type} onChange={(e) => setFilter("type", e.target.value)}>
+            <option value="ALL">Tüm tipler</option><option value="IP">İplik (IP)</option><option value="YM">Yarımamül (YM)</option><option value="MM">Mamül (MM)</option><option value="LYC">Likra (LYC)</option><option value="POLY">Polyester (POLY)</option>
+          </select>
+          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.isActive} onChange={(e) => setFilter("isActive", e.target.value)}>
+            <option value="ALL">Tümü</option><option value="Aktif">Aktif olanlar</option><option value="Pasif">Pasif olanlar</option>
+          </select>
+        </div>
+      </div>
+      <DataTable rows={filteredStocks} columns={columns} searchPlaceholder="Stok kodu, ad, tip veya özellikte ara" getSearchText={(row) => [row.code, row.name, row.type, getName(data.fabricTypes, row.fabricTypeId), getName(data.colors, row.colorId), getName(data.yarnCounts, row.yarnCountId)].join(" ")} />
       <FormDrawer open={open} title="Yeni stok kartı" onClose={() => setOpen(false)}><StockCardForm /></FormDrawer>
       <FormDrawer open={Boolean(editing)} title="Stok kartı düzenle" onClose={() => setEditing(null)}>{editing ? <StockCardEditForm stock={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
+      <FormDrawer open={Boolean(actionTarget)} title="Stok Kartı Sil / Pasif" onClose={() => setActionTarget(null)}>
+        {actionTarget && (
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-slate-200 p-5 shadow-sm">
+              <h3 className="font-semibold text-slate-900">Bu stok kartına ne yapılsın?</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                <b>Sil:</b> Sadece hiç hareket görmemiş kartlar silinebilir.<br/>
+                <b>Pasife Çek:</b> Hareket gören kartlar silinemez, ancak listelerde çıkmaması için pasife çekilebilir.
+              </p>
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <button className="w-full rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 hover:bg-rose-100" onClick={handleDelete}>
+                  Tamamen Sil
+                </button>
+                <button className="w-full rounded-2xl bg-amber-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-200 hover:bg-amber-700" onClick={handleDeactivate}>
+                  Pasife Çek
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </FormDrawer>
     </div>
   );
 }
@@ -548,8 +707,30 @@ export function ProductionPage({ type }: { type: "raw" | "dyehouse" }) {
   const { data, refresh } = useErpData();
   const [open, setOpen] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<RawProduction | DyehouseProduction | null>(null);
+  const [filters, setFilters] = useState({ status: "ALL", dateFrom: "", dateTo: "" });
+  const setFilter = (key: string, value: string) => setFilters((curr) => ({ ...curr, [key]: value }));
   const isRaw = type === "raw";
   const cancelledIds = new Set(data.stockMovements.filter((movement) => movement.referenceType === (isRaw ? "production_raw_cancel" : "production_dyehouse_cancel")).map((movement) => movement.referenceId));
+  const filteredRaw = useMemo(() => data.productionRaw.filter((row) => {
+    if (filters.status !== "ALL") {
+      const isCancelled = cancelledIds.has(row.id);
+      if (filters.status === "İptal" && !isCancelled) return false;
+      if (filters.status === "Aktif" && isCancelled) return false;
+    }
+    if (filters.dateFrom && row.date < filters.dateFrom) return false;
+    if (filters.dateTo && row.date > filters.dateTo) return false;
+    return true;
+  }), [data.productionRaw, filters, cancelledIds]);
+  const filteredDyehouse = useMemo(() => data.productionDyehouse.filter((row) => {
+    if (filters.status !== "ALL") {
+      const isCancelled = cancelledIds.has(row.id);
+      if (filters.status === "İptal" && !isCancelled) return false;
+      if (filters.status === "Aktif" && isCancelled) return false;
+    }
+    if (filters.dateFrom && row.date < filters.dateFrom) return false;
+    if (filters.dateTo && row.date > filters.dateTo) return false;
+    return true;
+  }), [data.productionDyehouse, filters, cancelledIds]);
   async function cancelProduction() {
     if (!cancelTarget) return;
     try {
@@ -585,13 +766,28 @@ export function ProductionPage({ type }: { type: "raw" | "dyehouse" }) {
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Üretim" title={isRaw ? "Ham Kumaş Üretimi" : "Boyahane Üretimi"} description={isRaw ? "İplik tüketimi, ham kumaş girişi, fire ve fasoncu depo kapanış mutabakatı." : "Ham çıkışı, mamül girişi, finish özellikleri ve boyahane fire hesaplama."} icon={Factory} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Yeni kayıt</button>} />
-      <div className="premium-card rounded-2xl p-5">
-        {isRaw ? <RawProductionForm /> : <DyehouseProductionForm />}
+      
+      <div className="premium-card rounded-2xl p-5 mb-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="font-semibold text-slate-950">Üretim Filtreleri</h2>
+            <p className="mt-1 text-sm text-slate-500">Durum ve tarihe göre kayıtları daraltın.</p>
+          </div>
+          <button className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600" onClick={() => setFilters({ status: "ALL", dateFrom: "", dateTo: "" })} type="button">Filtreleri temizle</button>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.status} onChange={(e) => setFilter("status", e.target.value)}>
+            <option value="ALL">Tüm durumlar</option><option value="Aktif">Aktif</option><option value="İptal">İptal</option>
+          </select>
+          <label className="space-y-1 text-xs font-semibold text-slate-400">Başlangıç<input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dateFrom} onChange={(e) => setFilter("dateFrom", e.target.value)} /></label>
+          <label className="space-y-1 text-xs font-semibold text-slate-400">Bitiş<input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dateTo} onChange={(e) => setFilter("dateTo", e.target.value)} /></label>
+        </div>
       </div>
+
       {isRaw ? (
-        <DataTable rows={data.productionRaw} columns={rawColumns} searchPlaceholder="Sipariş, parti, fasoncu veya açıklamada ara" getSearchText={(row) => [data.orders.find((order) => order.id === row.orderId)?.orderNo, data.parties.find((party) => party.id === row.partyId)?.partyNo, getName(data.partners, row.knitterPartnerId), row.description].join(" ")} />
+        <DataTable rows={filteredRaw} columns={rawColumns} searchPlaceholder="Sipariş, parti, fasoncu veya açıklamada ara" getSearchText={(row) => [data.orders.find((order) => order.id === row.orderId)?.orderNo, data.parties.find((party) => party.id === row.partyId)?.partyNo, getName(data.partners, row.knitterPartnerId), row.description].join(" ")} />
       ) : (
-        <DataTable rows={data.productionDyehouse} columns={dyehouseColumns} searchPlaceholder="Sipariş, parti, boyahane veya açıklamada ara" getSearchText={(row) => [data.orders.find((order) => order.id === row.orderId)?.orderNo, data.parties.find((party) => party.id === row.partyId)?.partyNo, getName(data.partners, row.dyehousePartnerId), row.description].join(" ")} />
+        <DataTable rows={filteredDyehouse} columns={dyehouseColumns} searchPlaceholder="Sipariş, parti, boyahane veya açıklamada ara" getSearchText={(row) => [data.orders.find((order) => order.id === row.orderId)?.orderNo, data.parties.find((party) => party.id === row.partyId)?.partyNo, getName(data.partners, row.dyehousePartnerId), row.description].join(" ")} />
       )}
       <FormDrawer open={open} title={isRaw ? "Ham üretim kaydı" : "Boyahane üretim kaydı"} onClose={() => setOpen(false)}>{isRaw ? <RawProductionForm /> : <DyehouseProductionForm />}</FormDrawer>
       <ConfirmModal
@@ -609,9 +805,21 @@ export function ProductionPage({ type }: { type: "raw" | "dyehouse" }) {
 
 export function TransfersPage() {
   const { data, refresh } = useErpData();
-  const [confirm, setConfirm] = useState(false);
+  const [open, setOpen] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<Transfer | null>(null);
+  const [filters, setFilters] = useState({ status: "ALL", dateFrom: "", dateTo: "" });
+  const setFilter = (key: string, value: string) => setFilters((curr) => ({ ...curr, [key]: value }));
   const cancelledTransferIds = new Set(data.stockMovements.filter((movement) => movement.referenceType === "transfer_cancel").map((movement) => movement.referenceId));
+  const filteredTransfers = useMemo(() => data.transfers.filter((row) => {
+    if (filters.status !== "ALL") {
+      const isCancelled = cancelledTransferIds.has(row.id);
+      if (filters.status === "İptal" && !isCancelled) return false;
+      if (filters.status === "Aktif" && isCancelled) return false;
+    }
+    if (filters.dateFrom && row.date < filters.dateFrom) return false;
+    if (filters.dateTo && row.date > filters.dateTo) return false;
+    return true;
+  }), [data.transfers, filters, cancelledTransferIds]);
   async function cancelTransferRecord() {
     if (!cancelTarget) return;
     try {
@@ -625,9 +833,26 @@ export function TransfersPage() {
   }
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Depo" title="Depolar Arası Transfer" description="Her depodan her depoya çift taraflı stok hareketi; negatif stok kontrolüne hazır altyapı." icon={Truck} action={<button className={primaryButton} onClick={() => setConfirm(true)}><Plus className="size-4" />Onaylı transfer</button>} />
-      <div className="premium-card rounded-2xl p-5"><TransferForm /></div>
-      <DataTable rows={data.transfers} columns={[
+      <PageHeader eyebrow="Depo" title="Depolar Arası Transfer" description="Her depodan her depoya çift taraflı stok hareketi; negatif stok kontrolüne hazır altyapı." icon={Truck} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Onaylı transfer</button>} />
+
+      <div className="premium-card rounded-2xl p-5 mb-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="font-semibold text-slate-950">Transfer Filtreleri</h2>
+            <p className="mt-1 text-sm text-slate-500">Durum ve tarihe göre kayıtları daraltın.</p>
+          </div>
+          <button className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600" onClick={() => setFilters({ status: "ALL", dateFrom: "", dateTo: "" })} type="button">Filtreleri temizle</button>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.status} onChange={(e) => setFilter("status", e.target.value)}>
+            <option value="ALL">Tüm durumlar</option><option value="Aktif">Aktif</option><option value="İptal">İptal</option>
+          </select>
+          <label className="space-y-1 text-xs font-semibold text-slate-400">Başlangıç<input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dateFrom} onChange={(e) => setFilter("dateFrom", e.target.value)} /></label>
+          <label className="space-y-1 text-xs font-semibold text-slate-400">Bitiş<input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dateTo} onChange={(e) => setFilter("dateTo", e.target.value)} /></label>
+        </div>
+      </div>
+
+      <DataTable rows={filteredTransfers} columns={[
         { header: "Tarih", cell: (row) => formatDate(row.date) },
         { header: "Kaynak", cell: (row) => getName(data.warehouses, row.fromWarehouseId) },
         { header: "Hedef", cell: (row) => getName(data.warehouses, row.toWarehouseId) },
@@ -635,7 +860,7 @@ export function TransfersPage() {
         { header: "Durum", cell: (row) => <StatusBadge tone={cancelledTransferIds.has(row.id) ? "red" : "green"}>{cancelledTransferIds.has(row.id) ? "İptal" : "Aktif"}</StatusBadge> },
         { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end"><button className={dangerButton} disabled={cancelledTransferIds.has(row.id)} onClick={() => setCancelTarget(row)} type="button">{cancelledTransferIds.has(row.id) ? "İptal edildi" : "İptal et"}</button></div> },
       ]} searchPlaceholder="Kaynak depo, hedef depo veya açıklamada ara" getSearchText={(row) => [getName(data.warehouses, row.fromWarehouseId), getName(data.warehouses, row.toWarehouseId), row.description].join(" ")} />
-      <ConfirmModal open={confirm} title="Transfer onayı" description="Bu işlem kaynak depodan çıkış ve hedef depoya giriş hareketi oluşturur." onClose={() => setConfirm(false)} onConfirm={() => setConfirm(false)} />
+      <FormDrawer open={open} title="Yeni Transfer" onClose={() => setOpen(false)}><TransferForm /></FormDrawer>
       <ConfirmModal
         open={Boolean(cancelTarget)}
         title="Transfer iptal edilsin mi?"
@@ -782,6 +1007,7 @@ export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<EditableSetting | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<EditableSetting | null>(null);
+  const [detailWarehouse, setDetailWarehouse] = useState<NamedEntity | null>(null);
   const map = {
     warehouses: { title: "Depo Yönetimi", desc: "Depo tanımları, bakiye kartları ve partili stok görünümü.", icon: Warehouse },
     partners: { title: "Fasoncu Cari Yönetimi", desc: "Fason örmeci, boyahane, satıcı ve müşteri kartları.", icon: Users },
@@ -861,11 +1087,16 @@ export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "
         { header: "Ad", cell: (row) => row.name },
         ...(kind === "warehouses" ? [{ header: "Tip", cell: (row: NamedEntity) => ("kind" in row ? warehouseKindLabels[row.kind as WarehouseEntity["kind"]] : "-") }] : []),
         ...(kind === "partners" ? [{ header: "Tip", cell: (row: NamedEntity) => ("type" in row ? partnerTypeLabels[row.type as Partner["type"]] : "-") }] : []),
+        ...(kind === "warehouses" ? [{ header: "Bakiye", cell: (row: NamedEntity) => formatKg(data.warehouseBalances.filter(b => b.warehouseId === row.id).reduce((sum, b) => sum + Number(b.quantity || 0), 0)) }] : []),
         { header: "Durum", cell: () => <StatusBadge tone="green">Aktif</StatusBadge> },
         ...(manageDefinitions ? [{
           header: "İşlem",
+          className: "text-right",
           cell: (row: NamedEntity) => (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap justify-end gap-2">
+              {kind === "warehouses" ? (
+                <button className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700" onClick={() => setDetailWarehouse(row)} type="button">Detay</button>
+              ) : null}
               <button
                 className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700"
                 onClick={() =>
@@ -932,6 +1163,26 @@ export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "
         onClose={() => setDeleteTarget(null)}
         onConfirm={deleteDefinition}
       />
+      <FormDrawer open={Boolean(detailWarehouse)} title={`${detailWarehouse?.name} Bakiye Detayları`} onClose={() => setDetailWarehouse(null)}>
+        <div className="space-y-4">
+          {data.warehouseBalances.filter(b => b.warehouseId === detailWarehouse?.id && Number(b.quantity) > 0).length === 0 ? (
+            <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">Bu depoda stok bulunmuyor.</p>
+          ) : (
+            data.warehouseBalances.filter(b => b.warehouseId === detailWarehouse?.id && Number(b.quantity) > 0).map(b => {
+              const stock = data.stockCards.find(s => s.id === b.stockId);
+              return (
+                <div key={b.stockId} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4">
+                  <div>
+                    <p className="font-semibold text-slate-900">{stock?.code}</p>
+                    <p className="text-xs text-slate-500">{stock?.name}</p>
+                  </div>
+                  <p className="font-bold text-emerald-600">{formatKg(b.quantity)}</p>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </FormDrawer>
     </div>
   );
 }
@@ -1187,6 +1438,17 @@ const developmentTimeline = [
       "Satın alma tarafında hızlı IP/LYC/POLY alışı, siparişe bağlı mal kabul ve ayrı Alış İşlemleri menüsü oluşturuldu.",
     ],
   },
+  {
+    date: "2026-05-04",
+    title: "Kullanıcı Deneyimi, Filtreleme ve Esneklik Geliştirmeleri",
+    summary: "Sistem geneline gelişmiş filtre mekanizmaları dahil edildi, stok durum yönetimleri iyileştirildi ve alış formlarına esneklik kazandırıldı.",
+    items: [
+      "Alış İşlemleri, Satıcı Siparişleri, Stok Kartları, Üretim ve Transfer sayfalarına detaylı filtreleme (durum, depo, tip bazlı) kartları eklendi.",
+      "Stok kartları için 'Tamamen Sil' ve 'Pasife Çek' işlemleri ayrıldı; hareket gören kartların silinmesi UI ve servis katmanında engellendi.",
+      "Mal kabul düzenleme ekranında, Hızlı Alış (Siparişsiz) kayıtları için tedarikçi, stok kartı ve birim fiyat düzenleme yeteneği açıldı.",
+      "Ayarlar altındaki Depo Yönetimi sekmesine Depo Bakiye izleme sütunu ve Detaylı Stok Görüntüleme modalı entegre edildi.",
+    ],
+  },
 ];
 
 const completedMilestones = [
@@ -1338,6 +1600,7 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
   const { data, refresh, mutateData } = useErpData();
   const [editing, setEditing] = useState<EditableSetting | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<EditableSetting | null>(null);
+  const [detailWarehouse, setDetailWarehouse] = useState<WarehouseEntity | null>(null);
   const activeGroup = section
     ? settingGroups.find((group) => group.href.endsWith(section))
     : undefined;
@@ -1462,8 +1725,14 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
                   <div>
                     <p className="font-semibold text-slate-950">{row.name}</p>
                     {"kind" in row ? <p className="text-xs text-slate-400">{warehouseKindLabels[row.kind as WarehouseEntity["kind"]]}</p> : null}
+                    {section === "warehouses" ? (
+                      <p className="mt-1 text-xs font-semibold text-emerald-600">Bakiye: {formatKg(data.warehouseBalances.filter(b => b.warehouseId === row.id).reduce((sum, b) => sum + Number(b.quantity || 0), 0))}</p>
+                    ) : null}
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
+                    {section === "warehouses" ? (
+                      <button className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700" onClick={() => setDetailWarehouse(row as WarehouseEntity)} type="button">Detay</button>
+                    ) : null}
                     <button
                       className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700"
                       onClick={() => setEditing({ id: row.id, name: row.name, kind: "kind" in row ? row.kind : undefined })}
@@ -1509,6 +1778,27 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
             onClose={() => setDeleteTarget(null)}
             onConfirm={deleteDefinition}
           />
+          <FormDrawer open={Boolean(detailWarehouse)} title={`${detailWarehouse?.name} Bakiye Detayları`} onClose={() => setDetailWarehouse(null)}>
+            <div className="space-y-4">
+              {data.warehouseBalances.filter(b => b.warehouseId === detailWarehouse?.id && Number(b.quantity) > 0).length === 0 ? (
+                <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">Bu depoda stok bulunmuyor.</p>
+              ) : (
+                data.warehouseBalances.filter(b => b.warehouseId === detailWarehouse?.id && Number(b.quantity) > 0).map(b => {
+                  const stock = data.stockCards.find(s => s.id === b.stockId);
+                  const party = data.parties.find(p => p.id === b.partyId);
+                  return (
+                    <div key={`${b.stockId}-${b.partyId || 'noparty'}`} className="flex items-center justify-between rounded-2xl border border-slate-100 p-4 shadow-sm">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{stock?.code} - {stock?.name}</p>
+                        {party && <p className="mt-1 text-xs text-slate-500">Parti: {party.partyNo}</p>}
+                      </div>
+                      <p className="text-sm font-bold text-slate-700">{formatKg(Number(b.quantity))}</p>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </FormDrawer>
         </div>
       ) : null}
 
