@@ -1761,6 +1761,7 @@ const developmentTimeline = [
       "Kaynak dosyalardaki kalan mojibake Türkçe karakterler temizlendi; PowerShell kaynaklı encoding riskine karşı Unicode escape tabanlı kontrollü düzeltme uygulandı.",
       "Satıcı siparişi ve mal kabul seçimlerinde sipariş numarası yanında satıcı, stok adı, renk ve kalan kg bilgisi gösterildi.",
       "Satıcı siparişi düzeltme formuna stok seçimi eklendi; stok adı zaten renk/Ne bilgisini taşıdığı için liste ve mal kabul seçimleri stok adına sadeleştirildi.",
+      "Canlı API ve veritabanı encoding kaynağı ayrıştırıldı; DB'deki bozuk text/json kayıtları temizlendi ve tekrar çalıştırılabilir fix:encoding komutu eklendi.",
     ],
   },
 ];

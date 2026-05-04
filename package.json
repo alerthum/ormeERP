@@ -12,7 +12,8 @@
     "db:mvp": "tsx scripts/apply-mvp-migration.ts",
     "seed": "tsx scripts/seed.ts",
     "reset:data": "tsx scripts/reset-data.ts",
-    "realtime:setup": "tsx scripts/setup-realtime.ts"
+    "realtime:setup": "tsx scripts/setup-realtime.ts",
+    "fix:encoding": "tsx scripts/fix-db-encoding.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.1",
