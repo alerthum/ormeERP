@@ -687,7 +687,7 @@ export function PurchaseOrderForm() {
 export function PurchaseOrderEditForm({ order, onDone }: { order: PurchaseOrder; onDone: () => void }) {
   const { data, refresh } = useErpData();
   const [loading, setLoading] = useState(false);
-  const item = order.items[0];
+  const item = normalizeItems(order.items)[0];
   const rawMaterialStocks = data.stockCards.filter((stock) => ["IP", "LYC", "POLY", "YM"].includes(stock.type) && stock.isActive !== false);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -737,7 +737,7 @@ export function PurchaseReceiptForm() {
   const { data, refresh } = useErpData();
   const [loading, setLoading] = useState(false);
   const getPurchaseReceiptOptionLabel = (order: PurchaseOrder) => {
-    const item = order.items[0];
+    const item = normalizeItems(order.items)[0];
     const stockName = item?.stockName || data.stockCards.find((stock) => stock.id === item?.stockId)?.name || "Stok seçilmemiş";
     const supplierName = getName(data.partners, order.supplierId);
     return `${order.purchaseOrderNo} · ${supplierName} · ${stockName} · ${formatKg(order.totalRemainingKg)} kalan`;
@@ -748,7 +748,7 @@ export function PurchaseReceiptForm() {
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
     const order = data.purchaseOrders.find((item) => item.id === form.get("purchaseOrderId"));
-    const item = order?.items[0];
+    const item = normalizeItems(order?.items)[0];
     try {
       if (!order || !item) throw new Error("Satıcı siparişi seçilmelidir.");
       await postJson("/api/purchase-receipts", {

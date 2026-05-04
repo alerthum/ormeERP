@@ -6,6 +6,7 @@ import type postgres from "postgres";
 type Tx = postgres.TransactionSql;
 
 const id = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
+const asJson = (value: unknown) => value as Parameters<typeof sql.json>[0];
 
 const tableMap = {
   fabricTypes: "settings_fabric_types",
@@ -230,6 +231,19 @@ async function assertAvailableBalance(tx: Tx, stockId: string, warehouseId: stri
   if (available < quantity) {
     throw new Error(`Yetersiz stok. Mevcut bakiye ${available.toFixed(3)} kg, istenen ${quantity.toFixed(3)} kg.`);
   }
+}
+
+function jsonArray(value: unknown): Array<Record<string, unknown>> {
+  if (Array.isArray(value)) return value as Array<Record<string, unknown>>;
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed as Array<Record<string, unknown>> : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
 }
 
 async function addMovement(
@@ -614,7 +628,7 @@ export async function createPurchaseOrder(payload: Record<string, unknown>) {
       values (
         ${recordId}, ${purchaseOrderNo}, ${requireString(payload.supplierId, "Satıcı")},
         ${requireString(payload.orderDate ?? new Date().toISOString().slice(0, 10), "Sipariş tarihi")},
-        ${requireString(payload.dueDate, "Termin tarihi")}, 'Taslak', ${JSON.stringify([poItem])},
+        ${requireString(payload.dueDate, "Termin tarihi")}, 'Taslak', ${tx.json(asJson([poItem]))},
         ${orderedKg}, 0, ${orderedKg}, ${optionalString(payload.description) ?? ""}, now(), now()
       )
     `;
@@ -625,7 +639,7 @@ export async function createPurchaseOrder(payload: Record<string, unknown>) {
 export async function updatePurchaseOrder(recordId: string, payload: Record<string, unknown>) {
   const rows = await sql`select items, total_received_kg from purchase_orders where id = ${recordId} limit 1`;
   if (!rows[0]) throw new Error("Satıcı siparişi bulunamadı.");
-  const items = (rows[0].items as Array<Record<string, unknown>>) ?? [];
+  const items = jsonArray(rows[0].items);
   const firstItem = items[0];
   if (!firstItem) throw new Error("Satıcı sipariş kalemi bulunamadı.");
   const orderedKg = numberValue(payload.orderedKg, "Sipariş kg");
@@ -655,7 +669,7 @@ export async function updatePurchaseOrder(recordId: string, payload: Record<stri
         order_date = ${requireString(payload.orderDate, "Sipariş tarihi")},
         due_date = ${requireString(payload.dueDate, "Termin tarihi")},
         status = ${requireString(payload.status ?? "Taslak", "Durum")},
-        items = ${JSON.stringify(nextItems)},
+        items = ${sql.json(asJson(nextItems))},
         total_ordered_kg = ${orderedKg},
         total_remaining_kg = ${totalRemaining},
         description = ${optionalString(payload.description) ?? ""},
@@ -676,7 +690,7 @@ export async function createPurchaseReceipt(payload: Record<string, unknown>) {
     const receiptNo = await nextBusinessNo(tx, "receipt");
     const orders = await tx`select items, supplier_id, total_received_kg, total_ordered_kg from purchase_orders where id = ${purchaseOrderId} limit 1`;
     if (!orders[0]) throw new Error("Satıcı siparişi bulunamadı.");
-    const items = orders[0].items as Array<Record<string, unknown>>;
+    const items = jsonArray(orders[0].items);
     const nextItems = items.map((item) => {
       if (item.id !== itemId) return item;
       const nextReceived = Number(item.receivedKg ?? 0) + receivedKg;
@@ -691,13 +705,13 @@ export async function createPurchaseReceipt(payload: Record<string, unknown>) {
       insert into purchase_receipts (id, purchase_order_id, receipt_no, receipt_date, warehouse_id, supplier_id, items, description, created_at, created_by)
       values (
         ${receiptId}, ${purchaseOrderId}, ${receiptNo}, ${requireString(payload.receiptDate ?? new Date().toISOString().slice(0, 10), "Mal kabul tarihi")},
-        ${warehouseId}, ${String(orders[0].supplier_id)}, ${JSON.stringify([{ purchaseOrderItemId: itemId, stockId, receivedKg, lotNo: optionalString(payload.lotNo), description: optionalString(payload.description) }])},
+        ${warehouseId}, ${String(orders[0].supplier_id)}, ${tx.json(asJson([{ purchaseOrderItemId: itemId, stockId, receivedKg, lotNo: optionalString(payload.lotNo), description: optionalString(payload.description) }]))},
         ${optionalString(payload.description) ?? ""}, now(), 'system'
       )
     `;
     await tx`
       update purchase_orders
-      set items = ${JSON.stringify(nextItems)}, total_received_kg = ${totalReceived}, total_remaining_kg = ${remaining}, status = ${status}, updated_at = now()
+      set items = ${tx.json(asJson(nextItems))}, total_received_kg = ${totalReceived}, total_remaining_kg = ${remaining}, status = ${status}, updated_at = now()
       where id = ${purchaseOrderId}
     `;
     await addMovement(tx, {
@@ -762,7 +776,7 @@ export async function createDirectRawMaterialPurchase(payload: Record<string, un
       )
       values (
         ${purchaseOrderId}, ${purchaseOrderNo}, ${supplierId}, ${date}, ${date}, 'Tamamlandı',
-        ${JSON.stringify([item])}, ${quantityKg}, ${quantityKg}, 0,
+        ${tx.json(asJson([item]))}, ${quantityKg}, ${quantityKg}, 0,
         ${optionalString(payload.description) ?? "Siparişsiz hızlı hammadde alışı"}, now(), now()
       )
     `;
@@ -770,7 +784,7 @@ export async function createDirectRawMaterialPurchase(payload: Record<string, un
       insert into purchase_receipts (id, purchase_order_id, receipt_no, receipt_date, warehouse_id, supplier_id, items, description, created_at, created_by)
       values (
         ${receiptId}, ${purchaseOrderId}, ${receiptNo}, ${date}, ${warehouseId}, ${supplierId},
-        ${JSON.stringify([{ purchaseOrderItemId, stockId, receivedKg: quantityKg, lotNo: optionalString(payload.lotNo), description: optionalString(payload.description) }])},
+        ${tx.json(asJson([{ purchaseOrderItemId, stockId, receivedKg: quantityKg, lotNo: optionalString(payload.lotNo), description: optionalString(payload.description) }]))},
         ${optionalString(payload.description) ?? "Siparişsiz hızlı hammadde alışı"}, now(), 'system'
       )
     `;
@@ -1367,7 +1381,7 @@ export async function cancelPurchaseReceipt(recordId: string) {
     if (!receipt) throw new Error("Mal kabul kaydı bulunamadı.");
     if (String(receipt.description).startsWith("[İPTAL]")) return { id: recordId, status: "İptal" };
 
-    const items = (Array.isArray(receipt.items) ? receipt.items : []) as Array<Record<string, unknown>>;
+    const items = jsonArray(receipt.items);
     const purchaseOrderId = String(receipt.purchase_order_id);
     const cancelDate = new Date().toISOString().slice(0, 10);
 
@@ -1392,7 +1406,7 @@ export async function cancelPurchaseReceipt(recordId: string) {
     // Update purchase order
     const orderRows = await tx`select items, total_received_kg, total_ordered_kg from purchase_orders where id = ${purchaseOrderId} limit 1`;
     if (orderRows[0]) {
-      const orderItems = (Array.isArray(orderRows[0].items) ? orderRows[0].items : []) as Array<Record<string, unknown>>;
+      const orderItems = jsonArray(orderRows[0].items);
       let totalReceived = Number(orderRows[0].total_received_kg ?? 0);
       
       const nextItems = orderItems.map((oItem) => {
@@ -1413,7 +1427,7 @@ export async function cancelPurchaseReceipt(recordId: string) {
       
       await tx`
         update purchase_orders
-        set items = ${JSON.stringify(nextItems)}, total_received_kg = ${totalReceived}, total_remaining_kg = ${remaining}, status = ${status}, updated_at = now()
+        set items = ${tx.json(asJson(nextItems))}, total_received_kg = ${totalReceived}, total_remaining_kg = ${remaining}, status = ${status}, updated_at = now()
         where id = ${purchaseOrderId}
       `;
     }
@@ -1433,7 +1447,7 @@ export async function deletePurchaseReceipt(recordId: string) {
     const receipt = rows[0];
     if (!receipt) throw new Error("Mal kabul kaydı bulunamadı.");
 
-    const items = (Array.isArray(receipt.items) ? receipt.items : []) as Array<Record<string, unknown>>;
+    const items = jsonArray(receipt.items);
     const purchaseOrderId = String(receipt.purchase_order_id);
     const directRows = await tx`
       select id from stock_movements
@@ -1450,7 +1464,7 @@ export async function deletePurchaseReceipt(recordId: string) {
 
     const orderRows = await tx`select items, total_received_kg, total_ordered_kg from purchase_orders where id = ${purchaseOrderId} limit 1`;
     if (orderRows[0]) {
-      const orderItems = (Array.isArray(orderRows[0].items) ? orderRows[0].items : []) as Array<Record<string, unknown>>;
+      const orderItems = jsonArray(orderRows[0].items);
       let totalReceived = Number(orderRows[0].total_received_kg ?? 0);
       const nextItems = orderItems.map((orderItem) => {
         const receiptItem = items.find((item) => item.purchaseOrderItemId === orderItem.id);
@@ -1466,7 +1480,7 @@ export async function deletePurchaseReceipt(recordId: string) {
       const status = totalReceived === 0 ? "Açık" : remaining === 0 ? "Tamamlandı" : "Kısmi Geldi";
       await tx`
         update purchase_orders
-        set items = ${JSON.stringify(nextItems)},
+        set items = ${tx.json(asJson(nextItems))},
             total_received_kg = ${totalReceived},
             total_remaining_kg = ${remaining},
             status = ${status},
@@ -1497,7 +1511,7 @@ export async function updatePurchaseReceipt(recordId: string, payload: Record<st
     const newDescription = optionalString(payload.description) ?? "";
     const newLotNo = optionalString(payload.lotNo);
 
-    const oldItems = (Array.isArray(receipt.items) ? receipt.items : []) as Array<Record<string, unknown>>;
+    const oldItems = jsonArray(receipt.items);
     const oldItem = oldItems[0];
     if (!oldItem) throw new Error("Fiş kalemi bulunamadı.");
 
@@ -1536,13 +1550,13 @@ export async function updatePurchaseReceipt(recordId: string, payload: Record<st
     const newUnitPrice = payload.unitPrice ? Number(payload.unitPrice) : Number(oldItem.unitPrice || 0);
 
     const updatedItems = [{ ...oldItem, stockId: newStockId, receivedKg: newReceivedKg, unitPrice: newUnitPrice, lotNo: newLotNo, description: newDescription }];
-    await tx`update purchase_receipts set receipt_date = ${newDate}, warehouse_id = ${newWarehouseId}, supplier_id = ${newSupplierId}, items = ${JSON.stringify(updatedItems)}, description = ${newDescription} where id = ${recordId}`;
+    await tx`update purchase_receipts set receipt_date = ${newDate}, warehouse_id = ${newWarehouseId}, supplier_id = ${newSupplierId}, items = ${tx.json(asJson(updatedItems))}, description = ${newDescription} where id = ${recordId}`;
 
     // Update purchase order
     const purchaseOrderId = String(receipt.purchase_order_id);
     const orderRows = await tx`select items, total_received_kg, total_ordered_kg from purchase_orders where id = ${purchaseOrderId} limit 1`;
     if (orderRows[0]) {
-      const orderItems = (Array.isArray(orderRows[0].items) ? orderRows[0].items : []) as Array<Record<string, unknown>>;
+      const orderItems = jsonArray(orderRows[0].items);
       let totalReceived = Number(orderRows[0].total_received_kg ?? 0);
       
       const nextItems = orderItems.map((oItem) => {
@@ -1561,7 +1575,7 @@ export async function updatePurchaseReceipt(recordId: string, payload: Record<st
       
       await tx`
         update purchase_orders
-        set items = ${JSON.stringify(nextItems)}, total_received_kg = ${totalReceived}, total_remaining_kg = ${remaining}, status = ${status}, updated_at = now()
+        set items = ${tx.json(asJson(nextItems))}, total_received_kg = ${totalReceived}, total_remaining_kg = ${remaining}, status = ${status}, updated_at = now()
         where id = ${purchaseOrderId}
       `;
     }

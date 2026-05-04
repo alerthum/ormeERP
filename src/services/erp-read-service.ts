@@ -47,6 +47,13 @@ function normalizeValue(key: string, value: unknown): unknown {
   if (Array.isArray(value)) return value.map((item) => normalizeObject(item as Row));
   if (typeof value === "object" && !(value instanceof Date)) return normalizeObject(value as Row);
   if (value instanceof Date) return value.toISOString();
+  if (typeof value === "string" && (value.trim().startsWith("[") || value.trim().startsWith("{"))) {
+    try {
+      return normalizeValue(key, JSON.parse(value));
+    } catch {
+      // Keep the original text when it is not actually JSON.
+    }
+  }
   if (numericKeys.has(key) && typeof value === "string") return Number(value);
   return value;
 }
