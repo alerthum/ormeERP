@@ -90,6 +90,9 @@ async function main() {
       first.orderedKg = Number(first.orderedKg ?? order.total_ordered_kg ?? 0);
       first.receivedKg = Number(first.receivedKg ?? order.total_received_kg ?? 0);
       first.remainingKg = Math.max(Number(first.orderedKg) - Number(first.receivedKg), 0);
+      if (!first.id) {
+        first.id = `poi-${crypto.randomUUID()}`;
+      }
       items[0] = first;
       await sql`update purchase_orders set items = ${sql.json(asJson(items))} where id = ${String(order.id)}`;
       fixedOrders += 1;
