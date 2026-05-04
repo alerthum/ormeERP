@@ -349,4 +349,18 @@ export const erpSeed: ErpData = {
   ],
   userProfiles: [],
   counters: [],
+  uiSettings: {
+    menuMode: "collapsible",
+    submenuDefaultState: "open",
+    modalPosition: "right",
+    modalPositionMobile: "bottom",
+    notificationsEnabled: true,
+    notificationModules: ["siparişler", "üretim", "stok", "satın alma", "sevkiyat"],
+    maxNotificationCount: 10,
+    showCriticalStock: true,
+    showDelayedOrders: true,
+    showProductionAlerts: true,
+    sidebarGroupBg: "#f8fafc",
+    sidebarGroupText: "#64748b",
+  },
 };
