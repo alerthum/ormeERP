@@ -1700,8 +1700,8 @@ export async function updatePurchaseReceipt(recordId: string, payload: Record<st
 export async function updateUISettings(payload: Record<string, unknown>) {
   await sql`
     insert into ui_settings (id, data)
-    values ('global', ${payload})
-    on conflict (id) do update set data = ${payload}
+    values ('global', ${sql.json(payload)})
+    on conflict (id) do update set data = ${sql.json(payload)}
   `;
   return { success: true };
 }
