@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { AlertTriangle, Boxes, Factory, PackageCheck, ShoppingCart, Timer, TrendingDown, Truck } from "lucide-react";
@@ -54,7 +54,7 @@ export function Dashboard() {
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1.4fr_0.8fr]">
-        <div className="premium-card rounded-2xl p-5">
+        <div className="premium-card rounded-none p-5">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-semibold text-slate-950">Aylık üretim ve fire trendi</h2>
@@ -83,7 +83,7 @@ export function Dashboard() {
           </div>
         </div>
 
-        <div className="premium-card rounded-2xl p-5">
+        <div className="premium-card rounded-none p-5">
           <h2 className="font-semibold text-slate-950">Sipariş durum dağılımı</h2>
           <div className="mt-6 h-60">
             {mounted ? (
@@ -108,33 +108,8 @@ export function Dashboard() {
         </div>
       </div>
 
-      <div className="premium-card rounded-2xl p-5">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h2 className="font-semibold text-slate-950">Bildirim Merkezi</h2>
-            <p className="text-sm text-slate-500">Kritik stok, termin, satın alma, fire ve sevkiyat sinyalleri</p>
-          </div>
-          <StatusBadge tone={notifications.some((item) => item.severity === "danger") ? "red" : notifications.length ? "amber" : "green"}>{notifications.length} bildirim</StatusBadge>
-        </div>
-        <div className="mt-5 grid gap-3 md:grid-cols-2">
-          {notifications.length === 0 ? (
-            <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">Şu an kritik bildirim yok.</div>
-          ) : notifications.map((item) => (
-            <div key={item.id} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-slate-950">{item.title}</p>
-                  <p className="mt-1 text-sm leading-6 text-slate-500">{item.message}</p>
-                </div>
-                <StatusBadge tone={item.severity === "danger" ? "red" : item.severity === "warning" ? "amber" : item.severity === "success" ? "green" : "blue"}>{item.severity}</StatusBadge>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
       <div className="grid gap-5 xl:grid-cols-3">
-        <div className="premium-card rounded-2xl p-5 xl:col-span-2">
+        <div className="premium-card rounded-none p-5 xl:col-span-2">
           <h2 className="font-semibold text-slate-950">Satıcı bazlı açık sipariş kg</h2>
           <div className="mt-5 h-64">
             {mounted ? (
@@ -150,11 +125,11 @@ export function Dashboard() {
             ) : null}
           </div>
         </div>
-        <div className="premium-card rounded-2xl p-5">
+        <div className="premium-card rounded-none p-5">
           <h2 className="font-semibold text-slate-950">Fasoncu risk listesi</h2>
           <div className="mt-5 space-y-3">
             {data.partners.filter((partner) => partner.type === "KNITTER").map((partner) => (
-              <div key={partner.id} className="flex items-center justify-between rounded-2xl bg-slate-50 p-3">
+              <div key={partner.id} className="flex items-center justify-between rounded-none bg-slate-50 p-3">
                 <div>
                   <p className="font-semibold text-slate-900">{partner.name}</p>
                   <p className="text-sm text-slate-500">Son fire riski</p>
@@ -167,11 +142,11 @@ export function Dashboard() {
       </div>
 
       <div className="grid gap-5 xl:grid-cols-2">
-        <div className="premium-card rounded-2xl p-5">
+        <div className="premium-card rounded-none p-5">
           <h2 className="font-semibold text-slate-950">Termin yaklaşan satın alma siparişleri</h2>
           <div className="mt-5 space-y-3">
             {data.purchaseOrders.map((order) => (
-              <div key={order.id} className="rounded-2xl border border-slate-100 p-4">
+              <div key={order.id} className="rounded-none border border-slate-100 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="font-semibold text-slate-950">{order.purchaseOrderNo} · {getName(data.partners, order.supplierId)}</p>
@@ -186,13 +161,13 @@ export function Dashboard() {
             ))}
           </div>
         </div>
-        <div className="premium-card rounded-2xl p-5">
+        <div className="premium-card rounded-none p-5">
           <h2 className="font-semibold text-slate-950">Son stok hareketleri</h2>
           <div className="mt-5 space-y-3">
             {data.stockMovements.slice(0, 5).map((movement) => (
-              <div key={movement.id} className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 p-3">
+              <div key={movement.id} className="flex items-center justify-between gap-3 rounded-none bg-slate-50 p-3">
                 <div className="flex items-center gap-3">
-                  <div className="grid size-10 place-items-center rounded-2xl bg-white text-blue-600 shadow-sm"><Timer className="size-4" /></div>
+                  <div className="grid size-10 place-items-center rounded-none bg-white text-blue-600 shadow-sm"><Timer className="size-4" /></div>
                   <div>
                     <p className="font-semibold text-slate-900">{movement.description}</p>
                     <p className="text-sm text-slate-500">{getName(data.warehouses, movement.warehouseId)}</p>

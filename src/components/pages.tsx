@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BarChart3, BookOpen, Boxes, CheckCircle2, Download, Factory, KeyRound, PackageCheck, PackagePlus, Plus, Settings, ShoppingCart, SlidersHorizontal, Truck, Users, Warehouse } from "lucide-react";
+import { AlertTriangle, BarChart3, Bell, BookOpen, Boxes, CheckCircle2, Download, Factory, KeyRound, Layout, Maximize2, PackageCheck, PackagePlus, Plus, Settings, ShoppingCart, SlidersHorizontal, Truck, Users, Warehouse, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DataTable, type Column } from "@/components/ui/data-table";
@@ -15,11 +15,17 @@ import { PartyTimeline } from "@/components/party-timeline";
 import { useErpData } from "@/components/erp-data-provider";
 import { getDashboardMetrics, getName, getPurchaseProgress } from "@/services/erp-service";
 import type { DyehouseProduction, ErpData, NamedEntity, Order, Partner, Party, PurchaseOrder, PurchaseReceipt, RawProduction, Role, Sale, StockCard, StockMovement, Transfer, UserProfile, Warehouse as WarehouseEntity } from "@/types/erp";
-import { formatDate, formatKg, formatPercent, wasteTone, normalizeItems } from "@/lib/utils";
+import { cn, formatDate, formatKg, formatPercent, wasteTone, normalizeItems } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 
-const primaryButton = "inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-100";
-const dangerButton = "rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700";
+const primaryButton = "inline-flex items-center justify-center gap-2 rounded-none bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-100";
+const dangerButton = "rounded-none border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700";
+const tones = {
+  blue: "bg-blue-600 ring-blue-100",
+  green: "bg-emerald-500 ring-emerald-100",
+  amber: "bg-amber-400 ring-amber-100",
+  red: "bg-rose-500 ring-rose-100",
+};
 
 function requestSignal(ms = 8000) {
   const controller = new AbortController();
@@ -99,6 +105,17 @@ const emptyOrderFilters: OrderFilters = {
   smart: "",
 };
 
+const inputClass = "w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50";
+
+function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
+  return (
+    <div className={cn("space-y-2", className)}>
+      <label className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{label}</label>
+      {children}
+    </div>
+  );
+}
+
 function includesTr(value: string, query: string) {
   return value.toLocaleLowerCase("tr-TR").includes(query.toLocaleLowerCase("tr-TR"));
 }
@@ -139,12 +156,26 @@ async function apiPatch(endpoint: string, payload: Record<string, unknown>) {
   const token = session.data.session?.access_token;
   const response = await fetch(endpoint, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}) },
     body: JSON.stringify(payload),
     signal: requestSignal(),
   });
   const result = (await response.json()) as { ok: boolean; error?: string };
   if (!response.ok || !result.ok) throw new Error(result.error ?? "İşlem tamamlanamadı.");
+}
+
+async function postJson(endpoint: string, payload: Record<string, unknown>) {
+  const session = await supabase.auth.getSession();
+  const token = session.data.session?.access_token;
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}) },
+    body: JSON.stringify(payload),
+    signal: requestSignal(),
+  });
+  const result = (await response.json()) as { ok: boolean; error?: string };
+  if (!response.ok || !result.ok) throw new Error(result.error ?? "İşlem tamamlanamadı.");
+  return result;
 }
 
 export function OrdersPage() {
@@ -223,6 +254,7 @@ export function OrdersPage() {
     },
     summary: (orders: Order[]) => `${orders.length} sipariş · ${formatKg(orders.reduce((sum, order) => sum + order.quantityKg, 0))}`,
   };
+
   async function deleteOrder() {
     if (!deleteTarget) return;
     try {
@@ -235,6 +267,7 @@ export function OrdersPage() {
       toast.error(error instanceof Error ? error.message : "Sipariş silinemedi.");
     }
   }
+
   const columns: Column<Order>[] = [
     { header: "Sipariş", cell: (row) => <Link className="font-semibold text-blue-700" href={`/orders/${row.id}`}>{row.orderNo}</Link> },
     { header: "Müşteri", cell: (row) => row.customerName },
@@ -242,11 +275,11 @@ export function OrdersPage() {
     { header: "Renk", cell: (row) => getName(data.colors, row.colorId) },
     { header: "Kg", cell: (row) => formatKg(row.quantityKg) },
     { header: "Durum", cell: (row) => <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge> },
-    { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end gap-2"><button className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditing(row)} type="button">Düzenle</button><button className={dangerButton} onClick={() => setDeleteTarget(row)} type="button">Sil</button></div> },
+    { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end gap-2"><button className="rounded-none border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditing(row)} type="button">Düzenle</button><button className={dangerButton} onClick={() => setDeleteTarget(row)} type="button">Sil</button></div> },
   ];
   const filterControls = (
     <div className="grid gap-3 md:grid-cols-2">
-      <select className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 outline-none" value={groupMode} onChange={(event) => setGroupMode(event.target.value as OrderGroupMode)}>
+      <select className="rounded-none border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 outline-none" value={groupMode} onChange={(event) => setGroupMode(event.target.value as OrderGroupMode)}>
         <option value="none">Gruplama yok</option>
         <option value="ymStock">YM stok adına göre grupla</option>
         <option value="mmStock">MM stok adına göre grupla</option>
@@ -256,69 +289,69 @@ export function OrdersPage() {
         <option value="customer">Müşteriye göre grupla</option>
         <option value="status">Duruma göre grupla</option>
       </select>
-      <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.status} onChange={(event) => setOrderFilter("status", event.target.value)}>
+      <select className="rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.status} onChange={(event) => setOrderFilter("status", event.target.value)}>
         <option value="ALL">Tüm durumlar</option>
         {["Taslak", "Onaylandı", "İplik Bekliyor", "Örmede", "Ham Geldi", "Boyahanede", "Mamül Hazır", "Sevk Edildi", "Kapandı", "İptal"].map((status) => <option key={status}>{status}</option>)}
       </select>
-      <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.customer} onChange={(event) => setOrderFilter("customer", event.target.value)}>
+      <select className="rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.customer} onChange={(event) => setOrderFilter("customer", event.target.value)}>
         <option value="">Tüm müşteriler</option>
         {customerNames.map((customer) => <option key={customer}>{customer}</option>)}
       </select>
-      <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.fabricTypeId} onChange={(event) => setOrderFilter("fabricTypeId", event.target.value)}>
+      <select className="rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.fabricTypeId} onChange={(event) => setOrderFilter("fabricTypeId", event.target.value)}>
         <option value="ALL">Tüm kumaşlar</option>
         {data.fabricTypes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
       </select>
-      <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.colorId} onChange={(event) => setOrderFilter("colorId", event.target.value)}>
+      <select className="rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.colorId} onChange={(event) => setOrderFilter("colorId", event.target.value)}>
         <option value="ALL">Tüm renkler</option>
         {data.colors.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
       </select>
-      <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.yarnCountId} onChange={(event) => setOrderFilter("yarnCountId", event.target.value)}>
+      <select className="rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.yarnCountId} onChange={(event) => setOrderFilter("yarnCountId", event.target.value)}>
         <option value="ALL">Tüm Ne numaraları</option>
         {data.yarnCounts.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
       </select>
-      <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.ymStockId} onChange={(event) => setOrderFilter("ymStockId", event.target.value)}>
+      <select className="rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.ymStockId} onChange={(event) => setOrderFilter("ymStockId", event.target.value)}>
         <option value="ALL">Tüm YM stokları</option>
         {ymStocks.map((stock) => <option key={stock.id} value={stock.id}>{stock.code} - {stock.name}</option>)}
       </select>
-      <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.mmStockId} onChange={(event) => setOrderFilter("mmStockId", event.target.value)}>
+      <select className="rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.mmStockId} onChange={(event) => setOrderFilter("mmStockId", event.target.value)}>
         <option value="ALL">Tüm MM stokları</option>
         {mmStocks.map((stock) => <option key={stock.id} value={stock.id}>{stock.code} - {stock.name}</option>)}
       </select>
-      <input className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none md:col-span-2" placeholder="Akıllı filtre: bekleyen boyahanede lacivert" value={filters.smart} onChange={(event) => setOrderFilter("smart", event.target.value)} />
+      <input className="rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none md:col-span-2" placeholder="Akıllı filtre: bekleyen boyahanede lacivert" value={filters.smart} onChange={(event) => setOrderFilter("smart", event.target.value)} />
       <label className="space-y-1 text-xs font-semibold text-slate-400">
         Sipariş başlangıç
-        <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dateFrom} onChange={(event) => setOrderFilter("dateFrom", event.target.value)} />
+        <input className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dateFrom} onChange={(event) => setOrderFilter("dateFrom", event.target.value)} />
       </label>
       <label className="space-y-1 text-xs font-semibold text-slate-400">
         Sipariş bitiş
-        <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dateTo} onChange={(event) => setOrderFilter("dateTo", event.target.value)} />
+        <input className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dateTo} onChange={(event) => setOrderFilter("dateTo", event.target.value)} />
       </label>
       <label className="space-y-1 text-xs font-semibold text-slate-400">
         Termin başlangıç
-        <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dueFrom} onChange={(event) => setOrderFilter("dueFrom", event.target.value)} />
+        <input className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dueFrom} onChange={(event) => setOrderFilter("dueFrom", event.target.value)} />
       </label>
       <label className="space-y-1 text-xs font-semibold text-slate-400">
         Termin bitiş
-        <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dueTo} onChange={(event) => setOrderFilter("dueTo", event.target.value)} />
+        <input className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dueTo} onChange={(event) => setOrderFilter("dueTo", event.target.value)} />
       </label>
     </div>
   );
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Siparişler" title="Müşteri Siparişleri" description="Kumaş üretim talepleri, otomatik YM/MM stok eşleşmesi ve üretim durum takibi." icon={ShoppingCart} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Yeni sipariş</button>} />
-      <div className="premium-card rounded-2xl p-4 sm:p-5">
+      <div className="premium-card rounded-none p-4 sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="font-semibold text-slate-950">Sipariş görünümü</h2>
             <p className="mt-1 text-sm text-slate-500">{filteredOrders.length} sipariş listeleniyor.</p>
           </div>
           <div className="flex gap-2">
-            <button className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-100" onClick={() => setFiltersOpen(true)} type="button">
+            <button className="inline-flex items-center justify-center gap-2 rounded-none bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-100" onClick={() => setFiltersOpen(true)} type="button">
               <SlidersHorizontal className="size-4" />
               Filtrele
             </button>
             {(activeFilterChips.length > 0) ? (
-              <button className="rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600" onClick={() => { setFilters(emptyOrderFilters); setGroupMode("none"); }} type="button">
+              <button className="rounded-none border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600" onClick={() => { setFilters(emptyOrderFilters); setGroupMode("none"); }} type="button">
                 Temizle
               </button>
             ) : null}
@@ -338,8 +371,8 @@ export function OrdersPage() {
           <p className="text-sm leading-6 text-slate-500">Durum, tarih, müşteri, stok ve akıllı ifade ile listeyi daraltın. Seçimler sayfada chip olarak görünür.</p>
           {filterControls}
           <div className="grid gap-3 sm:grid-cols-2">
-            <button className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600" onClick={() => { setFilters(emptyOrderFilters); setGroupMode("none"); }} type="button">Filtreleri temizle</button>
-            <button className="rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-100" onClick={() => setFiltersOpen(false)} type="button">Sonuçları göster</button>
+            <button className="rounded-none border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600" onClick={() => { setFilters(emptyOrderFilters); setGroupMode("none"); }} type="button">Filtreleri temizle</button>
+            <button className="rounded-none bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-100" onClick={() => setFiltersOpen(false)} type="button">Sonuçları göster</button>
           </div>
         </div>
       </FormDrawer>
@@ -359,18 +392,206 @@ export function OrdersPage() {
 export function OrderDetailPage({ id }: { id: string }) {
   const { data } = useErpData();
   const order = data.orders.find((item) => item.id === id);
-  if (!order) return <DataTable rows={[]} columns={[]} />;
-  const party = data.parties.find((item) => item.orderId === order.id);
+
+  const orderParties = order ? data.parties.filter(p => p.orderId === order.id) : [];
+  const orderSales = order ? data.sales.filter(s => s.orderId === order.id) : [];
+  const shippedKg = orderSales.reduce((sum, s) => sum + s.quantityKg, 0);
+  const producedRawKg = orderParties.reduce((sum, p) => sum + p.rawProducedKg, 0);
+  const finishedKg = orderParties.reduce((sum, p) => sum + p.finishedKg, 0);
+  
+  const readyKg = Math.max(finishedKg - shippedKg, 0);
+  const progressPercent = (order?.quantityKg ?? 0) > 0 ? (shippedKg / order!.quantityKg) * 100 : 0;
+
+  const allTimelineItems = orderParties.flatMap(p => (p.timeline || []).map(t => ({ ...t, partyNo: p.partyNo })))
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const orderBalances = data.warehouseBalances.filter(b => 
+    order && (b.stockId === order.ymStockId || b.stockId === order.mmStockId) && b.quantity > 0
+  ).filter(b => {
+    if (b.partyId) return orderParties.some(p => p.id === b.partyId);
+    return true;
+  });
+
+  const analysis = useMemo(() => {
+    if (!order) return { status: "info" as const, text: "", alerts: [] };
+    const alerts: string[] = [];
+    const today = new Date();
+    const dueDate = new Date(order.dueDate);
+    const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (shippedKg >= order.quantityKg && order.quantityKg > 0) {
+      return { status: "success" as const, text: "Sipariş tamamen sevk edildi. Başarıyla tamamlandı.", alerts: [] };
+    }
+
+    if (diffDays < 0) {
+      alerts.push(`Siparişin termin tarihi ${Math.abs(diffDays)} gün geçti! Acil sevkiyat planlanmalı.`);
+    } else if (diffDays <= 3) {
+      alerts.push(`Termine sadece ${diffDays} gün kaldı. Kritik aşamadasınız.`);
+    }
+
+    orderParties.forEach(p => {
+      if (p.status === "Ham Geldi") {
+        const lastRawDate = (p.timeline || []).filter(t => t.title.includes("Ham")).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]?.date;
+        if (lastRawDate) {
+          const delay = Math.ceil((today.getTime() - new Date(lastRawDate).getTime()) / (1000 * 60 * 60 * 24));
+          if (delay >= 3) {
+            alerts.push(`${p.partyNo} partisi ${delay} gündür ham depoda bekliyor, henüz boyahaneye gönderilmedi.`);
+          }
+        }
+      }
+    });
+
+    if (producedRawKg === 0 && diffDays < 7) {
+      alerts.push("Üretim henüz başlamamış görünüyor. Termin yetişmeyebilir.");
+    }
+
+    let recommendation = "";
+    if (readyKg > 0) {
+      recommendation = `${formatKg(readyKg)} mamül kumaş depoda hazır bekliyor. Hemen sevkiyat oluşturulabilir.`;
+    } else if (producedRawKg > finishedKg) {
+      recommendation = "Boyahanedeki işlemlerin hızlandırılması sevkiyat süresini kısaltacaktır.";
+    } else {
+      recommendation = "Örme planlaması yapılarak ham kumaş girişleri hızlandırılmalı.";
+    }
+
+    return {
+      status: alerts.length > 0 ? (diffDays < 0 ? "danger" as const : "warning" as const) : "info" as const,
+      text: recommendation,
+      alerts
+    };
+  }, [order, orderParties, shippedKg, producedRawKg, finishedKg, readyKg]);
+
+  if (!order) return <div className="p-8 text-center text-slate-500">Sipariş bulunamadı.</div>;
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow={order.orderNo} title={order.customerName} description={`${getName(data.fabricTypes, order.fabricTypeId)} · ${getName(data.colors, order.colorId)} · ${formatKg(order.quantityKg)}`} icon={ShoppingCart} action={<StatusBadge tone={statusTone(order.status)}>{order.status}</StatusBadge>} />
+      <PageHeader 
+        eyebrow={order.orderNo} 
+        title={order.customerName} 
+        description={`${getName(data.fabricTypes, order.fabricTypeId)} · ${getName(data.colors, order.colorId)}`} 
+        icon={ShoppingCart} 
+        action={<StatusBadge tone={statusTone(order.status)}>{order.status}</StatusBadge>} 
+      />
       <div className="grid gap-4 md:grid-cols-4">
-        <StatCard title="Termin" value={formatDate(order.dueDate)} helper="Planlanan teslim" icon={ShoppingCart} />
-        <StatCard title="YM stok" value={getName(data.stockCards, order.ymStockId)} helper="Ham kumaş referansı" icon={Boxes} tone="green" />
-        <StatCard title="MM stok" value={getName(data.stockCards, order.mmStockId)} helper="Mamül kumaş referansı" icon={Boxes} tone="green" />
-        <StatCard title="Parti" value={party?.partyNo ?? "-"} helper="Satışa kadar izlenir" icon={Factory} tone="amber" />
+        <StatCard title="Sipariş" value={formatKg(order.quantityKg)} helper="Hedef miktar" icon={ShoppingCart} />
+        <StatCard title="Sevk Edilen" value={formatKg(shippedKg)} helper={`${formatPercent(progressPercent)} tamamlandı`} icon={Truck} tone="green" />
+        <StatCard title="Hazır" value={formatKg(readyKg)} helper="Depoda bekleyen mamül" icon={PackageCheck} tone="blue" />
+        <StatCard title="Kalan" value={formatKg(Math.max(order.quantityKg - shippedKg, 0))} helper="Eksik miktar" icon={Boxes} tone={progressPercent < 100 ? "amber" : "green"} />
       </div>
-      <PartyTimeline items={party?.timeline ?? []} />
+      <div className="mt-2 h-3 overflow-hidden rounded-full bg-slate-100 shadow-inner">
+        <div 
+          className="h-full bg-gradient-to-r from-blue-500 to-emerald-500 transition-all duration-1000" 
+          style={{ width: `${progressPercent}%` }} 
+        />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="premium-card rounded-none p-5">
+            <h3 className="text-base font-semibold text-slate-950 flex items-center gap-2">
+              <BarChart3 className="size-4 text-blue-600" />
+              Sipariş Timeline
+            </h3>
+            <div className="mt-6 space-y-6">
+              {allTimelineItems.length === 0 ? (
+                <p className="py-8 text-center text-sm text-slate-500 italic">Henüz bir hareket kaydı bulunmuyor.</p>
+              ) : allTimelineItems.map((item, idx) => (
+                <div key={idx} className="relative flex gap-4">
+                  {idx < allTimelineItems.length - 1 && <div className="absolute left-[11px] top-7 h-full w-px bg-slate-100" />}
+                  <div className={cn("relative z-10 mt-1 size-6 rounded-full ring-8 shadow-sm", tones[item.tone as keyof typeof tones || "blue"])} />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{formatDate(item.date)}</p>
+                      <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{item.partyNo}</span>
+                    </div>
+                    <h4 className="mt-1 font-semibold text-slate-900">{item.title}</h4>
+                    <p className="mt-1 text-sm text-slate-500 leading-relaxed">{item.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="premium-card rounded-none p-5 bg-slate-50/50">
+            <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400">Depo Bakiyeleri</h3>
+            <div className="mt-4 space-y-3">
+              {orderBalances.length === 0 ? (
+                <p className="text-sm text-slate-500">Bu sipariş için depoda bakiye bulunmuyor.</p>
+              ) : orderBalances.map(b => (
+                <div key={b.id} className="flex items-center justify-between p-3 rounded-none bg-white border border-slate-100 shadow-sm">
+                  <div>
+                    <p className="text-xs font-bold text-slate-900">{getName(data.warehouses, b.warehouseId)}</p>
+                    <p className="text-[10px] text-slate-500">{getName(data.stockCards, b.stockId)} {b.lotNo ? `· Lot: ${b.lotNo}` : ""}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-blue-600">{formatKg(b.quantity)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="premium-card rounded-none p-5">
+            <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400">Sevkiyat Özeti</h3>
+            <div className="mt-4 space-y-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-500">Sipariş Miktarı</span>
+                <span className="font-bold text-slate-900">{formatKg(order.quantityKg)}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-500">Toplam Sevk Edilen</span>
+                <span className="font-bold text-emerald-600">{formatKg(shippedKg)}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-500">Kalan Bekleyen</span>
+                <span className="font-bold text-amber-600">{formatKg(Math.max(order.quantityKg - shippedKg, 0))}</span>
+              </div>
+              <div className="pt-4 border-t border-slate-100">
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase mb-3">Son Sevkiyatlar</h4>
+                {orderSales.slice(0, 3).map(s => (
+                  <div key={s.id} className="flex items-center justify-between text-xs py-1">
+                    <span className="text-slate-600">{formatDate(s.date)}</span>
+                    <span className="font-semibold text-slate-900">{formatKg(s.quantityKg)}</span>
+                  </div>
+                ))}
+                {orderSales.length === 0 && <p className="text-xs text-slate-400 italic">Henüz sevkiyat yapılmadı.</p>}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className={cn(
+        "premium-card rounded-none p-6 border-l-4",
+        analysis.status === "danger" ? "border-rose-500 bg-rose-50/30" : 
+        analysis.status === "warning" ? "border-amber-500 bg-amber-50/30" : "border-blue-500 bg-blue-50/30"
+      )}>
+        <div className="flex items-start gap-4">
+          <div className={cn(
+            "p-2 rounded-none",
+            analysis.status === "danger" ? "bg-rose-100 text-rose-600" : 
+            analysis.status === "warning" ? "bg-amber-100 text-amber-600" : "bg-blue-100 text-blue-600"
+          )}>
+            <Factory className="size-5" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-bold text-slate-900">AI Üretim & Planlama Analizi</h3>
+            <p className="mt-1 text-sm text-slate-700 leading-relaxed">{analysis.text}</p>
+            
+            {analysis.alerts.length > 0 && (
+              <div className="mt-4 space-y-2">
+                {analysis.alerts.map((alert, idx) => (
+                  <div key={idx} className="flex items-center gap-2 text-xs font-semibold text-slate-800 bg-white/50 p-2 rounded-none border border-white/50">
+                    <div className={cn("size-1.5 rounded-full", analysis.status === "danger" ? "bg-rose-500" : "bg-amber-500")} />
+                    {alert}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -411,24 +632,24 @@ export function PurchaseOrdersPage() {
     { header: "Gelen", cell: (row) => formatKg(row.totalReceivedKg) },
     { header: "Kalan", cell: (row) => formatKg(row.totalRemainingKg) },
     { header: "Durum", cell: (row) => <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge> },
-    { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end gap-2"><button className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditing(row)} type="button">Düzenle</button><button className={dangerButton} onClick={() => setDeleteTarget(row)} type="button">Sil</button></div> },
+    { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end gap-2"><button className="rounded-none border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditing(row)} type="button">Düzenle</button><button className={dangerButton} onClick={() => setDeleteTarget(row)} type="button">Sil</button></div> },
   ];
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Satın alma" title="Satıcı Siparişleri" description="IP, LYC ve POLY için açık satıcı siparişleri, termin ve bekleyen kg takibi." icon={PackagePlus} action={<button className={primaryButton} onClick={() => setOrderOpen(true)}><Plus className="size-4" />Satıcı siparişi</button>} />
-      <div className="premium-card rounded-2xl p-5 mb-6">
+      <div className="premium-card rounded-none p-5 mb-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="font-semibold text-slate-950">Satıcı Sipariş Filtreleri</h2>
             <p className="mt-1 text-sm text-slate-500">Durum ve tedarikçiye göre daraltın.</p>
           </div>
-          <button className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600" onClick={() => setFilters({ status: "ALL", supplierId: "ALL" })} type="button">Filtreleri temizle</button>
+          <button className="rounded-none border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600" onClick={() => setFilters({ status: "ALL", supplierId: "ALL" })} type="button">Filtreleri temizle</button>
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.status} onChange={(e) => setFilter("status", e.target.value)}>
+          <select className="rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.status} onChange={(e) => setFilter("status", e.target.value)}>
             <option value="ALL">Tüm durumlar</option><option value="Taslak">Taslak</option><option value="Açık">Açık</option><option value="Kısmi Geldi">Kısmi Geldi</option><option value="Tamamlandı">Tamamlandı</option><option value="İptal">İptal</option>
           </select>
-          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.supplierId} onChange={(e) => setFilter("supplierId", e.target.value)}>
+          <select className="rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.supplierId} onChange={(e) => setFilter("supplierId", e.target.value)}>
             <option value="ALL">Tüm Satıcılar</option>
             {uniqueSuppliers.map(id => <option key={id} value={id}>{getName(data.partners, id)}</option>)}
           </select>
@@ -437,7 +658,7 @@ export function PurchaseOrdersPage() {
 
       <div className="grid gap-4 md:grid-cols-3">
         {filteredOrders.map((order) => (
-          <div key={order.id} className="premium-card rounded-2xl p-5">
+          <div key={order.id} className="premium-card rounded-none p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="font-semibold text-slate-950">{order.purchaseOrderNo} · {getName(data.partners, order.supplierId)}</p>
@@ -512,7 +733,7 @@ export function PurchasesPage() {
       className: "text-right",
       cell: (row) => (
         <div className="flex justify-end gap-2">
-          <button className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditingReceipt(row)} type="button">Düzenle</button>
+          <button className="rounded-none border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditingReceipt(row)} type="button">Düzenle</button>
           <button className={dangerButton} onClick={() => setDeleteReceiptTarget(row)} type="button">Sil</button>
         </div>
       ),
@@ -533,34 +754,34 @@ export function PurchasesPage() {
         <StatCard title="Toplam gelen" value={formatKg(data.purchaseReceipts.reduce((sum, receipt) => sum + normalizeItems(receipt.items).reduce((itemSum, item) => itemSum + (item.receivedKg || 0), 0), 0))} helper="Tüm alış fişleri" icon={PackageCheck} tone="green" />
         <StatCard title="Hızlı alış" value={String(data.purchaseReceipts.filter((receipt) => directReceiptIds.has(receipt.id)).length)} helper="Siparişsiz giriş" icon={CheckCircle2} tone="blue" />
       </div>
-      <div className="premium-card rounded-2xl p-5 mb-6">
+      <div className="premium-card rounded-none p-5 mb-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="font-semibold text-slate-950">Alış İşlemleri Filtreleri</h2>
             <p className="mt-1 text-sm text-slate-500">İşlem türü ve depoya göre daraltın.</p>
           </div>
-          <button className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600" onClick={() => setFilters({ type: "ALL", warehouseId: "ALL" })} type="button">Filtreleri temizle</button>
+          <button className="rounded-none border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600" onClick={() => setFilters({ type: "ALL", warehouseId: "ALL" })} type="button">Filtreleri temizle</button>
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.type} onChange={(e) => setFilter("type", e.target.value)}>
+          <select className="rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.type} onChange={(e) => setFilter("type", e.target.value)}>
             <option value="ALL">Tüm türler</option><option value="Hızlı">Hızlı alış</option><option value="Siparişe Bağlı">Siparişe bağlı</option>
           </select>
-          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.warehouseId} onChange={(e) => setFilter("warehouseId", e.target.value)}>
+          <select className="rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.warehouseId} onChange={(e) => setFilter("warehouseId", e.target.value)}>
             <option value="ALL">Tüm depolar</option>
             {data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
           </select>
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-2 mb-6">
-        <div className="premium-card rounded-2xl p-5">
+        <div className="premium-card rounded-none p-5">
           <h2 className="font-semibold text-slate-950">Hızlı alış</h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">Sipariş açmadan IP, LYC veya POLY stoğunu doğrudan seçilen depoya alır. Sistem tamamlanmış satıcı siparişi, mal kabul ve stok girişi kaydını birlikte oluşturur.</p>
-          <button className="mt-4 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white" onClick={() => setDirectOpen(true)} type="button">Hızlı alış başlat</button>
+          <button className="mt-4 rounded-none bg-blue-600 px-4 py-3 text-sm font-semibold text-white" onClick={() => setDirectOpen(true)} type="button">Hızlı alış başlat</button>
         </div>
-        <div className="premium-card rounded-2xl p-5">
+        <div className="premium-card rounded-none p-5">
           <h2 className="font-semibold text-slate-950">Siparişe bağlı alış</h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">Önceden açılmış satıcı siparişlerine kısmi veya tam mal kabul girer. Gelen ve kalan kg otomatik hesaplanır.</p>
-          <button className="mt-4 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white" onClick={() => setReceiptOpen(true)} type="button">Mal kabul gir</button>
+          <button className="mt-4 rounded-none bg-blue-600 px-4 py-3 text-sm font-semibold text-white" onClick={() => setReceiptOpen(true)} type="button">Mal kabul gir</button>
         </div>
       </div>
       <DataTable
@@ -644,24 +865,24 @@ export function StocksPage() {
     { header: "Ne", cell: (row) => getName(data.yarnCounts, row.yarnCountId) },
     { header: "Stok", cell: (row) => formatKg(data.stockMovements.filter((movement) => movement.stockId === row.id).reduce((sum, movement) => sum + (movement.direction === "IN" ? movement.quantity : -movement.quantity), 0)) },
     { header: "Kritik", cell: (row) => formatKg(row.criticalStockKg) },
-    { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end gap-2"><button className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700" onClick={() => setDetailTarget(row)} type="button">Detay</button><button className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditing(row)} type="button">Düzenle</button><button className={dangerButton} onClick={() => setActionTarget(row)} type="button">Sil/Pasif</button></div> },
+    { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end gap-2"><button className="rounded-none border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700" onClick={() => setDetailTarget(row)} type="button">Detay</button><button className="rounded-none border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditing(row)} type="button">Düzenle</button><button className={dangerButton} onClick={() => setActionTarget(row)} type="button">Sil/Pasif</button></div> },
   ];
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Stok" title="Stok Kartları" description="YM/MM partili izlenir; IP/LYC/POLY satın alma ve üretim tüketimiyle takip edilir." icon={Boxes} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Stok kartı</button>} />
-      <div className="premium-card rounded-2xl p-5 mb-6">
+      <div className="premium-card rounded-none p-5 mb-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="font-semibold text-slate-950">Stok Kartı Filtreleri</h2>
             <p className="mt-1 text-sm text-slate-500">Stok tipi ve durumuna göre daraltın.</p>
           </div>
-          <button className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600" onClick={() => setFilters({ type: "ALL", isActive: "Aktif" })} type="button">Filtreleri temizle</button>
+          <button className="rounded-none border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600" onClick={() => setFilters({ type: "ALL", isActive: "Aktif" })} type="button">Filtreleri temizle</button>
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.type} onChange={(e) => setFilter("type", e.target.value)}>
+          <select className="rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.type} onChange={(e) => setFilter("type", e.target.value)}>
             <option value="ALL">Tüm tipler</option><option value="IP">İplik (IP)</option><option value="YM">Yarımamül (YM)</option><option value="MM">Mamül (MM)</option><option value="LYC">Likra (LYC)</option><option value="POLY">Polyester (POLY)</option>
           </select>
-          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.isActive} onChange={(e) => setFilter("isActive", e.target.value)}>
+          <select className="rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.isActive} onChange={(e) => setFilter("isActive", e.target.value)}>
             <option value="ALL">Tümü</option><option value="Aktif">Aktif olanlar</option><option value="Pasif">Pasif olanlar</option>
           </select>
         </div>
@@ -697,17 +918,17 @@ export function StocksPage() {
       <FormDrawer open={Boolean(actionTarget)} title="Stok Kartı Sil / Pasif" onClose={() => setActionTarget(null)}>
         {actionTarget && (
           <div className="space-y-6">
-            <div className="rounded-2xl border border-slate-200 p-5 shadow-sm">
+            <div className="rounded-none border border-slate-200 p-5 shadow-sm">
               <h3 className="font-semibold text-slate-900">Bu stok kartına ne yapılsın?</h3>
               <p className="mt-2 text-sm leading-6 text-slate-500">
                 <b>Sil:</b> Sadece hiç hareket görmemiş kartlar silinebilir.<br/>
                 <b>Pasife Çek:</b> Hareket gören kartlar silinemez, ancak listelerde çıkmaması için pasife çekilebilir.
               </p>
               <div className="mt-5 grid grid-cols-2 gap-3">
-                <button className="w-full rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 hover:bg-rose-100" onClick={handleDelete}>
+                <button className="w-full rounded-none border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 hover:bg-rose-100" onClick={handleDelete}>
                   Tamamen Sil
                 </button>
-                <button className="w-full rounded-2xl bg-amber-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-200 hover:bg-amber-700" onClick={handleDeactivate}>
+                <button className="w-full rounded-none bg-amber-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-200 hover:bg-amber-700" onClick={handleDeactivate}>
                   Pasife Çek
                 </button>
               </div>
@@ -799,7 +1020,7 @@ export function StockDetailPage({ id }: { id: string }) {
         {tabs.map((tab) => (
           <button
             key={tab}
-            className={`rounded-2xl px-4 py-2 text-sm font-semibold transition ${activeTab === tab ? "bg-blue-600 text-white shadow-lg shadow-blue-100" : "border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700"}`}
+            className={`rounded-none px-4 py-2 text-sm font-semibold transition ${activeTab === tab ? "bg-blue-600 text-white shadow-lg shadow-blue-100" : "border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700"}`}
             onClick={() => setActiveTab(tab)}
             type="button"
           >
@@ -815,7 +1036,7 @@ export function StockDetailPage({ id }: { id: string }) {
             <StatCard title="Bekleyen alış" value={formatKg(purchaseItems.reduce((sum, item) => sum + item.remainingKg, 0))} helper="Satıcı açık kg" icon={Truck} tone="amber" />
             <StatCard title="Üretim tüketimi" value={formatKg(movements.filter((item) => item.movementType === "Üretim tüketim").reduce((sum, item) => sum + item.quantity, 0))} helper="Hareketlerden hesaplanır" icon={Factory} tone="red" />
           </div>
-          <div className="premium-card rounded-2xl p-5">
+          <div className="premium-card rounded-none p-5">
             <h2 className="font-semibold text-slate-950">Kart bilgileri</h2>
             <div className="mt-4 grid gap-3 text-sm text-slate-600 md:grid-cols-3">
               <p><span className="font-semibold text-slate-900">Tip:</span> {stock.type}</p>
@@ -842,7 +1063,14 @@ export function StockDetailPage({ id }: { id: string }) {
           columns={[
             { header: "Depo", cell: (row) => row.warehouseName },
             { header: "Parti", cell: (row) => row.partyNo },
-            { header: "Lot", cell: (row) => row.lotNo },
+            { header: "En", cell: (row) => {
+              const party = data.parties.find(p => p.id === row.partyId);
+              return (party?.finishWidth || party?.rawWidth) ?? "-";
+            }},
+            { header: "Gramaj", cell: (row) => {
+              const party = data.parties.find(p => p.id === row.partyId);
+              return (party?.finishGsm || party?.rawGsm) ?? "-";
+            }},
             { header: "Bakiye", cell: (row) => formatKg(row.quantity) },
             { header: "Güncelleme", cell: (row) => formatDate(row.updatedAt) },
           ]}
@@ -856,7 +1084,14 @@ export function StockDetailPage({ id }: { id: string }) {
           columns={[
             { header: "Depo", cell: (row) => row.warehouseName },
             { header: "Parti", cell: (row) => row.partyNo },
-            { header: "Lot", cell: (row) => row.lotNo },
+            { header: "En", cell: (row) => {
+              const party = data.parties.find(p => p.id === row.partyId);
+              return (party?.finishWidth || party?.rawWidth) ?? "-";
+            }},
+            { header: "Gramaj", cell: (row) => {
+              const party = data.parties.find(p => p.id === row.partyId);
+              return (party?.finishGsm || party?.rawGsm) ?? "-";
+            }},
             { header: "Bakiye", cell: (row) => formatKg(row.quantity) },
           ]}
           searchPlaceholder="Parti veya lotta ara"
@@ -930,20 +1165,68 @@ export function PartyDetailPage({ id }: { id: string }) {
   const party = data.parties.find((item) => item.id === id);
   if (!party) return <DataTable rows={[]} columns={[]} />;
   const order = data.orders.find((item) => item.id === party.orderId);
+
+  const timeline = useMemo(() => {
+    const events: Array<{ date: string; title: string; description: string; tone: 'blue' | 'green' | 'amber' | 'red' }> = [
+      ...(party.timeline || [])
+    ];
+
+    data.productionRaw.filter(p => p.partyId === id).forEach(p => {
+      events.push({
+        date: p.date,
+        title: 'Ham Üretim',
+        description: formatKg(p.producedRawKg) + ' ham kumaş üretildi. ( %' + p.wastePercent + ' fire)',
+        tone: 'blue'
+      });
+    });
+
+    data.transfers.forEach(t => {
+      const partyItem = normalizeItems(t.items).find(it => it.partyId === id);
+      if (partyItem) {
+        events.push({
+          date: t.date,
+          title: 'Depo Transferi',
+          description: getName(data.warehouses, t.fromWarehouseId) + ' -> ' + getName(data.warehouses, t.toWarehouseId) + ' (' + formatKg(partyItem.quantity) + ' kg)',
+          tone: 'amber'
+        });
+      }
+    });
+
+    data.productionDyehouse.filter(p => p.partyId === id).forEach(p => {
+      events.push({
+        date: p.date,
+        title: 'Boyahane Üretimi',
+        description: formatKg(p.finishedKg) + ' mamül kumaş girişi yapıldı. ( %' + p.wastePercent + ' fire)',
+        tone: 'green'
+      });
+    });
+
+    data.sales.filter(s => s.partyId === id && s.status !== 'İptal').forEach(s => {
+      events.push({
+        date: s.date,
+        title: 'Sevkiyat / Satış',
+        description: s.customerName + ' müşterisine ' + formatKg(s.quantityKg) + ' kg sevk edildi.',
+        tone: 'amber'
+      });
+    });
+
+    return events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [data, id, party.timeline]);
+
   return (
-    <div className="space-y-6">
-      <PageHeader eyebrow={`Parti ${party.partyNo}`} title={order?.customerName ?? "Parti detayı"} description="Sipariş, iplik tüketimi, fasoncu, boyahane, satış ve kalan kg zinciri." icon={Factory} action={<StatusBadge tone={statusTone(party.status)}>{party.status}</StatusBadge>} />
-      <div className="grid gap-4 md:grid-cols-4">
-        <StatCard title="Ham üretim" value={formatKg(party.rawProducedKg)} helper={`${formatKg(party.rawConsumedKg)} iplik tüketildi`} icon={Factory} />
-        <StatCard title="Ham fire" value={formatPercent(party.rawWastePercent)} helper={formatKg(party.rawWasteKg)} icon={BarChart3} tone="red" />
-        <StatCard title="Boyahane giriş" value={formatKg(party.dyehouseInputKg)} helper="Ham kumaş sevki" icon={Truck} tone="amber" />
-        <StatCard title="Mamül" value={formatKg(party.finishedKg)} helper={`${formatPercent(party.dyehouseWastePercent)} boyahane fire`} icon={Boxes} tone="green" />
+    <div className='space-y-6'>
+      <PageHeader eyebrow={'Parti ' + party.partyNo} title={order?.customerName ?? 'Parti detayı'} description='Sipariş, iplik tüketimi, fasoncu, boyahane, satış ve kalan kg zinciri.' icon={Factory} action={<StatusBadge tone={statusTone(party.status)}>{party.status}</StatusBadge>} />
+      <div className='grid gap-4 md:grid-cols-4'>
+        <StatCard title='Ham üretim' value={formatKg(party.rawProducedKg)} helper={formatKg(party.rawConsumedKg) + ' iplik tüketildi'} icon={Factory} />
+        <StatCard title='Ham fire' value={formatPercent(party.rawWastePercent)} helper={formatKg(party.rawWasteKg)} icon={BarChart3} tone='red' />
+        <StatCard title='Boyahane giriş' value={formatKg(party.dyehouseInputKg)} helper='Ham kumaş sevki' icon={Truck} tone='amber' />
+        <StatCard title='Mamül' value={formatKg(party.finishedKg)} helper={formatPercent(party.dyehouseWastePercent) + ' boyahane fire'} icon={Boxes} tone='green' />
       </div>
-      <PartyTimeline items={party?.timeline ?? []} />
+      <PartyTimeline items={timeline} />
     </div>
   );
-}
 
+}
 export function PartyShiftPage() {
   const { data } = useErpData();
   const rows = data.orderPartyAllocations.map((item) => ({
@@ -960,7 +1243,7 @@ export function PartyShiftPage() {
         description="Bir partinin tamamını veya belirli kg kısmını başka bir müşteri siparişine bağlayın."
         icon={PackageCheck}
       />
-      <div className="premium-card rounded-2xl p-5">
+      <div className="premium-card rounded-none p-5">
         <PartyShiftForm />
       </div>
       <DataTable
@@ -981,172 +1264,176 @@ export function PartyShiftPage() {
   );
 }
 
-export function ProductionPage({ type }: { type: "raw" | "dyehouse" }) {
+export function ProductionPage({ type }: { type: 'raw' | 'dyehouse' }) {
   const { data, refresh } = useErpData();
   const [open, setOpen] = useState(false);
-  const [cancelTarget, setCancelTarget] = useState<RawProduction | DyehouseProduction | null>(null);
-  const [filters, setFilters] = useState({ status: "ALL", dateFrom: "", dateTo: "" });
+  const [editing, setEditing] = useState<RawProduction | DyehouseProduction | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<RawProduction | DyehouseProduction | null>(null);
+  const [filters, setFilters] = useState({ dateFrom: '', dateTo: '' });
   const setFilter = (key: string, value: string) => setFilters((curr) => ({ ...curr, [key]: value }));
-  const isRaw = type === "raw";
-  const cancelledIds = useMemo(() => new Set(data.stockMovements.filter((movement) => movement.referenceType === (isRaw ? "production_raw_cancel" : "production_dyehouse_cancel")).map((movement) => movement.referenceId)), [data.stockMovements, isRaw]);
+  const isRaw = type === 'raw';
+  
   const filteredRaw = useMemo(() => data.productionRaw.filter((row) => {
-    if (filters.status !== "ALL") {
-      const isCancelled = cancelledIds.has(row.id);
-      if (filters.status === "İptal" && !isCancelled) return false;
-      if (filters.status === "Aktif" && isCancelled) return false;
-    }
     if (filters.dateFrom && row.date < filters.dateFrom) return false;
     if (filters.dateTo && row.date > filters.dateTo) return false;
     return true;
-  }), [data.productionRaw, filters, cancelledIds]);
+  }), [data.productionRaw, filters]);
+  
   const filteredDyehouse = useMemo(() => data.productionDyehouse.filter((row) => {
-    if (filters.status !== "ALL") {
-      const isCancelled = cancelledIds.has(row.id);
-      if (filters.status === "İptal" && !isCancelled) return false;
-      if (filters.status === "Aktif" && isCancelled) return false;
-    }
     if (filters.dateFrom && row.date < filters.dateFrom) return false;
     if (filters.dateTo && row.date > filters.dateTo) return false;
     return true;
-  }), [data.productionDyehouse, filters, cancelledIds]);
-  async function cancelProduction() {
-    if (!cancelTarget) return;
+  }), [data.productionDyehouse, filters]);
+
+  async function deleteProductionRecord() {
+    if (!deleteTarget) return;
     try {
-      await apiDelete(`/api/production/${isRaw ? "raw" : "dyehouse"}/${cancelTarget.id}`);
+      await apiDelete('/api/production/' + (isRaw ? 'raw' : 'dyehouse') + '/' + deleteTarget.id);
       refreshInBackground(refresh);
-      toast.success(isRaw ? "Ham üretim iptal edildi ve stoklar geri alındı." : "Boyahane üretimi iptal edildi ve stoklar geri alındı.");
-      setCancelTarget(null);
+      toast.success(isRaw ? 'Ham üretim kaydı silindi.' : 'Boyahane üretim kaydı silindi.');
+      setDeleteTarget(null);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Üretim kaydı iptal edilemedi.");
+      toast.error(error instanceof Error ? error.message : 'Üretim silinemedi.');
     }
   }
+
   const rawColumns: Column<RawProduction>[] = [
-    { header: "Tarih", cell: (row) => formatDate(row.date) },
-    { header: "Sipariş", cell: (row) => data.orders.find((order) => order.id === row.orderId)?.orderNo ?? "-" },
-    { header: "Parti", cell: (row) => data.parties.find((party) => party.id === row.partyId)?.partyNo ?? "-" },
-    { header: "Fasoncu", cell: (row) => getName(data.partners, row.knitterPartnerId) },
-    { header: "Ham kg", cell: (row) => formatKg(row.producedRawKg) },
-    { header: "Fire", cell: (row) => <StatusBadge tone={wasteTone(row.wastePercent)}>{formatPercent(row.wastePercent)}</StatusBadge> },
-    { header: "Durum", cell: (row) => <StatusBadge tone={cancelledIds.has(row.id) ? "red" : "green"}>{cancelledIds.has(row.id) ? "İptal" : "Aktif"}</StatusBadge> },
-    { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end"><button className={dangerButton} disabled={cancelledIds.has(row.id)} onClick={() => setCancelTarget(row)} type="button">{cancelledIds.has(row.id) ? "İptal edildi" : "İptal et"}</button></div> },
+    { header: 'Tarih', cell: (row) => formatDate(row.date) },
+    { header: 'Sipariş', cell: (row) => data.orders.find((order) => order.id === row.orderId)?.orderNo ?? '-' },
+    { header: 'Parti', cell: (row) => data.parties.find((party) => party.id === row.partyId)?.partyNo ?? '-' },
+    { header: 'Fasoncu', cell: (row) => getName(data.partners, row.knitterPartnerId) },
+    { header: 'Ham kg', cell: (row) => formatKg(row.producedRawKg) },
+    { header: 'Fire', cell: (row) => <StatusBadge tone={wasteTone(row.wastePercent)}>{formatPercent(row.wastePercent)}</StatusBadge> },
+    { header: 'İşlem', className: 'text-right', cell: (row) => (
+      <div className='flex justify-end gap-2'>
+        <button className='rounded-none border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-blue-200 hover:text-blue-700 transition-colors' onClick={() => setEditing(row)} type='button'>Düzenle</button>
+        <button className='rounded-none border border-rose-100 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-100 transition-colors' onClick={() => setDeleteTarget(row)} type='button'>Sil</button>
+      </div>
+    ) },
   ];
+
   const dyehouseColumns: Column<DyehouseProduction>[] = [
-    { header: "Tarih", cell: (row) => formatDate(row.date) },
-    { header: "Sipariş", cell: (row) => data.orders.find((order) => order.id === row.orderId)?.orderNo ?? "-" },
-    { header: "Parti", cell: (row) => data.parties.find((party) => party.id === row.partyId)?.partyNo ?? "-" },
-    { header: "Boyahane", cell: (row) => getName(data.partners, row.dyehousePartnerId) },
-    { header: "Giden", cell: (row) => formatKg(row.inputRawKg) },
-    { header: "Dönen", cell: (row) => formatKg(row.finishedKg) },
-    { header: "Fire", cell: (row) => <StatusBadge tone={wasteTone(row.wastePercent)}>{formatPercent(row.wastePercent)}</StatusBadge> },
-    { header: "Durum", cell: (row) => <StatusBadge tone={cancelledIds.has(row.id) ? "red" : "green"}>{cancelledIds.has(row.id) ? "İptal" : "Aktif"}</StatusBadge> },
-    { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end"><button className={dangerButton} disabled={cancelledIds.has(row.id)} onClick={() => setCancelTarget(row)} type="button">{cancelledIds.has(row.id) ? "İptal edildi" : "İptal et"}</button></div> },
+    { header: 'Tarih', cell: (row) => formatDate(row.date) },
+    { header: 'Sipariş', cell: (row) => data.orders.find((order) => order.id === row.orderId)?.orderNo ?? '-' },
+    { header: 'Parti', cell: (row) => data.parties.find((party) => party.id === row.partyId)?.partyNo ?? '-' },
+    { header: 'Boyahane', cell: (row) => getName(data.partners, row.dyehousePartnerId) },
+    { header: 'Giden', cell: (row) => formatKg(row.inputRawKg) },
+    { header: 'Dönen', cell: (row) => formatKg(row.finishedKg) },
+    { header: 'Fire', cell: (row) => <StatusBadge tone={wasteTone(row.wastePercent)}>{formatPercent(row.wastePercent)}</StatusBadge> },
+    { header: 'İşlem', className: 'text-right', cell: (row) => (
+      <div className='flex justify-end gap-2'>
+        <button className='rounded-none border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-blue-200 hover:text-blue-700 transition-colors' onClick={() => setEditing(row)} type='button'>Düzenle</button>
+        <button className='rounded-none border border-rose-100 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-100 transition-colors' onClick={() => setDeleteTarget(row)} type='button'>Sil</button>
+      </div>
+    ) },
   ];
+
   return (
-    <div className="space-y-6">
-      <PageHeader eyebrow="Üretim" title={isRaw ? "Ham Kumaş Üretimi" : "Boyahane Üretimi"} description={isRaw ? "İplik tüketimi, ham kumaş girişi, fire ve fasoncu depo kapanış mutabakatı." : "Ham çıkışı, mamül girişi, finish özellikleri ve boyahane fire hesaplama."} icon={Factory} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Yeni kayıt</button>} />
+    <div className='space-y-6'>
+      <PageHeader eyebrow='Üretim' title={isRaw ? 'Ham Kumaş Üretimi' : 'Boyahane Üretimi'} description={isRaw ? 'İplik tüketimi, ham kumaş girişi, fire ve fasoncu depo kapanış mutabakatı.' : 'Ham çıkışı, mamül girişi, finish özellikleri ve boyahane fire hesaplama.'} icon={Factory} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className='size-4' />Yeni kayıt</button>} />
       
-      <div className="premium-card rounded-2xl p-5 mb-6">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div className='premium-card rounded-none p-5 mb-6'>
+        <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
           <div>
-            <h2 className="font-semibold text-slate-950">Üretim Filtreleri</h2>
-            <p className="mt-1 text-sm text-slate-500">Durum ve tarihe göre kayıtları daraltın.</p>
+            <h2 className='font-semibold text-slate-950'>Üretim Filtreleri</h2>
+            <p className='mt-1 text-sm text-slate-500'>Tarihe göre kayıtları daraltın.</p>
           </div>
-          <button className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600" onClick={() => setFilters({ status: "ALL", dateFrom: "", dateTo: "" })} type="button">Filtreleri temizle</button>
+          <button className='rounded-none border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600' onClick={() => setFilters({ dateFrom: '', dateTo: '' })} type='button'>Filtreleri temizle</button>
         </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-3">
-          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.status} onChange={(e) => setFilter("status", e.target.value)}>
-            <option value="ALL">Tüm durumlar</option><option value="Aktif">Aktif</option><option value="İptal">İptal</option>
-          </select>
-          <label className="space-y-1 text-xs font-semibold text-slate-400">Başlangıç<input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dateFrom} onChange={(e) => setFilter("dateFrom", e.target.value)} /></label>
-          <label className="space-y-1 text-xs font-semibold text-slate-400">Bitiş<input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dateTo} onChange={(e) => setFilter("dateTo", e.target.value)} /></label>
+        <div className='mt-4 grid gap-3 md:grid-cols-2'>
+          <label className='space-y-1 text-xs font-semibold text-slate-400'>Başlangıç<input className='w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none' type='date' value={filters.dateFrom} onChange={(e) => setFilter('dateFrom', e.target.value)} /></label>
+          <label className='space-y-1 text-xs font-semibold text-slate-400'>Bitiş<input className='w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none' type='date' value={filters.dateTo} onChange={(e) => setFilter('dateTo', e.target.value)} /></label>
         </div>
       </div>
 
       {isRaw ? (
-        <DataTable rows={filteredRaw} columns={rawColumns} searchPlaceholder="Sipariş, parti, fasoncu veya açıklamada ara" getSearchText={(row) => [data.orders.find((order) => order.id === row.orderId)?.orderNo, data.parties.find((party) => party.id === row.partyId)?.partyNo, getName(data.partners, row.knitterPartnerId), row.description].join(" ")} />
+        <DataTable rows={filteredRaw} columns={rawColumns} searchPlaceholder='Sipariş, parti, fasoncu veya açıklamada ara' getSearchText={(row) => [data.orders.find((order) => order.id === row.orderId)?.orderNo, data.parties.find((party) => party.id === row.partyId)?.partyNo, getName(data.partners, row.knitterPartnerId), row.description].join(' ')} />
       ) : (
-        <DataTable rows={filteredDyehouse} columns={dyehouseColumns} searchPlaceholder="Sipariş, parti, boyahane veya açıklamada ara" getSearchText={(row) => [data.orders.find((order) => order.id === row.orderId)?.orderNo, data.parties.find((party) => party.id === row.partyId)?.partyNo, getName(data.partners, row.dyehousePartnerId), row.description].join(" ")} />
+        <DataTable rows={filteredDyehouse} columns={dyehouseColumns} searchPlaceholder='Sipariş, parti, boyahane veya açıklamada ara' getSearchText={(row) => [data.orders.find((order) => order.id === row.orderId)?.orderNo, data.parties.find((party) => party.id === row.partyId)?.partyNo, getName(data.partners, row.dyehousePartnerId), row.description].join(' ')} />
       )}
-      <FormDrawer open={open} title={isRaw ? "Ham üretim kaydı" : "Boyahane üretim kaydı"} onClose={() => setOpen(false)}>{isRaw ? <RawProductionForm /> : <DyehouseProductionForm />}</FormDrawer>
+
+      <FormDrawer open={open || !!editing} title={editing ? (isRaw ? 'Ham Üretimi Düzenle' : 'Boyahane Üretimini Düzenle') : (isRaw ? 'Yeni Üretim Kaydı' : 'Yeni Boyahane Üretimi')} onClose={() => { setOpen(false); setEditing(null); }}>
+        {isRaw ? <RawProductionForm initialData={editing as RawProduction} /> : <DyehouseProductionForm initialData={editing as DyehouseProduction} />}
+      </FormDrawer>
+
       <ConfirmModal
-        open={Boolean(cancelTarget)}
-        title={isRaw ? "Ham üretim iptal edilsin mi?" : "Boyahane üretimi iptal edilsin mi?"}
-        description="Bu işlem stok hareketlerini ters kayıtla geri alır. İlgili stok başka işlemle tüketildiyse iptal engellenir."
-        confirmLabel="İptal et"
-        tone="danger"
-        onClose={() => setCancelTarget(null)}
-        onConfirm={cancelProduction}
+        open={Boolean(deleteTarget)}
+        title='Üretim kaydı silinsin mi?'
+        description='Bu üretim kaydı; stok hareketleri, depolar arası transferler veya sevkiyat fişleri ile ilişkilendirilmiş olabilir. Eğer bağlı kayıtlar varsa sistem silme işlemini engelleyecektir.'
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={deleteProductionRecord}
       />
     </div>
   );
 }
-
 export function TransfersPage() {
   const { data, refresh } = useErpData();
   const [open, setOpen] = useState(false);
-  const [cancelTarget, setCancelTarget] = useState<Transfer | null>(null);
-  const [filters, setFilters] = useState({ status: "ALL", dateFrom: "", dateTo: "" });
+  const [editing, setEditing] = useState<Transfer | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Transfer | null>(null);
+  const [filters, setFilters] = useState({ dateFrom: '', dateTo: '' });
   const setFilter = (key: string, value: string) => setFilters((curr) => ({ ...curr, [key]: value }));
-  const cancelledTransferIds = useMemo(() => new Set(data.stockMovements.filter((movement) => movement.referenceType === "transfer_cancel").map((movement) => movement.referenceId)), [data.stockMovements]);
+
   const filteredTransfers = useMemo(() => data.transfers.filter((row) => {
-    if (filters.status !== "ALL") {
-      const isCancelled = cancelledTransferIds.has(row.id);
-      if (filters.status === "İptal" && !isCancelled) return false;
-      if (filters.status === "Aktif" && isCancelled) return false;
-    }
     if (filters.dateFrom && row.date < filters.dateFrom) return false;
     if (filters.dateTo && row.date > filters.dateTo) return false;
     return true;
-  }), [data.transfers, filters, cancelledTransferIds]);
-  async function cancelTransferRecord() {
-    if (!cancelTarget) return;
+  }), [data.transfers, filters]);
+
+  async function deleteTransferRecord() {
+    if (!deleteTarget) return;
     try {
-      await apiDelete(`/api/transfers/${cancelTarget.id}`);
+      await apiDelete('/api/transfers/' + deleteTarget.id);
       refreshInBackground(refresh);
-      toast.success("Transfer iptal edildi ve stoklar kaynak depoya iade edildi.");
-      setCancelTarget(null);
+      toast.success('Transfer kaydı silindi.');
+      setDeleteTarget(null);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Transfer iptal edilemedi.");
+      toast.error(error instanceof Error ? error.message : 'Transfer silinemedi.');
     }
   }
-  return (
-    <div className="space-y-6">
-      <PageHeader eyebrow="Depo" title="Depolar Arası Transfer" description="Her depodan her depoya çift taraflı stok hareketi; negatif stok kontrolüne hazır altyapı." icon={Truck} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Onaylı transfer</button>} />
 
-      <div className="premium-card rounded-2xl p-5 mb-6">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+  return (
+    <div className='space-y-6'>
+      <PageHeader eyebrow='Stok' title='Depolar Arası Transfer' description='İplik, ham veya mamül kumaşların depolar arası sevkiyat kaydı.' icon={Truck} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className='size-4' />Yeni transfer</button>} />
+      
+      <div className='premium-card rounded-none p-5 mb-6'>
+        <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
           <div>
-            <h2 className="font-semibold text-slate-950">Transfer Filtreleri</h2>
-            <p className="mt-1 text-sm text-slate-500">Durum ve tarihe göre kayıtları daraltın.</p>
+            <h2 className='font-semibold text-slate-950'>Transfer Filtreleri</h2>
+            <p className='mt-1 text-sm text-slate-500'>Tarihe göre kayıtları daraltın.</p>
           </div>
-          <button className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600" onClick={() => setFilters({ status: "ALL", dateFrom: "", dateTo: "" })} type="button">Filtreleri temizle</button>
+          <button className='rounded-none border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600' onClick={() => setFilters({ dateFrom: '', dateTo: '' })} type='button'>Filtreleri temizle</button>
         </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-3">
-          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.status} onChange={(e) => setFilter("status", e.target.value)}>
-            <option value="ALL">Tüm durumlar</option><option value="Aktif">Aktif</option><option value="İptal">İptal</option>
-          </select>
-          <label className="space-y-1 text-xs font-semibold text-slate-400">Başlangıç<input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dateFrom} onChange={(e) => setFilter("dateFrom", e.target.value)} /></label>
-          <label className="space-y-1 text-xs font-semibold text-slate-400">Bitiş<input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dateTo} onChange={(e) => setFilter("dateTo", e.target.value)} /></label>
+        <div className='mt-4 grid gap-3 md:grid-cols-2'>
+          <label className='space-y-1 text-xs font-semibold text-slate-400'>Başlangıç<input className='w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none' type='date' value={filters.dateFrom} onChange={(e) => setFilter('dateFrom', e.target.value)} /></label>
+          <label className='space-y-1 text-xs font-semibold text-slate-400'>Bitiş<input className='w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none' type='date' value={filters.dateTo} onChange={(e) => setFilter('dateTo', e.target.value)} /></label>
         </div>
       </div>
 
       <DataTable rows={filteredTransfers} columns={[
-        { header: "Tarih", cell: (row) => formatDate(row.date) },
-        { header: "Kaynak", cell: (row) => getName(data.warehouses, row.fromWarehouseId) },
-        { header: "Hedef", cell: (row) => getName(data.warehouses, row.toWarehouseId) },
-        { header: "Miktar", cell: (row) => formatKg(normalizeItems(row.items).reduce((sum, item) => sum + (item.quantity || 0), 0)) },
-        { header: "Durum", cell: (row) => <StatusBadge tone={cancelledTransferIds.has(row.id) ? "red" : "green"}>{cancelledTransferIds.has(row.id) ? "İptal" : "Aktif"}</StatusBadge> },
-        { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end"><button className={dangerButton} disabled={cancelledTransferIds.has(row.id)} onClick={() => setCancelTarget(row)} type="button">{cancelledTransferIds.has(row.id) ? "İptal edildi" : "İptal et"}</button></div> },
-      ]} searchPlaceholder="Kaynak depo, hedef depo veya açıklamada ara" getSearchText={(row) => [getName(data.warehouses, row.fromWarehouseId), getName(data.warehouses, row.toWarehouseId), row.description].join(" ")} />
-      <FormDrawer open={open} title="Yeni Transfer" onClose={() => setOpen(false)}><TransferForm /></FormDrawer>
+        { header: 'Tarih', cell: (row) => formatDate(row.date) },
+        { header: 'Kaynak', cell: (row) => getName(data.warehouses, row.fromWarehouseId) },
+        { header: 'Hedef', cell: (row) => getName(data.warehouses, row.toWarehouseId) },
+        { header: 'Miktar', cell: (row) => formatKg(normalizeItems(row.items).reduce((sum, item) => sum + (item.quantity || 0), 0)) },
+        { header: 'İşlem', className: 'text-right', cell: (row) => (
+          <div className='flex justify-end gap-2'>
+            <button className='rounded-none border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-blue-200 hover:text-blue-700 transition-colors' onClick={() => setEditing(row)} type='button'>Düzenle</button>
+            <button className='rounded-none border border-rose-100 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-100 transition-colors' onClick={() => setDeleteTarget(row)} type='button'>Sil</button>
+          </div>
+        )},
+      ]} searchPlaceholder='Kaynak depo, hedef depo veya açıklamada ara' getSearchText={(row) => [getName(data.warehouses, row.fromWarehouseId), getName(data.warehouses, row.toWarehouseId), row.description].join(' ')} />
+      
+      <FormDrawer open={open || !!editing} title={editing ? 'Transferi Düzenle' : 'Yeni Transfer'} onClose={() => { setOpen(false); setEditing(null); }}>
+        <TransferForm initialData={editing || undefined} />
+      </FormDrawer>
       <ConfirmModal
-        open={Boolean(cancelTarget)}
-        title="Transfer iptal edilsin mi?"
-        description="Bu işlem hedef depodan çıkış, kaynak depoya giriş ters hareketi oluşturur. Hedef depoda yeterli stok yoksa işlem yapılmaz."
-        confirmLabel="İptal et"
-        tone="danger"
-        onClose={() => setCancelTarget(null)}
-        onConfirm={cancelTransferRecord}
+        open={Boolean(deleteTarget)}
+        title='Transfer silinsin mi?'
+        description='Bu işlem kaydı ve ilgili tüm stok hareketlerini kalıcı olarak siler.'
+        confirmLabel='Kalıcı olarak sil'
+        tone='danger'
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={deleteTransferRecord}
       />
     </div>
   );
@@ -1154,23 +1441,119 @@ export function TransfersPage() {
 
 export function WasteAnalysisPage() {
   const { data } = useErpData();
+  const [filters, setFilters] = useState({ customer: '', dateFrom: '', dateTo: '' });
   const metrics = getDashboardMetrics(data);
+
+  const groupedRows = useMemo(() => {
+    const result: Array<{
+      orderId: string;
+      orderNo: string;
+      customerName: string;
+      totalConsumedKg: number;
+      totalRawKg: number;
+      totalDyeInputKg: number;
+      totalFinishedKg: number;
+      totalRawWasteKg: number;
+      totalDyeWasteKg: number;
+      avgRawWastePercent: number;
+      avgDyeWastePercent: number;
+      parties: any[];
+    }> = [];
+
+    data.orders.forEach(order => {
+      const orderParties = data.parties.filter(p => p.orderId === order.id);
+      if (orderParties.length === 0) return;
+
+      const consumed = orderParties.reduce((s, p) => s + (p.rawConsumedKg || 0), 0);
+      const raw = orderParties.reduce((s, p) => s + (p.rawProducedKg || 0), 0);
+      const dyeInput = orderParties.reduce((s, p) => s + (p.dyehouseInputKg || 0), 0);
+      const finished = orderParties.reduce((s, p) => s + (p.finishedKg || 0), 0);
+      const rawWaste = orderParties.reduce((s, p) => s + (p.rawWasteKg || 0), 0);
+      const dyeWaste = orderParties.reduce((s, p) => s + (p.dyehouseWasteKg || 0), 0);
+
+      result.push({
+        orderId: order.id,
+        orderNo: order.orderNo,
+        customerName: order.customerName,
+        totalConsumedKg: consumed,
+        totalRawKg: raw,
+        totalDyeInputKg: dyeInput,
+        totalFinishedKg: finished,
+        totalRawWasteKg: rawWaste,
+        totalDyeWasteKg: dyeWaste,
+        avgRawWastePercent: consumed > 0 ? (rawWaste / consumed) * 100 : 0,
+        avgDyeWastePercent: dyeInput > 0 ? (dyeWaste / dyeInput) * 100 : 0,
+        parties: orderParties
+      });
+    });
+
+    return result.filter(r => {
+        if (filters.customer && !r.customerName.toLowerCase().includes(filters.customer.toLowerCase())) return false;
+        return true;
+    });
+  }, [data, filters]);
+
   return (
-    <div className="space-y-6">
-      <PageHeader eyebrow="Fire" title="Fire Analizi Dashboard" description="Sipariş, parti, fasoncu, kumaş cinsi ve dönem bazlı beklenen/gerçek fire takibi." icon={BarChart3} />
-      <div className="grid gap-4 md:grid-cols-4">
-        <StatCard title="Ham fire ort." value={formatPercent(metrics.avgRawWaste)} helper="0-3 yeşil, 12+ kritik" icon={BarChart3} tone="red" />
-        <StatCard title="Boyahane fire ort." value={formatPercent(metrics.avgDyeWaste)} helper="Gönderilen ham kg bazlı" icon={BarChart3} tone="amber" />
-        <StatCard title="Fire kg" value={formatKg(metrics.wasteKg)} helper="Ham + boyahane" icon={Factory} tone="red" />
-        <StatCard title="Riskli fasoncu" value="2" helper="Eşik üstü üretim ortağı" icon={Users} tone="amber" />
+    <div className='space-y-6'>
+      <PageHeader eyebrow='Fire' title='Fire Analizi Dashboard' description='Sipariş bazlı toplam üretim, tüketim ve fire oranları.' icon={BarChart3} />
+      
+      <div className='grid gap-4 md:grid-cols-4'>
+        <StatCard title='Ham fire ort.' value={formatPercent(metrics.avgRawWaste)} helper='Tüm üretimler toplamı' icon={BarChart3} tone='red' />
+        <StatCard title='Boyahane fire ort.' value={formatPercent(metrics.avgDyeWaste)} helper='Tüm boyahaneler toplamı' icon={BarChart3} tone='amber' />
+        <StatCard title='Toplam Fire kg' value={formatKg(metrics.wasteKg)} helper='Ham + Boyahane' icon={Factory} tone='red' />
+        <StatCard title='Toplam Üretim' value={formatKg(metrics.monthlyProductionKg)} helper='Ham + Mamül' icon={Boxes} tone='blue' />
       </div>
-      <DataTable rows={data.parties} columns={[
-        { header: "Parti", cell: (row) => row.partyNo },
-        { header: "Ham fire kg", cell: (row) => formatKg(row.rawWasteKg) },
-        { header: "Ham fire %", cell: (row) => <StatusBadge tone={wasteTone(row.rawWastePercent)}>{formatPercent(row.rawWastePercent)}</StatusBadge> },
-        { header: "Boya fire kg", cell: (row) => formatKg(row.dyehouseWasteKg) },
-        { header: "Boya fire %", cell: (row) => <StatusBadge tone={wasteTone(row.dyehouseWastePercent)}>{formatPercent(row.dyehouseWastePercent)}</StatusBadge> },
-      ]} />
+
+      <div className='premium-card rounded-none p-5 mb-6'>
+        <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
+           <h2 className='font-semibold text-slate-950'>Analiz Filtreleri</h2>
+           <button className='text-xs font-bold text-slate-400 uppercase tracking-wider' onClick={() => setFilters({ customer: '', dateFrom: '', dateTo: '' })}>Sıfırla</button>
+        </div>
+        <div className='mt-4 grid gap-4 md:grid-cols-1'>
+            <input className='rounded-none border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-blue-500' placeholder='Müşteri ara...' value={filters.customer} onChange={e => setFilters({...filters, customer: e.target.value})} />
+        </div>
+      </div>
+
+      <div className='space-y-4'>
+        {groupedRows.map(row => (
+            <div key={row.orderId} className='premium-card rounded-3xl overflow-hidden border border-slate-100 shadow-sm'>
+                <div className='bg-slate-50/50 p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4'>
+                    <div>
+                        <h3 className='text-sm font-bold text-slate-400 uppercase tracking-[0.15em] mb-1'>Sipariş: {row.orderNo}</h3>
+                        <div className='text-lg font-bold text-slate-950'>{row.customerName}</div>
+                    </div>
+                    <div className='flex gap-6'>
+                        <div className='text-right'>
+                            <div className='text-[10px] font-bold text-slate-400 uppercase'>Tüketim</div>
+                            <div className='font-bold text-slate-900'>{formatKg(row.totalConsumedKg)}</div>
+                        </div>
+                        <div className='text-right'>
+                            <div className='text-[10px] font-bold text-slate-400 uppercase'>Ham Fire</div>
+                            <div className='font-bold text-rose-600'>{formatPercent(row.avgRawWastePercent)}</div>
+                        </div>
+                        <div className='text-right'>
+                            <div className='text-[10px] font-bold text-slate-400 uppercase'>Boya Fire</div>
+                            <div className='font-bold text-amber-600'>{formatPercent(row.avgDyeWastePercent)}</div>
+                        </div>
+                    </div>
+                </div>
+                <div className='p-2'>
+                    <DataTable 
+                        rows={row.parties} 
+                        columns={[
+                            { header: 'Parti No', cell: (p) => <Link className='font-bold text-blue-600' href={'/parties/' + p.id}>{p.partyNo}</Link> },
+                            { header: 'Tüketim', cell: (p) => formatKg(p.rawConsumedKg) },
+                            { header: 'Ham Üretim', cell: (p) => formatKg(p.rawProducedKg) },
+                            { header: 'Ham Fire %', cell: (p) => <StatusBadge tone={wasteTone(p.rawWastePercent)}>{formatPercent(p.rawWastePercent)}</StatusBadge> },
+                            { header: 'Boya Giriş', cell: (p) => formatKg(p.dyehouseInputKg) },
+                            { header: 'Mamül Giriş', cell: (p) => formatKg(p.finishedKg) },
+                            { header: 'Boya Fire %', cell: (p) => <StatusBadge tone={wasteTone(p.dyehouseWastePercent)}>{formatPercent(p.dyehouseWastePercent)}</StatusBadge> },
+                        ]} 
+                    />
+                </div>
+            </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1228,17 +1611,17 @@ export function ReportsPage() {
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Raporlama" title="Gelişmiş ERP Raporları" description="Üretim, stok, satın alma, satış ve fire metrikleri canlı PostgreSQL verisinden hesaplanır." icon={BarChart3} action={<button className={primaryButton} onClick={exportCsv} type="button"><Download className="size-4" />CSV dışa aktar</button>} />
-      <div className="premium-card grid gap-4 rounded-2xl p-4 md:grid-cols-2">
+      <div className="premium-card grid gap-4 rounded-none p-4 md:grid-cols-2">
         <label className="space-y-2">
           <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Parti durumu</span>
-          <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+          <select className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
             <option value="ALL">Tüm durumlar</option>
             {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
           </select>
         </label>
         <label className="space-y-2">
           <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Stok tipi</span>
-          <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" value={stockTypeFilter} onChange={(event) => setStockTypeFilter(event.target.value)}>
+          <select className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" value={stockTypeFilter} onChange={(event) => setStockTypeFilter(event.target.value)}>
             <option value="ALL">Tüm stoklar</option>
             <option value="IP">IP</option>
             <option value="LYC">LYC</option>
@@ -1373,10 +1756,10 @@ export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "
           cell: (row: NamedEntity) => (
             <div className="flex flex-wrap justify-end gap-2">
               {kind === "warehouses" ? (
-                <button className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700" onClick={() => setDetailWarehouse(row)} type="button">Detay</button>
+                <button className="rounded-none border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700" onClick={() => setDetailWarehouse(row)} type="button">Detay</button>
               ) : null}
               <button
-                className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700"
+                className="rounded-none border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700"
                 onClick={() =>
                   setEditing({
                     id: row.id,
@@ -1404,12 +1787,12 @@ export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "
         <form className="grid gap-4" onSubmit={updateDefinition}>
           <label className="space-y-2">
             <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Ad</span>
-            <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="name" defaultValue={editing?.name} required />
+            <input className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="name" defaultValue={editing?.name} required />
           </label>
           {kind === "warehouses" ? (
             <label className="space-y-2">
               <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Tip</span>
-              <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="kind" defaultValue={editing?.kind ?? "RAW"}>
+              <select className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="kind" defaultValue={editing?.kind ?? "RAW"}>
                 <option value="YARN">İplik deposu</option>
                 <option value="KNITTER">Fasoncu deposu</option>
                 <option value="RAW">Ham kumaş deposu</option>
@@ -1423,7 +1806,7 @@ export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "
           {kind === "partners" ? (
             <label className="space-y-2">
               <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Tip</span>
-              <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="type" defaultValue={editing?.type ?? "SUPPLIER"}>
+              <select className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="type" defaultValue={editing?.type ?? "SUPPLIER"}>
                 <option value="KNITTER">Fason örmeci</option>
                 <option value="DYEHOUSE">Boyahane</option>
                 <option value="SUPPLIER">Satıcı</option>
@@ -1444,12 +1827,12 @@ export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "
       <FormDrawer open={Boolean(detailWarehouse)} title={`${detailWarehouse?.name} Bakiye Detayları`} onClose={() => setDetailWarehouse(null)}>
         <div className="space-y-4">
           {data.warehouseBalances.filter(b => b.warehouseId === detailWarehouse?.id && Number(b.quantity) > 0).length === 0 ? (
-            <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">Bu depoda stok bulunmuyor.</p>
+            <p className="rounded-none bg-slate-50 p-4 text-sm text-slate-500">Bu depoda stok bulunmuyor.</p>
           ) : (
             data.warehouseBalances.filter(b => b.warehouseId === detailWarehouse?.id && Number(b.quantity) > 0).map(b => {
               const stock = data.stockCards.find(s => s.id === b.stockId);
               return (
-                <div key={b.stockId} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4">
+                <div key={b.stockId} className="flex items-center justify-between rounded-none border border-slate-200 bg-white p-4">
                   <div>
                     <p className="font-semibold text-slate-900">{stock?.code}</p>
                     <p className="text-xs text-slate-500">{stock?.name}</p>
@@ -1519,6 +1902,12 @@ export function RolesSecurityPage() {
 }
 
 const settingGroups = [
+  {
+    href: "/settings/project",
+    title: "Proje Ayarları",
+    description: "Menü davranışı, modal pozisyonu ve bildirim tercihleri gibi UI/UX ayarları.",
+    items: ["Görünüm", "Modal", "Bildirim"],
+  },
   {
     href: "/settings/fabric-types",
     title: "Kumaş cinsleri",
@@ -1630,7 +2019,7 @@ export function PrefixCountersPage() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {counters.map((counter) => (
-          <div key={counter.key} className="premium-card rounded-2xl p-5">
+          <div key={counter.key} className="premium-card rounded-none p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{counter.prefix}</p>
@@ -1638,7 +2027,7 @@ export function PrefixCountersPage() {
               </div>
               <StatusBadge tone={counter.currentValue > 0 ? "green" : "slate"}>{counter.currentValue > 0 ? "Aktif" : "Bekliyor"}</StatusBadge>
             </div>
-            <div className="mt-5 rounded-2xl bg-slate-50 p-4">
+            <div className="mt-5 rounded-none bg-slate-50 p-4">
               <p className="text-xs font-semibold text-slate-400">Son sıra</p>
               <p className="mt-1 text-2xl font-bold text-slate-950">{counter.currentValue}</p>
               <p className="mt-2 text-xs text-slate-500">Örnek: {counter.sample}</p>
@@ -1651,7 +2040,7 @@ export function PrefixCountersPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="premium-card rounded-2xl p-5">
+        <div className="premium-card rounded-none p-5">
           <h2 className="font-semibold text-slate-950">Hammadde girişi nasıl yapılır?</h2>
           <div className="mt-4 space-y-3">
             {[
@@ -1660,7 +2049,7 @@ export function PrefixCountersPage() {
               "Sonra Alış İşlemleri ekranında Hızlı alış ile siparişsiz giriş yap veya Satıcı Siparişleri üzerinden açık sipariş oluşturup Mal kabul gir.",
               "Gelen kg seçilen depoya stok hareketi olarak işlenir ve tüm kullanıcılarda realtime yenilenir.",
             ].map((step, index) => (
-              <div key={step} className="flex gap-3 rounded-2xl bg-slate-50 p-4">
+              <div key={step} className="flex gap-3 rounded-none bg-slate-50 p-4">
                 <div className="grid size-8 shrink-0 place-items-center rounded-full bg-white text-sm font-bold text-blue-700 shadow-sm">{index + 1}</div>
                 <p className="text-sm leading-6 text-slate-600">{step}</p>
               </div>
@@ -1672,11 +2061,11 @@ export function PrefixCountersPage() {
           </div>
         </div>
 
-        <div className="premium-card rounded-2xl p-5">
+        <div className="premium-card rounded-none p-5">
           <h2 className="font-semibold text-slate-950">Mevcut hammadde stok kartları</h2>
           <div className="mt-4 divide-y divide-slate-100">
             {rawMaterialStocks.length === 0 ? (
-              <div className="rounded-2xl bg-amber-50 p-4 text-sm leading-6 text-amber-800">
+              <div className="rounded-none bg-amber-50 p-4 text-sm leading-6 text-amber-800">
                 Henüz IP/LYC/POLY stok kartı yok. Hammadde alışı yapabilmek için önce stok kartı açılmalı.
               </div>
             ) : (
@@ -1847,7 +2236,7 @@ export function RoadmapPage() {
         <StatCard title="Son güncelleme" value="04.05.2026" helper="Gün bazında takip edilir" icon={Settings} tone="blue" />
       </div>
 
-      <div className="premium-card rounded-2xl p-5">
+      <div className="premium-card rounded-none p-5">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h2 className="font-semibold text-slate-950">Tamamlanma özeti</h2>
@@ -1860,7 +2249,7 @@ export function RoadmapPage() {
         </div>
         <div className="mt-4 grid gap-2 md:grid-cols-2">
           {completedMilestones.map((item) => (
-            <div key={item} className="flex items-center gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            <div key={item} className="flex items-center gap-2 rounded-none bg-slate-50 px-4 py-3 text-sm text-slate-600">
               <CheckCircle2 className="size-4 text-green-600" />
               {item}
             </div>
@@ -1868,18 +2257,18 @@ export function RoadmapPage() {
         </div>
       </div>
 
-      <div className="premium-card rounded-2xl p-5">
+      <div className="premium-card rounded-none p-5">
         <h2 className="font-semibold text-slate-950">Tarih ağacı</h2>
         <p className="mt-1 text-sm text-slate-500">Ana tarih yanında günün en büyük değişikliği koyu başlık olarak görünür; altındaki ince satırlar o günün diğer kayıtlarıdır.</p>
         <div className="mt-6 space-y-8">
           {developmentTimeline.map((entry, index) => (
             <div key={entry.date} className="grid gap-4 md:grid-cols-[160px_1fr]">
               <div className="flex md:justify-end">
-                <div className="rounded-2xl bg-blue-50 px-4 py-3 text-sm font-bold text-blue-700">{formatDate(entry.date)}</div>
+                <div className="rounded-none bg-blue-50 px-4 py-3 text-sm font-bold text-blue-700">{formatDate(entry.date)}</div>
               </div>
               <div className="relative border-l-2 border-blue-100 pl-6">
                 <div className="absolute -left-[9px] top-2 size-4 rounded-full border-4 border-white bg-blue-600 shadow" />
-                <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                <div className="rounded-none border border-slate-100 bg-white p-5 shadow-sm">
                   <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                     <div>
                       <h3 className="text-lg font-bold text-slate-950">{entry.title}</h3>
@@ -1889,7 +2278,7 @@ export function RoadmapPage() {
                   </div>
                   <div className="mt-4 space-y-2">
                     {entry.items.map((item) => (
-                      <div key={item} className="rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">{item}</div>
+                      <div key={item} className="rounded-none bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">{item}</div>
                     ))}
                   </div>
                 </div>
@@ -1899,12 +2288,12 @@ export function RoadmapPage() {
         </div>
       </div>
 
-      <div className="premium-card rounded-2xl p-5">
+      <div className="premium-card rounded-none p-5">
         <h2 className="font-semibold text-slate-950">Bekleyen geliştirmeler</h2>
         <p className="mt-1 text-sm text-slate-500">Tarihe bağlı değil; önem sırasına göre ele alınacak işler. Yeni geliştirme tamamlandığında bu sayfada ilgili madde işaretlenir.</p>
         <div className="mt-5 space-y-3">
           {pendingRoadmap.map((item) => (
-            <div key={item.title} className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm md:flex-row md:items-start">
+            <div key={item.title} className="flex flex-col gap-3 rounded-none border border-slate-100 bg-white p-4 shadow-sm md:flex-row md:items-start">
               <StatusBadge tone={item.priority === "P0" ? "red" : item.priority === "P1" ? "amber" : "blue"}>{item.priority}</StatusBadge>
               <div>
                 <h3 className="font-semibold text-slate-950">{item.title}</h3>
@@ -1984,9 +2373,9 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
 
       {!activeGroup ? (
         <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
-          <div className="premium-card rounded-2xl p-5">
+          <div className="premium-card rounded-none p-5">
             <div className="flex items-center gap-3">
-              <div className="grid size-11 place-items-center rounded-2xl bg-blue-600 text-white">
+              <div className="grid size-11 place-items-center rounded-none bg-blue-600 text-white">
                 <BookOpen className="size-5" />
               </div>
               <div>
@@ -1996,7 +2385,7 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
             </div>
             <div className="mt-5 space-y-3">
               {startSteps.map((step, index) => (
-                <div key={step} className="flex gap-3 rounded-2xl bg-slate-50 p-4">
+                <div key={step} className="flex gap-3 rounded-none bg-slate-50 p-4">
                   <div className="grid size-8 shrink-0 place-items-center rounded-full bg-white text-sm font-bold text-blue-700 shadow-sm">{index + 1}</div>
                   <p className="text-sm leading-6 text-slate-600">{step}</p>
                 </div>
@@ -2015,13 +2404,13 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {(activeGroup ? [activeGroup] : settingGroups).map((group) => (
-          <Link key={group.title} href={group.href} className="premium-card rounded-2xl p-5 transition hover:-translate-y-0.5 hover:shadow-xl">
+          <Link key={group.title} href={group.href} className="premium-card rounded-none p-5 transition hover:-translate-y-0.5 hover:shadow-xl">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="font-semibold text-slate-950">{group.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-500">{group.description}</p>
               </div>
-              <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-600">
+              <div className="grid size-10 shrink-0 place-items-center rounded-none bg-blue-50 text-blue-600">
                 <Settings className="size-4" />
               </div>
             </div>
@@ -2035,7 +2424,7 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
       </div>
 
       {settingConfig ? (
-        <div className="premium-card rounded-2xl p-5">
+        <div className="premium-card rounded-none p-5">
           <h2 className="font-semibold text-slate-950">Veritabanı tanımları</h2>
           <p className="mt-2 text-sm text-slate-500">Bu alandaki kayıtlar doğrudan Supabase PostgreSQL tablolarına yazılır ve tüm cihazlarda anlık yenilenir.</p>
           <div className="mt-5">
@@ -2043,7 +2432,7 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
           </div>
           <div className="mt-5 divide-y divide-slate-100">
             {settingConfig.rows.length === 0 ? (
-              <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">Henüz tanım yok.</p>
+              <p className="rounded-none bg-slate-50 p-4 text-sm text-slate-500">Henüz tanım yok.</p>
             ) : (
               settingConfig.rows.map((row) => (
                 <div key={row.id} className="flex items-center justify-between gap-3 py-3">
@@ -2057,16 +2446,16 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     {section === "warehouses" ? (
-                      <button className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700" onClick={() => setDetailWarehouse(row as WarehouseEntity)} type="button">Detay</button>
+                      <button className="rounded-none border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700" onClick={() => setDetailWarehouse(row as WarehouseEntity)} type="button">Detay</button>
                     ) : null}
                     <button
-                      className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700"
+                      className="rounded-none border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700"
                       onClick={() => setEditing({ id: row.id, name: row.name, code: "code" in row ? String(row.code) : undefined, isActive: row.isActive, kind: "kind" in row ? row.kind : undefined })}
                       type="button"
                     >
                       Düzenle
                     </button>
-                    <button className="rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700" onClick={() => setDeleteTarget({ id: row.id, name: row.name })} type="button">
+                    <button className="rounded-none border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700" onClick={() => setDeleteTarget({ id: row.id, name: row.name })} type="button">
                       Sil
                     </button>
                   </div>
@@ -2078,13 +2467,13 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
             <form className="grid gap-4" onSubmit={updateDefinition}>
               <label className="space-y-2">
                 <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Ad</span>
-                <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="name" defaultValue={editing?.name} required />
+                <input className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="name" defaultValue={editing?.name} required />
               </label>
               {section === "yarn-types" ? (
                 <>
                   <label className="space-y-2">
                     <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Kod</span>
-                    <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm uppercase outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="code" defaultValue={editing?.code} required />
+                    <input className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm uppercase outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="code" defaultValue={editing?.code} required />
                   </label>
                   <label className="flex items-center gap-2 text-sm text-slate-600">
                     <input defaultChecked={editing?.isActive !== false} name="isActive" type="checkbox" />
@@ -2095,7 +2484,7 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
               {section === "warehouses" ? (
                 <label className="space-y-2">
                   <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Tip</span>
-                  <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="kind" defaultValue={editing?.kind ?? "RAW"}>
+                  <select className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="kind" defaultValue={editing?.kind ?? "RAW"}>
                     <option value="YARN">İplik deposu</option>
                     <option value="KNITTER">Fasoncu deposu</option>
                     <option value="RAW">Ham kumaş deposu</option>
@@ -2119,13 +2508,13 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
           <FormDrawer open={Boolean(detailWarehouse)} title={`${detailWarehouse?.name} Bakiye Detayları`} onClose={() => setDetailWarehouse(null)}>
             <div className="space-y-4">
               {data.warehouseBalances.filter(b => b.warehouseId === detailWarehouse?.id && Number(b.quantity) > 0).length === 0 ? (
-                <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">Bu depoda stok bulunmuyor.</p>
+                <p className="rounded-none bg-slate-50 p-4 text-sm text-slate-500">Bu depoda stok bulunmuyor.</p>
               ) : (
                 data.warehouseBalances.filter(b => b.warehouseId === detailWarehouse?.id && Number(b.quantity) > 0).map(b => {
                   const stock = data.stockCards.find(s => s.id === b.stockId);
                   const party = data.parties.find(p => p.id === b.partyId);
                   return (
-                    <div key={`${b.stockId}-${b.partyId || 'noparty'}`} className="flex items-center justify-between rounded-2xl border border-slate-100 p-4 shadow-sm">
+                    <div key={`${b.stockId}-${b.partyId || 'noparty'}`} className="flex items-center justify-between rounded-none border border-slate-100 p-4 shadow-sm">
                       <div>
                         <p className="text-sm font-semibold text-slate-900">{stock?.code} - {stock?.name}</p>
                         {party && <p className="mt-1 text-xs text-slate-500">Parti: {party.partyNo}</p>}
@@ -2140,7 +2529,7 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
         </div>
       ) : null}
 
-      <div className="premium-card rounded-2xl p-5">
+      <div className="premium-card rounded-none p-5">
         <h2 className="font-semibold text-slate-950">Kullanım notu</h2>
         <p className="mt-2 text-sm leading-6 text-slate-500">
           Önce ayar sözlüklerini girin. Sonra hammadde stok kartlarını ve satıcı siparişlerini açın. Müşteri siparişinde aynı özelliklerde YM/MM stok yoksa sistem yeni kod üretim mantığıyla kart açacak şekilde kurgulandı. Ham üretim ilk parti numarasını oluşturur; boyahane, transfer ve satış hareketleri bu parti üzerinden izlenir.
@@ -2159,3 +2548,219 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
 
 
 
+export function ProjectSettingsPage() {
+  const { data, refresh, mutateData } = useErpData();
+  const settings = data.uiSettings;
+  const [loading, setLoading] = useState(false);
+
+  async function updateSettings(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    const formData = new FormData(e.currentTarget);
+    const payload = {
+      menuMode: formData.get("menuMode"),
+      submenuDefaultState: formData.get("submenuDefaultState"),
+      modalPosition: formData.get("modalPosition"),
+      modalPositionMobile: formData.get("modalPositionMobile"),
+      notificationsEnabled: formData.get("notificationsEnabled") === "on",
+      maxNotificationCount: Number(formData.get("maxNotificationCount")),
+      showCriticalStock: formData.get("showCriticalStock") === "on",
+      showDelayedOrders: formData.get("showDelayedOrders") === "on",
+      showProductionAlerts: formData.get("showProductionAlerts") === "on",
+      sidebarGroupBg: formData.get("sidebarGroupBg"),
+      sidebarGroupText: formData.get("sidebarGroupText"),
+      notificationModules: settings.notificationModules,
+    };
+
+    try {
+      await apiPatch("/api/settings/ui", payload as any);
+      mutateData((prev) => ({ ...prev, uiSettings: { ...prev.uiSettings, ...payload } as any }));
+      await refresh();
+      toast.success("Ayarlar başarıyla kaydedildi ve uygulandı.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Ayarlar güncellenemedi.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-6" key={JSON.stringify(settings)}>
+      <PageHeader
+        eyebrow="Ayarlar"
+        title="Proje Ayarları"
+        description="Sistemin görsel davranışı ve kullanıcı deneyimi tercihlerini buradan yönetebilirsiniz."
+        icon={SlidersHorizontal}
+      />
+
+      <form onSubmit={updateSettings} className="grid gap-6 lg:grid-cols-2">
+        <div className="premium-card rounded-3xl p-6 space-y-6">
+          <div className="flex items-center gap-3 border-b border-slate-50 pb-4">
+            <div className="grid size-10 place-items-center rounded-none bg-blue-50 text-blue-600">
+              <Layout className="size-5" />
+            </div>
+            <h2 className="font-bold text-slate-950">Menü ve Görünüm</h2>
+          </div>
+          
+          <div className="grid gap-4">
+            <Field label="Menü Modu">
+              <select name="menuMode" defaultValue={settings.menuMode} className={inputClass}>
+                <option value="static">Sabit Liste (Klasik)</option>
+                <option value="collapsible">Gruplanmış / Açılır-Kapanır</option>
+              </select>
+            </Field>
+            
+            <Field label="Alt Menü Varsayılan Durumu">
+              <select name="submenuDefaultState" defaultValue={settings.submenuDefaultState} className={inputClass}>
+                <option value="open">Açık</option>
+                <option value="closed">Kapalı</option>
+              </select>
+            </Field>
+          </div>
+        </div>
+
+        <div className="premium-card rounded-3xl p-6 space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-50 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="grid size-10 place-items-center rounded-none bg-orange-50 text-orange-600">
+                <Layout className="size-5" />
+              </div>
+              <h2 className="font-bold text-slate-950">Menü Grupları Tasarımı</h2>
+            </div>
+            <button 
+              type="button" 
+              onClick={() => {
+                const bgInput = document.getElementsByName("sidebarGroupBg")[0] as HTMLInputElement;
+                const textInput = document.getElementsByName("sidebarGroupText")[0] as HTMLInputElement;
+                if (bgInput) bgInput.value = "#f8fafc";
+                if (textInput) textInput.value = "#64748b";
+              }}
+              className="text-xs font-bold text-blue-600 hover:underline"
+            >
+              Varsayılana Dön
+            </button>
+          </div>
+          
+          <div className="grid gap-6">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Grup Arkaplan Rengi">
+                <div className="flex gap-2">
+                  <input type="color" name="sidebarGroupBg" defaultValue={settings.sidebarGroupBg || "#f8fafc"} className="size-11 rounded-none border-none p-1 shadow-sm" />
+                  <input type="text" value={settings.sidebarGroupBg || "#f8fafc"} readOnly className={cn(inputClass, "flex-1 font-mono text-xs")} />
+                </div>
+              </Field>
+              <Field label="Grup Yazı Rengi">
+                <div className="flex gap-2">
+                  <input type="color" name="sidebarGroupText" defaultValue={settings.sidebarGroupText || "#64748b"} className="size-11 rounded-none border-none p-1 shadow-sm" />
+                  <input type="text" value={settings.sidebarGroupText || "#64748b"} readOnly className={cn(inputClass, "flex-1 font-mono text-xs")} />
+                </div>
+              </Field>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Premium Renk Paletleri</p>
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                {[
+                  { name: "Varsayılan", bg: "#f8fafc", text: "#64748b" },
+                  { name: "Orange", bg: "#fff7ed", text: "#ea580c" },
+                  { name: "Ocean", bg: "#eff6ff", text: "#2563eb" },
+                  { name: "Forest", bg: "#f0fdf4", text: "#16a34a" },
+                  { name: "Rose", bg: "#fff1f2", text: "#e11d48" },
+                  { name: "Indigo", bg: "#eef2ff", text: "#4f46e5" },
+                ].map((palette) => (
+                  <button
+                    key={palette.name}
+                    type="button"
+                    onClick={() => {
+                      const bgInput = document.getElementsByName("sidebarGroupBg")[0] as HTMLInputElement;
+                      const textInput = document.getElementsByName("sidebarGroupText")[0] as HTMLInputElement;
+                      if (bgInput) bgInput.value = palette.bg;
+                      if (textInput) textInput.value = palette.text;
+                    }}
+                    className="flex flex-col items-center gap-1.5 p-2 rounded-none border border-slate-100 hover:border-blue-200 hover:shadow-sm transition-all group"
+                  >
+                    <div className="size-8 rounded-full border border-slate-100 shadow-inner" style={{ backgroundColor: palette.bg }} />
+                    <span className="text-[10px] font-bold text-slate-500 group-hover:text-slate-900">{palette.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="premium-card rounded-3xl p-6 space-y-6">
+          <div className="flex items-center gap-3 border-b border-slate-50 pb-4">
+            <div className="grid size-10 place-items-center rounded-none bg-amber-50 text-amber-600">
+              <Maximize2 className="size-5" />
+            </div>
+            <h2 className="font-bold text-slate-950">Modal Pozisyonu</h2>
+          </div>
+          
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Masaüstü Pozisyonu">
+              <select name="modalPosition" defaultValue={settings.modalPosition} className={inputClass}>
+                <option value="right">Sağ (Slide)</option>
+                <option value="left">Sol (Slide)</option>
+                <option value="center">Orta (Geniş)</option>
+                <option value="top">Üst (Drop)</option>
+                <option value="bottom">Alt (Rise)</option>
+              </select>
+            </Field>
+            
+            <Field label="Mobil Pozisyonu">
+              <select name="modalPositionMobile" defaultValue={settings.modalPositionMobile} className={inputClass}>
+                <option value="bottom">Alt (Drawer)</option>
+                <option value="top">Üst</option>
+                <option value="right">Sağ</option>
+                <option value="left">Sol</option>
+              </select>
+            </Field>
+          </div>
+        </div>
+
+        <div className="premium-card rounded-3xl p-6 space-y-6 lg:col-span-2">
+          <div className="flex items-center gap-3 border-b border-slate-50 pb-4">
+            <div className="grid size-10 place-items-center rounded-none bg-rose-50 text-rose-600">
+              <Bell className="size-5" />
+            </div>
+            <h2 className="font-bold text-slate-950">Bildirim Sistemi</h2>
+          </div>
+          
+          <div className="grid gap-6 md:grid-cols-3">
+            <div className="space-y-4">
+              <label className="flex items-center gap-3 p-3 rounded-none bg-slate-50 transition-all hover:bg-white hover:ring-1 hover:ring-slate-200">
+                <input type="checkbox" name="notificationsEnabled" defaultChecked={settings.notificationsEnabled} className="size-5 rounded-none border-slate-300 text-blue-600 focus:ring-blue-500" />
+                <span className="text-sm font-semibold text-slate-700">Bildirimler Aktif</span>
+              </label>
+              <Field label="Maksimum Bildirim Sayısı">
+                <input type="number" name="maxNotificationCount" defaultValue={settings.maxNotificationCount} className={inputClass} />
+              </Field>
+            </div>
+            
+            <div className="md:col-span-2 grid gap-3 sm:grid-cols-3">
+              {[
+                { name: "showCriticalStock", label: "Kritik Stok Uyarısı" },
+                { name: "showDelayedOrders", label: "Geciken Siparişler" },
+                { name: "showProductionAlerts", label: "Üretim Sinyalleri" },
+              ].map((opt) => (
+                <label key={opt.name} className="flex flex-col gap-3 p-4 rounded-none border border-slate-100 bg-white transition-all hover:border-blue-200 hover:shadow-md group">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400 group-hover:text-blue-600">{opt.label}</span>
+                    <input type="checkbox" name={opt.name} defaultChecked={(settings as any)[opt.name]} className="size-5 rounded-none border-slate-300 text-blue-600 focus:ring-blue-500" />
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-relaxed">Gerçek zamanlı hesaplama ile panele yansıtılır.</p>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-2 flex justify-end">
+          <button disabled={loading} className={cn(primaryButton, "px-12 py-4 text-base shadow-xl shadow-blue-100")} type="submit">
+            {loading ? "Kaydediliyor..." : "Ayarları Uygula"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}

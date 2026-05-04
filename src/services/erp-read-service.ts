@@ -67,6 +67,33 @@ function normalizeObject(row: Row) {
   );
 }
 
+async function ensureUISettingsTable() {
+  await sql`
+    create table if not exists ui_settings (
+      id text primary key,
+      data jsonb not null
+    )
+  `;
+  const rows = await sql`select count(*) from ui_settings`;
+  if (Number(rows[0].count) === 0) {
+    const defaults = {
+      menuMode: "collapsible",
+      submenuDefaultState: "open",
+      modalPosition: "right",
+      modalPositionMobile: "bottom",
+      notificationsEnabled: true,
+      notificationModules: ["siparişler", "üretim", "stok", "satın alma", "sevkiyat"],
+      maxNotificationCount: 10,
+      showCriticalStock: true,
+      showDelayedOrders: true,
+      showProductionAlerts: true,
+      sidebarGroupBg: "#f8fafc",
+      sidebarGroupText: "#64748b",
+    };
+    await sql`insert into ui_settings (id, data) values ('global', ${JSON.stringify(defaults)}::jsonb)`;
+  }
+}
+
 async function ensureCountersTable() {
   await sql`
     create table if not exists counters (
@@ -80,6 +107,7 @@ async function ensureCountersTable() {
 
 export async function getErpDataFromDb(): Promise<ErpData> {
   await ensureCountersTable();
+  await ensureUISettingsTable();
 
   const rows = await sql`
     select
@@ -105,7 +133,8 @@ export async function getErpDataFromDb(): Promise<ErpData> {
       coalesce((select jsonb_agg(to_jsonb(t) order by t.created_at desc) from notifications t), '[]'::jsonb) as notifications,
       coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from roles t), '[]'::jsonb) as roles,
       coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from user_profiles t), '[]'::jsonb) as user_profiles,
-      coalesce((select jsonb_agg(to_jsonb(t) order by t.key) from counters t), '[]'::jsonb) as counters
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.key) from counters t), '[]'::jsonb) as counters,
+      (select data from ui_settings where id = 'global' limit 1) as ui_settings
   `;
 
   return normalizeObject(rows[0] as Row) as unknown as ErpData;

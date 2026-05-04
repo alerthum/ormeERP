@@ -24,4 +24,16 @@ export const emptyErpData: ErpData = {
   roles: [],
   userProfiles: [],
   counters: [],
+  uiSettings: {
+    menuMode: "collapsible",
+    submenuDefaultState: "open",
+    modalPosition: "right",
+    modalPositionMobile: "bottom",
+    notificationsEnabled: true,
+    notificationModules: ["siparişler", "üretim", "stok", "satın alma", "sevkiyat"],
+    maxNotificationCount: 10,
+    showCriticalStock: true,
+    showDelayedOrders: true,
+    showProductionAlerts: true,
+  },
 };

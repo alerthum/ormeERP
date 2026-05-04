@@ -1,0 +1,1901 @@
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Encountered two children with the same key, `2026-05-04`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version. 
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:4104:33)
+    at runWithFiberInDEV (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:965:74)
+    at warnOnInvalidKey (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:4103:21)
+    at reconcileChildrenArray (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:4129:160)
+    at reconcileChildFibersImpl (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:4236:51)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:4261:39)
+    at reconcileChildren (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:5898:51)
+    at beginWork (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:6758:1573)
+    at runWithFiberInDEV (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:965:74)
+    at performUnitOfWork (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9555:97)
+    at workLoopConcurrentByScheduler (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9551:58)
+    at renderRootConcurrent (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9534:71)
+    at performWorkOnRoot (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9061:150)
+    at performWorkOnRootViaSchedulerTask (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:10255:9)
+    at MessagePort.performWorkUntilDeadline (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_0rpq4pf._.js:2647:64) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:4104:33)
+[browser] GoTrueClient@sb-lxndgnhocdozmobhvruh-auth-token:1 (2.105.1) 2026-05-04T01:53:56.425Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] GoTrueClient@sb-lxndgnhocdozmobhvruh-auth-token:2 (2.105.1) 2026-05-04T01:53:56.434Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] GoTrueClient@sb-lxndgnhocdozmobhvruh-auth-token:3 (2.105.1) 2026-05-04T01:53:56.438Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] GoTrueClient@sb-lxndgnhocdozmobhvruh-auth-token:4 (2.105.1) 2026-05-04T01:53:56.442Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] GoTrueClient@sb-lxndgnhocdozmobhvruh-auth-token:5 (2.105.1) 2026-05-04T01:53:56.445Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] GoTrueClient@sb-lxndgnhocdozmobhvruh-auth-token:6 (2.105.1) 2026-05-04T01:53:56.449Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] GoTrueClient@sb-lxndgnhocdozmobhvruh-auth-token:7 (2.105.1) 2026-05-04T01:53:56.454Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] GoTrueClient@sb-lxndgnhocdozmobhvruh-auth-token:8 (2.105.1) 2026-05-04T01:53:56.490Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] GoTrueClient@sb-lxndgnhocdozmobhvruh-auth-token:9 (2.105.1) 2026-05-04T01:53:56.493Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] GoTrueClient@sb-lxndgnhocdozmobhvruh-auth-token:10 (2.105.1) 2026-05-04T01:53:56.496Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] GoTrueClient@sb-lxndgnhocdozmobhvruh-auth-token:11 (2.105.1) 2026-05-04T01:53:56.499Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] GoTrueClient@sb-lxndgnhocdozmobhvruh-auth-token:12 (2.105.1) 2026-05-04T01:53:56.502Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] GoTrueClient@sb-lxndgnhocdozmobhvruh-auth-token:13 (2.105.1) 2026-05-04T01:53:56.505Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] GoTrueClient@sb-lxndgnhocdozmobhvruh-auth-token:14 (2.105.1) 2026-05-04T01:53:56.507Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] GoTrueClient@sb-lxndgnhocdozmobhvruh-auth-token:15 (2.105.1) 2026-05-04T01:53:56.509Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5611:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5882:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7522:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7700:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8858:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8856:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8849:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8683:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5611:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5882:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7522:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7700:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8858:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8856:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8849:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8683:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5611:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5882:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7522:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7700:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8858:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8856:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8849:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8683:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] A component is changing a controlled input to be uncontrolled. This is likely caused by the value changing from a defined to undefined, which should not happen. Decide between using a controlled or uncontrolled input element for the lifetime of the component. More info: https://react.dev/link/controlled-components 
+    at updateProperties (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:11212:82)
+    at commitUpdate (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:11894:9)
+    at runWithFiberInDEV (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:965:74)
+    at commitHostUpdate (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:7421:13)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8298:100)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8286:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8286:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8286:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8286:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8286:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8286:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8286:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8286:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8403:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8403:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8403:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8219:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:11212:82)
+[browser] A component is changing an uncontrolled input to be controlled. This is likely caused by the value changing from undefined to a defined value, which should not happen. Decide between using a controlled or uncontrolled input element for the lifetime of the component. More info: https://react.dev/link/controlled-components 
+    at updateProperties (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:11211:82)
+    at commitUpdate (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:11894:9)
+    at runWithFiberInDEV (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:965:74)
+    at commitHostUpdate (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:7421:13)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8298:100)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8286:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8286:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8286:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8286:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8286:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8286:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8286:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8286:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8403:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8403:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8403:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8219:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:11211:82)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5611:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5882:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7522:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7700:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8858:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8856:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8849:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8683:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5611:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5882:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7522:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7700:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8858:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8856:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8849:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8683:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5611:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5882:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7522:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7700:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8858:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8856:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8849:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8683:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] A component is changing a controlled input to be uncontrolled. This is likely caused by the value changing from a defined to undefined, which should not happen. Decide between using a controlled or uncontrolled input element for the lifetime of the component. More info: https://react.dev/link/controlled-components 
+    at updateProperties (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:11212:82)
+    at commitUpdate (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:11894:9)
+    at runWithFiberInDEV (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:965:74)
+    at commitHostUpdate (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:7421:13)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8298:100)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8286:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8286:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8286:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8286:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8286:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8286:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8286:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8286:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8403:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8403:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8403:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8219:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106)
+    at commitMutationEffectsOnFiber (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8214:17)
+    at recursivelyTraverseMutationEffects (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:8205:106) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:11212:82)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5611:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5882:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7522:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7700:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8858:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8856:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8849:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8683:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5611:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5882:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7522:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7700:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8858:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8856:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8849:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8683:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5611:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5882:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7522:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7700:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8858:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8856:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8849:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8683:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5611:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5882:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7522:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7700:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8858:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8856:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8849:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8683:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5611:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5882:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7522:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7700:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8858:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8856:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8849:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8683:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5611:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5882:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7522:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7700:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8858:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8856:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8849:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8683:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5611:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5882:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7522:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7700:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8858:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8856:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8849:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8683:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5611:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5882:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7522:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7700:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8858:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8856:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8849:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8683:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5611:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5882:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7522:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7700:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8858:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8856:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8849:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8683:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5611:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5882:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7522:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7700:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8858:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8856:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8849:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8683:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5611:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:5882:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7522:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:7700:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8858:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8856:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8849:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:8683:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+⨯ Error: DATABASE_URL is not configured.
+    at module evaluation (src\db\client.ts:6:9)
+    at module evaluation (src\app\api\_helpers.ts:3:1)
+    at module evaluation (src\app\api\erp\route.ts:1:1)
+    at Object.<anonymous> (C:\Users\ibrahimyokus\Desktop\convert\Yokus Orme Erp Yazilimi\.next\dev\server\app\api\erp\route.js:9:3)
+  4 |
+  5 | if (!databaseUrl) {
+> 6 |   throw new Error("DATABASE_URL is not configured.");
+    |         ^
+  7 | }
+  8 |
+  9 | export const sql = postgres(databaseUrl, { {
+  page: '/api/erp'
+}
+⨯ Error: DATABASE_URL is not configured.
+    at module evaluation (src\db\client.ts:6:9)
+    at module evaluation (src\app\api\_helpers.ts:3:1)
+    at module evaluation (src\app\api\erp\route.ts:1:1)
+    at Object.<anonymous> (C:\Users\ibrahimyokus\Desktop\convert\Yokus Orme Erp Yazilimi\.next\dev\server\app\api\erp\route.js:9:3)
+  4 |
+  5 | if (!databaseUrl) {
+> 6 |   throw new Error("DATABASE_URL is not configured.");
+    |         ^
+  7 | }
+  8 |
+  9 | export const sql = postgres(databaseUrl, { {
+  page: '/api/erp'
+}
+⨯ Error: DATABASE_URL is not configured.
+    at module evaluation (src\db\client.ts:6:9)
+    at module evaluation (src\app\api\_helpers.ts:3:1)
+    at module evaluation (src\app\api\erp\route.ts:1:1)
+    at Object.<anonymous> (C:\Users\ibrahimyokus\Desktop\convert\Yokus Orme Erp Yazilimi\.next\dev\server\app\api\erp\route.js:9:3)
+  4 |
+  5 | if (!databaseUrl) {
+> 6 |   throw new Error("DATABASE_URL is not configured.");
+    |         ^
+  7 | }
+  8 |
+  9 | export const sql = postgres(databaseUrl, { {
+  page: '/api/erp'
+}
+⨯ Error: DATABASE_URL is not configured.
+    at module evaluation (src\db\client.ts:6:9)
+    at module evaluation (src\app\api\_helpers.ts:3:1)
+    at module evaluation (src\app\api\erp\route.ts:1:1)
+    at Object.<anonymous> (C:\Users\ibrahimyokus\Desktop\convert\Yokus Orme Erp Yazilimi\.next\dev\server\app\api\erp\route.js:9:3)
+  4 |
+  5 | if (!databaseUrl) {
+> 6 |   throw new Error("DATABASE_URL is not configured.");
+    |         ^
+  7 | }
+  8 |
+  9 | export const sql = postgres(databaseUrl, { {
+  page: '/api/erp'
+}
+⨯ Error: DATABASE_URL is not configured.
+    at module evaluation (src\db\client.ts:6:9)
+    at module evaluation (src\app\api\_helpers.ts:3:1)
+    at module evaluation (src\app\api\erp\route.ts:1:1)
+    at Object.<anonymous> (C:\Users\ibrahimyokus\Desktop\convert\Yokus Orme Erp Yazilimi\.next\dev\server\app\api\erp\route.js:9:3)
+  4 |
+  5 | if (!databaseUrl) {
+> 6 |   throw new Error("DATABASE_URL is not configured.");
+    |         ^
+  7 | }
+  8 |
+  9 | export const sql = postgres(databaseUrl, { {
+  page: '/api/erp'
+}
+⨯ Error: DATABASE_URL is not configured.
+    at module evaluation (src\db\client.ts:6:9)
+    at module evaluation (src\app\api\_helpers.ts:3:1)
+    at module evaluation (src\app\api\erp\route.ts:1:1)
+    at Object.<anonymous> (C:\Users\ibrahimyokus\Desktop\convert\Yokus Orme Erp Yazilimi\.next\dev\server\app\api\erp\route.js:9:3)
+  4 |
+  5 | if (!databaseUrl) {
+> 6 |   throw new Error("DATABASE_URL is not configured.");
+    |         ^
+  7 | }
+  8 |
+  9 | export const sql = postgres(databaseUrl, { {
+  page: '/api/erp'
+}
+⨯ Error: DATABASE_URL is not configured.
+    at module evaluation (src\db\client.ts:6:9)
+    at module evaluation (src\app\api\_helpers.ts:3:1)
+    at module evaluation (src\app\api\erp\route.ts:1:1)
+    at Object.<anonymous> (C:\Users\ibrahimyokus\Desktop\convert\Yokus Orme Erp Yazilimi\.next\dev\server\app\api\erp\route.js:9:3)
+  4 |
+  5 | if (!databaseUrl) {
+> 6 |   throw new Error("DATABASE_URL is not configured.");
+    |         ^
+  7 | }
+  8 |
+  9 | export const sql = postgres(databaseUrl, { {
+  page: '/api/erp'
+}
+⨯ Error: DATABASE_URL is not configured.
+    at module evaluation (src\db\client.ts:6:9)
+    at module evaluation (src\app\api\_helpers.ts:3:1)
+    at module evaluation (src\app\api\erp\route.ts:1:1)
+    at Object.<anonymous> (C:\Users\ibrahimyokus\Desktop\convert\Yokus Orme Erp Yazilimi\.next\dev\server\app\api\erp\route.js:9:3)
+  4 |
+  5 | if (!databaseUrl) {
+> 6 |   throw new Error("DATABASE_URL is not configured.");
+    |         ^
+  7 | }
+  8 |
+  9 | export const sql = postgres(databaseUrl, { {
+  page: '/api/erp'
+}
+⨯ Error: DATABASE_URL is not configured.
+    at module evaluation (src\db\client.ts:6:9)
+    at module evaluation (src\app\api\_helpers.ts:3:1)
+    at module evaluation (src\app\api\erp\route.ts:1:1)
+    at Object.<anonymous> (C:\Users\ibrahimyokus\Desktop\convert\Yokus Orme Erp Yazilimi\.next\dev\server\app\api\erp\route.js:9:3)
+  4 |
+  5 | if (!databaseUrl) {
+> 6 |   throw new Error("DATABASE_URL is not configured.");
+    |         ^
+  7 | }
+  8 |
+  9 | export const sql = postgres(databaseUrl, { {
+  page: '/api/erp'
+}
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src\lib\supabase.ts:6:37)
+    at module evaluation (src\components\erp-data-provider.tsx:6:1)
+    at module evaluation (src\components\app-shell.tsx:23:1)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "demo-anon-key";
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    |                                     ^
+  7 |   auth: {
+  8 |     persistSession: true,
+  9 |     autoRefreshToken: true, {
+  digest: '3707772171'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src\lib\supabase.ts:6:37)
+    at module evaluation (src\components\erp-data-provider.tsx:6:1)
+    at module evaluation (src\components\app-shell.tsx:23:1)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "demo-anon-key";
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    |                                     ^
+  7 |   auth: {
+  8 |     persistSession: true,
+  9 |     autoRefreshToken: true, {
+  digest: '3707772171'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src\lib\supabase.ts:6:37)
+    at module evaluation (src\components\erp-data-provider.tsx:6:1)
+    at module evaluation (src\components\app-shell.tsx:23:1)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "demo-anon-key";
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    |                                     ^
+  7 |   auth: {
+  8 |     persistSession: true,
+  9 |     autoRefreshToken: true, {
+  digest: '3707772171'
+}
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src\lib\supabase.ts:6:37)
+    at module evaluation (src\components\erp-data-provider.tsx:6:1)
+    at module evaluation (src\components\app-shell.tsx:23:1)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "demo-anon-key";
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    |                                     ^
+  7 |   auth: {
+  8 |     persistSession: true,
+  9 |     autoRefreshToken: true, {
+  digest: '3707772171'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src\lib\supabase.ts:6:37)
+    at module evaluation (src\components\erp-data-provider.tsx:6:1)
+    at module evaluation (src\components\app-shell.tsx:23:1)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "demo-anon-key";
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    |                                     ^
+  7 |   auth: {
+  8 |     persistSession: true,
+  9 |     autoRefreshToken: true, {
+  digest: '3707772171'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src\lib\supabase.ts:6:37)
+    at module evaluation (src\components\erp-data-provider.tsx:6:1)
+    at module evaluation (src\components\app-shell.tsx:23:1)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "demo-anon-key";
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    |                                     ^
+  7 |   auth: {
+  8 |     persistSession: true,
+  9 |     autoRefreshToken: true, {
+  digest: '3707772171'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src\lib\supabase.ts:6:37)
+    at module evaluation (src\components\erp-data-provider.tsx:6:1)
+    at module evaluation (src\components\app-shell.tsx:23:1)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "demo-anon-key";
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    |                                     ^
+  7 |   auth: {
+  8 |     persistSession: true,
+  9 |     autoRefreshToken: true, {
+  digest: '3707772171'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src\lib\supabase.ts:6:37)
+    at module evaluation (src\components\erp-data-provider.tsx:6:1)
+    at module evaluation (src\components\app-shell.tsx:23:1)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "demo-anon-key";
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    |                                     ^
+  7 |   auth: {
+  8 |     persistSession: true,
+  9 |     autoRefreshToken: true, {
+  digest: '3707772171'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src\lib\supabase.ts:6:37)
+    at module evaluation (src\components\erp-data-provider.tsx:6:1)
+    at module evaluation (src\components\app-shell.tsx:23:1)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "demo-anon-key";
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    |                                     ^
+  7 |   auth: {
+  8 |     persistSession: true,
+  9 |     autoRefreshToken: true, {
+  digest: '3707772171'
+}
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src\lib\supabase.ts:6:37)
+    at module evaluation (src\components\erp-data-provider.tsx:6:1)
+    at module evaluation (src\components\app-shell.tsx:23:1)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "demo-anon-key";
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    |                                     ^
+  7 |   auth: {
+  8 |     persistSession: true,
+  9 |     autoRefreshToken: true, {
+  digest: '3707772171'
+}
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src\lib\supabase.ts:6:37)
+    at module evaluation (src\components\erp-data-provider.tsx:6:1)
+    at module evaluation (src\components\app-shell.tsx:23:1)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "demo-anon-key";
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    |                                     ^
+  7 |   auth: {
+  8 |     persistSession: true,
+  9 |     autoRefreshToken: true, {
+  digest: '3488144735'
+}
+[browser] Uncaught Error: supabaseUrl is required.
+    at validateSupabaseUrl (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:12741:28)
+    at new SupabaseClient (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:12953:25)
+    at createClient (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_05~beb9._.js:13175:12)
+    at module evaluation (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/src_0cmd1xf._.js:116:216)
+    at module evaluation (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/src_0cmd1xf._.js:149:151)
+    at module evaluation (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/src_0cmd1xf._.js:343:174)
+    at requireModule (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:95:84)
+    at initializeModuleChunk (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:1110:25)
+    at resolveModuleChunk (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:1030:43)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:1758:24)
+    at Page (src\app\orders\page.tsx:5:10)
+  3 |
+  4 | export default function Page() {
+> 5 |   return <AppShell><OrdersPage /></AppShell>;
+    |          ^
+  6 | }
+  7 |
+⨯ ./src/components/forms.tsx:54:54
+Expected ',', got 'ident'
+  [90m52 |[0m [36mfunction[0m upsertById<[33mT[0m [36mextends[0m { id: string }>(items: [33mT[0m[], item: [33mT[0m) {
+  [90m53 |[0m   [36mreturn[0m items.some((current) => current.id === item.id)
+[31m[1m>[0m [90m54 |[0m      items.map((current) => (current.id === item.id  item : current))
+  [90m   |[0m                                                      [31m[1m^^^^[0m
+  [90m55 |[0m     : [...items, item];
+  [90m56 |[0m }
+  [90m57 |[0m
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/forms.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/forms.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/components/erp-data-provider.tsx:63:37
+Expected ',', got 'string literal'
+  [90m61 |[0m     [36mconst[0m result = ([36mawait[0m response.json()) [36mas[0m [33mApiResponse[0m;
+  [90m62 |[0m     [36mif[0m (!response.ok || !result.ok || !result.data) {
+[31m[1m>[0m [90m63 |[0m       [36mthrow[0m [36mnew[0m [33mError[0m(result.error  [32m"Veriler alınamadı."[0m);
+  [90m   |[0m                                     [31m[1m^^^^^^^^^^^^^^^^^^^^[0m
+  [90m64 |[0m     }
+  [90m65 |[0m     setData(result.data);
+  [90m66 |[0m     setLoading([36mfalse[0m);
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/erp-data-provider.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/erp-data-provider.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/components/ui/stat-card.tsx:27:61
+Expected ',', got 'string literal'
+  [90m25 |[0m ...
+  [90m26 |[0m ...
+[31m[1m>[0m [90m27 |[0m ...[32m"premium-card rounded-2xl"[0m, compact  [32m"p-3 sm:p-4"[0m : [32m"p-4 sm:p-5"[0m)}>
+  [90m   |[0m                                         [31m[1m^^^^^^^^^^^^[0m
+  [90m28 |[0m ...n([32m"flex items-start justify-between"[0m, compact  [32m"gap-2"[0m : [32m"gap-3"[0m)}>
+  [90m29 |[0m ...[32m"min-w-0"[0m>
+  [90m30 |[0m ...{cn([32m"font-medium text-slate-500"[0m, compact  [32m"text-[11px] leading-4 sm:text-xs"[0m : [32m"text-s..[0m.
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/ui/stat-card.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/ui/stat-card.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/components/pages.tsx:76:92
+Expected ',', got '{'
+  [90m74 |[0m ...row.name, isActive: [36mtrue[0m };
+  [90m75 |[0m ...
+[31m[1m>[0m [90m76 |[0m ...ehouses.map((item) => (item.id === row.id  { ...item, ...base, kind: row.kind  item.kin...
+  [90m   |[0m                                               [31m[1m^[0m
+  [90m77 |[0m ...
+  [90m78 |[0m ...
+  [90m79 |[0m ...ers.map((item) => (item.id === row.id  { ...item, ...base, [36mtype[0m: row.[36mtype[0m  item.[36mtype[0m } ...
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/pages.tsx
+    ./src/app/orders/page.tsx
+
+
+
+./src/lib/utils.ts:34:37
+Expected ';', got 'ident'
+  [90m32 |[0m     [36mtry[0m {
+  [90m33 |[0m       [36mconst[0m parsed = [33mJSON[0m.parse(items);
+[31m[1m>[0m [90m34 |[0m       [36mreturn[0m [33mArray[0m.isArray(parsed)  parsed : [];
+  [90m   |[0m                                     [31m[1m^^^^^^[0m
+  [90m35 |[0m     } [36mcatch[0m {
+  [90m36 |[0m       [36mreturn[0m [];
+  [90m37 |[0m     }
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/lib/utils.ts [Client Component Browser]
+    ./src/components/app-shell.tsx [Client Component Browser]
+    ./src/components/app-shell.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/lib/utils.ts [Client Component SSR]
+    ./src/components/app-shell.tsx [Client Component SSR]
+    ./src/components/app-shell.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/services/erp-service.ts:15:53
+Expected ';', got 'string literal'
+  [90m13 |[0m ...[36mction[0m getName<[33mT[0m [36mextends[0m { id: string; name: string }>(items: [33mT[0m[], id: string): string {
+  [90m14 |[0m ... [36mreturn[0m [32m"-"[0m;
+[31m[1m>[0m [90m15 |[0m ...tems.find((item) => item.id === id).name  [32m"-"[0m;
+  [90m   |[0m                                              [31m[1m^^^[0m
+  [90m16 |[0m ...
+  [90m17 |[0m ...
+  [90m18 |[0m ...[36mction[0m nextCode(prefix: [33mStockType[0m, cards: [33mStockCard[0m[]): string {
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/services/erp-service.ts [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/services/erp-service.ts [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/components/ui/page-header.tsx:23:11
+Expected '</', got ':'
+  [90m21 |[0m             <[33mIcon[0m className=[32m"size-5"[0m />
+  [90m22 |[0m           </div>
+[31m[1m>[0m [90m23 |[0m         ) : [36mnull[0m}
+  [90m   |[0m           [31m[1m^[0m
+  [90m24 |[0m         <div>
+  [90m25 |[0m           {eyebrow  <p className=[32m"text-xs font-bold uppercase tracking-[0.18em] text-blue-...[0m
+  [90m26 |[0m           <h1 className=[32m"text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl"[0m...
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/ui/page-header.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/ui/page-header.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/components/party-timeline.tsx:18:45
+Expected '</', got 'ident'
+  [90m16 |[0m ...   {items.map((item, index) => (
+  [90m17 |[0m ...     <div key={[32m`[0m${item.date[32m}-[0m${item.title[32m}`[0m} className=[32m"relative flex gap-4"[0m>
+[31m[1m>[0m [90m18 |[0m ...       {index < items.length - [35m1[0m  <div className=[32m"absolute left-[11px] top-7 h-full w-p...[0m
+  [90m   |[0m                                           [31m[1m^^^^^^^^^[0m
+  [90m19 |[0m ...       <div className={cn([32m"relative z-10 mt-1 size-6 rounded-full ring-8"[0m, tones[item.t...
+  [90m20 |[0m ...       <div>
+  [90m21 |[0m ...         <p className=[32m"text-xs font-semibold uppercase tracking-[0.14em] text-slate-400.[0m..
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/party-timeline.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/party-timeline.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/components/app-shell.tsx:77:29
+Expected '</', got 'string literal'
+  [90m75 |[0m ...               className={cn(
+  [90m76 |[0m ...                 [32m"flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-semibold t...[0m
+[31m[1m>[0m [90m77 |[0m ...                 active  [32m"bg-blue-50 text-blue-700 shadow-sm"[0m : [32m"text-slate-500 hover:b...[0m
+  [90m   |[0m                             [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m78 |[0m ...               )}
+  [90m79 |[0m ...             >
+  [90m80 |[0m ...               <[33mIcon[0m className=[32m"size-5"[0m />
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/app-shell.tsx
+    ./src/app/orders/page.tsx
+
+
+
+./src/components/ui/confirm-modal.tsx:40:110
+Expected '</', got 'string literal'
+  [90m38 |[0m ...
+  [90m39 |[0m ...
+[31m[1m>[0m [90m40 |[0m ...[32madow-lg [0m${tone === [32m"danger"[0m  [32m"bg-rose-600 shadow-rose-100"[0m : [32m"bg-blue-600 shadow-blue-1...[0m
+  [90m   |[0m                                 [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m41 |[0m ...
+  [90m42 |[0m ...
+  [90m43 |[0m ...
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/ui/confirm-modal.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/ui/confirm-modal.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/lib/supabase.ts:3:59
+Expected a semicolon
+  [90m1 |[0m [36mimport[0m { createClient } [36mfrom[0m [32m"@supabase/supabase-js"[0m;
+  [90m2 |[0m
+[31m[1m>[0m [90m3 |[0m [36mconst[0m supabaseUrl = process.env.[33mNEXT_PUBLIC_SUPABASE_URL[0m  [32m"https://example.supabase.co"[0m;
+  [90m  |[0m                                                           [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m4 |[0m [36mconst[0m supabaseAnonKey = process.env.[33mNEXT_PUBLIC_SUPABASE_ANON_KEY[0m  [32m"demo-anon-key"[0m;
+  [90m5 |[0m
+  [90m6 |[0m [36mexport[0m [36mconst[0m supabase = createClient(supabaseUrl, supabaseAnonKey, {
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/lib/supabase.ts [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/lib/supabase.ts [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/lib/supabase.ts:4:68
+Expected a semicolon
+  [90m2 |[0m
+  [90m3 |[0m [36mconst[0m supabaseUrl = process.env.[33mNEXT_PUBLIC_SUPABASE_URL[0m  [32m"https://example.supabase.co"[0m;
+[31m[1m>[0m [90m4 |[0m [36mconst[0m supabaseAnonKey = process.env.[33mNEXT_PUBLIC_SUPABASE_ANON_KEY[0m  [32m"demo-anon-key"[0m;
+  [90m  |[0m                                                                    [31m[1m^^^^^^^^^^^^^^^[0m
+  [90m5 |[0m
+  [90m6 |[0m [36mexport[0m [36mconst[0m supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  [90m7 |[0m   auth: {
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/lib/supabase.ts [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/lib/supabase.ts [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/components/ui/data-table.tsx:60:46
+Expression expected
+  [90m58 |[0m ...[36monst[0m [page, setPage] = useState([35m1[0m);
+  [90m59 |[0m ...[36monst[0m [collapsedGroups, setCollapsedGroups] = useState<[33mSet[0m<string>>([36mnew[0m [33mSet[0m());
+[31m[1m>[0m [90m60 |[0m ...[36monst[0m mobileColumns = columns.length > [35m4[0m  [...columns.slice([35m0[0m, [35m3[0m), columns[columns.lengt...
+  [90m   |[0m                                              [31m[1m^^^[0m
+  [90m61 |[0m ...[36monst[0m normalizedQuery = query.trim().toLocaleLowerCase([32m"tr-TR"[0m);
+  [90m62 |[0m ...[36monst[0m filteredRows = useMemo(
+  [90m63 |[0m ... () => (normalizedQuery  rows.filter((row) => getSearchText(row).toLocaleLowerCase([32m"tr-...[0m
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/ui/data-table.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/ui/data-table.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+[browser] Uncaught Error: ./src/components/erp-data-provider.tsx:63:37
+Expected ',', got 'string literal'
+  61 |     const result = (await response.json()) as ApiResponse;
+  62 |     if (!response.ok || !result.ok || !result.data) {
+> 63 |       throw new Error(result.error  "Veriler alınamadı.");
+     |                                     ^^^^^^^^^^^^^^^^^^^^
+  64 |     }
+  65 |     setData(result.data);
+  66 |     setLoading(false);
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/erp-data-provider.tsx [Client Component Browser]
+    ./src/components/dashboard.tsx [Client Component Browser]
+    ./src/components/dashboard.tsx [Server Component]
+    ./src/app/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/erp-data-provider.tsx [Client Component SSR]
+    ./src/components/dashboard.tsx [Client Component SSR]
+    ./src/components/dashboard.tsx [Server Component]
+    ./src/app/dashboard/page.tsx [Server Component]
+
+
+    at <unknown> (Error: ./src/components/erp-data-provider.tsx:63:37)
+    at <unknown> (Error: (./src/components/erp-data-provider.tsx:63:37)
+⨯ ./src/components/forms.tsx:54:54
+Expected ',', got 'ident'
+  [90m52 |[0m [36mfunction[0m upsertById<[33mT[0m [36mextends[0m { id: string }>(items: [33mT[0m[], item: [33mT[0m) {
+  [90m53 |[0m   [36mreturn[0m items.some((current) => current.id === item.id)
+[31m[1m>[0m [90m54 |[0m      items.map((current) => (current.id === item.id  item : current))
+  [90m   |[0m                                                      [31m[1m^^^^[0m
+  [90m55 |[0m     : [...items, item];
+  [90m56 |[0m }
+  [90m57 |[0m
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/forms.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/forms.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/components/erp-data-provider.tsx:63:37
+Expected ',', got 'string literal'
+  [90m61 |[0m     [36mconst[0m result = ([36mawait[0m response.json()) [36mas[0m [33mApiResponse[0m;
+  [90m62 |[0m     [36mif[0m (!response.ok || !result.ok || !result.data) {
+[31m[1m>[0m [90m63 |[0m       [36mthrow[0m [36mnew[0m [33mError[0m(result.error  [32m"Veriler alınamadı."[0m);
+  [90m   |[0m                                     [31m[1m^^^^^^^^^^^^^^^^^^^^[0m
+  [90m64 |[0m     }
+  [90m65 |[0m     setData(result.data);
+  [90m66 |[0m     setLoading([36mfalse[0m);
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/erp-data-provider.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/erp-data-provider.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/components/ui/stat-card.tsx:27:61
+Expected ',', got 'string literal'
+  [90m25 |[0m ...
+  [90m26 |[0m ...
+[31m[1m>[0m [90m27 |[0m ...[32m"premium-card rounded-2xl"[0m, compact  [32m"p-3 sm:p-4"[0m : [32m"p-4 sm:p-5"[0m)}>
+  [90m   |[0m                                         [31m[1m^^^^^^^^^^^^[0m
+  [90m28 |[0m ...n([32m"flex items-start justify-between"[0m, compact  [32m"gap-2"[0m : [32m"gap-3"[0m)}>
+  [90m29 |[0m ...[32m"min-w-0"[0m>
+  [90m30 |[0m ...{cn([32m"font-medium text-slate-500"[0m, compact  [32m"text-[11px] leading-4 sm:text-xs"[0m : [32m"text-s..[0m.
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/ui/stat-card.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/ui/stat-card.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/components/pages.tsx:76:92
+Expected ',', got '{'
+  [90m74 |[0m ...row.name, isActive: [36mtrue[0m };
+  [90m75 |[0m ...
+[31m[1m>[0m [90m76 |[0m ...ehouses.map((item) => (item.id === row.id  { ...item, ...base, kind: row.kind  item.kin...
+  [90m   |[0m                                               [31m[1m^[0m
+  [90m77 |[0m ...
+  [90m78 |[0m ...
+  [90m79 |[0m ...ers.map((item) => (item.id === row.id  { ...item, ...base, [36mtype[0m: row.[36mtype[0m  item.[36mtype[0m } ...
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/pages.tsx
+    ./src/app/orders/page.tsx
+
+
+
+./src/lib/utils.ts:34:37
+Expected ';', got 'ident'
+  [90m32 |[0m     [36mtry[0m {
+  [90m33 |[0m       [36mconst[0m parsed = [33mJSON[0m.parse(items);
+[31m[1m>[0m [90m34 |[0m       [36mreturn[0m [33mArray[0m.isArray(parsed)  parsed : [];
+  [90m   |[0m                                     [31m[1m^^^^^^[0m
+  [90m35 |[0m     } [36mcatch[0m {
+  [90m36 |[0m       [36mreturn[0m [];
+  [90m37 |[0m     }
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/lib/utils.ts [Client Component Browser]
+    ./src/components/app-shell.tsx [Client Component Browser]
+    ./src/components/app-shell.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/lib/utils.ts [Client Component SSR]
+    ./src/components/app-shell.tsx [Client Component SSR]
+    ./src/components/app-shell.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/services/erp-service.ts:15:53
+Expected ';', got 'string literal'
+  [90m13 |[0m ...[36mction[0m getName<[33mT[0m [36mextends[0m { id: string; name: string }>(items: [33mT[0m[], id: string): string {
+  [90m14 |[0m ... [36mreturn[0m [32m"-"[0m;
+[31m[1m>[0m [90m15 |[0m ...tems.find((item) => item.id === id).name  [32m"-"[0m;
+  [90m   |[0m                                              [31m[1m^^^[0m
+  [90m16 |[0m ...
+  [90m17 |[0m ...
+  [90m18 |[0m ...[36mction[0m nextCode(prefix: [33mStockType[0m, cards: [33mStockCard[0m[]): string {
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/services/erp-service.ts [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/services/erp-service.ts [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/components/ui/page-header.tsx:23:11
+Expected '</', got ':'
+  [90m21 |[0m             <[33mIcon[0m className=[32m"size-5"[0m />
+  [90m22 |[0m           </div>
+[31m[1m>[0m [90m23 |[0m         ) : [36mnull[0m}
+  [90m   |[0m           [31m[1m^[0m
+  [90m24 |[0m         <div>
+  [90m25 |[0m           {eyebrow  <p className=[32m"text-xs font-bold uppercase tracking-[0.18em] text-blue-...[0m
+  [90m26 |[0m           <h1 className=[32m"text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl"[0m...
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/ui/page-header.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/ui/page-header.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/components/party-timeline.tsx:18:45
+Expected '</', got 'ident'
+  [90m16 |[0m ...   {items.map((item, index) => (
+  [90m17 |[0m ...     <div key={[32m`[0m${item.date[32m}-[0m${item.title[32m}`[0m} className=[32m"relative flex gap-4"[0m>
+[31m[1m>[0m [90m18 |[0m ...       {index < items.length - [35m1[0m  <div className=[32m"absolute left-[11px] top-7 h-full w-p...[0m
+  [90m   |[0m                                           [31m[1m^^^^^^^^^[0m
+  [90m19 |[0m ...       <div className={cn([32m"relative z-10 mt-1 size-6 rounded-full ring-8"[0m, tones[item.t...
+  [90m20 |[0m ...       <div>
+  [90m21 |[0m ...         <p className=[32m"text-xs font-semibold uppercase tracking-[0.14em] text-slate-400.[0m..
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/party-timeline.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/party-timeline.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/components/app-shell.tsx:77:29
+Expected '</', got 'string literal'
+  [90m75 |[0m ...               className={cn(
+  [90m76 |[0m ...                 [32m"flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-semibold t...[0m
+[31m[1m>[0m [90m77 |[0m ...                 active  [32m"bg-blue-50 text-blue-700 shadow-sm"[0m : [32m"text-slate-500 hover:b...[0m
+  [90m   |[0m                             [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m78 |[0m ...               )}
+  [90m79 |[0m ...             >
+  [90m80 |[0m ...               <[33mIcon[0m className=[32m"size-5"[0m />
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/app-shell.tsx
+    ./src/app/orders/page.tsx
+
+
+
+./src/components/ui/confirm-modal.tsx:40:110
+Expected '</', got 'string literal'
+  [90m38 |[0m ...
+  [90m39 |[0m ...
+[31m[1m>[0m [90m40 |[0m ...[32madow-lg [0m${tone === [32m"danger"[0m  [32m"bg-rose-600 shadow-rose-100"[0m : [32m"bg-blue-600 shadow-blue-1...[0m
+  [90m   |[0m                                 [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m41 |[0m ...
+  [90m42 |[0m ...
+  [90m43 |[0m ...
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/ui/confirm-modal.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/ui/confirm-modal.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/lib/supabase.ts:3:59
+Expected a semicolon
+  [90m1 |[0m [36mimport[0m { createClient } [36mfrom[0m [32m"@supabase/supabase-js"[0m;
+  [90m2 |[0m
+[31m[1m>[0m [90m3 |[0m [36mconst[0m supabaseUrl = process.env.[33mNEXT_PUBLIC_SUPABASE_URL[0m  [32m"https://example.supabase.co"[0m;
+  [90m  |[0m                                                           [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m4 |[0m [36mconst[0m supabaseAnonKey = process.env.[33mNEXT_PUBLIC_SUPABASE_ANON_KEY[0m  [32m"demo-anon-key"[0m;
+  [90m5 |[0m
+  [90m6 |[0m [36mexport[0m [36mconst[0m supabase = createClient(supabaseUrl, supabaseAnonKey, {
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/lib/supabase.ts [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/lib/supabase.ts [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/lib/supabase.ts:4:68
+Expected a semicolon
+  [90m2 |[0m
+  [90m3 |[0m [36mconst[0m supabaseUrl = process.env.[33mNEXT_PUBLIC_SUPABASE_URL[0m  [32m"https://example.supabase.co"[0m;
+[31m[1m>[0m [90m4 |[0m [36mconst[0m supabaseAnonKey = process.env.[33mNEXT_PUBLIC_SUPABASE_ANON_KEY[0m  [32m"demo-anon-key"[0m;
+  [90m  |[0m                                                                    [31m[1m^^^^^^^^^^^^^^^[0m
+  [90m5 |[0m
+  [90m6 |[0m [36mexport[0m [36mconst[0m supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  [90m7 |[0m   auth: {
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/lib/supabase.ts [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/lib/supabase.ts [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/components/ui/data-table.tsx:60:46
+Expression expected
+  [90m58 |[0m ...[36monst[0m [page, setPage] = useState([35m1[0m);
+  [90m59 |[0m ...[36monst[0m [collapsedGroups, setCollapsedGroups] = useState<[33mSet[0m<string>>([36mnew[0m [33mSet[0m());
+[31m[1m>[0m [90m60 |[0m ...[36monst[0m mobileColumns = columns.length > [35m4[0m  [...columns.slice([35m0[0m, [35m3[0m), columns[columns.lengt...
+  [90m   |[0m                                              [31m[1m^^^[0m
+  [90m61 |[0m ...[36monst[0m normalizedQuery = query.trim().toLocaleLowerCase([32m"tr-TR"[0m);
+  [90m62 |[0m ...[36monst[0m filteredRows = useMemo(
+  [90m63 |[0m ... () => (normalizedQuery  rows.filter((row) => getSearchText(row).toLocaleLowerCase([32m"tr-...[0m
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/ui/data-table.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/ui/data-table.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+[browser] Uncaught Error: ./src/components/erp-data-provider.tsx:63:37
+Expected ',', got 'string literal'
+  61 |     const result = (await response.json()) as ApiResponse;
+  62 |     if (!response.ok || !result.ok || !result.data) {
+> 63 |       throw new Error(result.error  "Veriler alınamadı.");
+     |                                     ^^^^^^^^^^^^^^^^^^^^
+  64 |     }
+  65 |     setData(result.data);
+  66 |     setLoading(false);
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/erp-data-provider.tsx [Client Component Browser]
+    ./src/components/dashboard.tsx [Client Component Browser]
+    ./src/components/dashboard.tsx [Server Component]
+    ./src/app/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/erp-data-provider.tsx [Client Component SSR]
+    ./src/components/dashboard.tsx [Client Component SSR]
+    ./src/components/dashboard.tsx [Server Component]
+    ./src/app/dashboard/page.tsx [Server Component]
+
+
+    at <unknown> (Error: ./src/components/erp-data-provider.tsx:63:37)
+    at <unknown> (Error: (./src/components/erp-data-provider.tsx:63:37)
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src\lib\supabase.ts:6:37)
+    at module evaluation (src\components\erp-data-provider.tsx:6:1)
+    at module evaluation (src\components\app-shell.tsx:23:1)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "demo-anon-key";
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    |                                     ^
+  7 |   auth: {
+  8 |     persistSession: true,
+  9 |     autoRefreshToken: true, {
+  digest: '3707772171'
+}
+⨯ ./src/components/erp-data-provider.tsx:63:60
+Expected ':', got ')'
+  [90m61 |[0m     [36mconst[0m result = ([36mawait[0m response.json()) [36mas[0m [33mApiResponse[0m;
+  [90m62 |[0m     [36mif[0m (!response.ok || !result.ok || !result.data) {
+[31m[1m>[0m [90m63 |[0m       [36mthrow[0m [36mnew[0m [33mError[0m(result.error ? [32m"Veriler alınamadı."[0m);
+  [90m   |[0m                                                          [31m[1m^[0m
+  [90m64 |[0m     }
+  [90m65 |[0m     setData(result.data);
+  [90m66 |[0m     setLoading([36mfalse[0m);
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/erp-data-provider.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/erp-data-provider.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/components/ui/data-table.tsx:71:50
+Expected ':', got ')'
+  [90m69 |[0m ...[36mr[0m ([36mconst[0m row [36mof[0m filteredRows) {
+  [90m70 |[0m ...[36mconst[0m key = groupBy.getKey(row) || [32m"Tanımsız"[0m;
+[31m[1m>[0m [90m71 |[0m ...grouped.set(key, [...(grouped.get(key) ? []), row]);
+  [90m   |[0m                                               [31m[1m^[0m
+  [90m72 |[0m ...
+  [90m73 |[0m ...[36mturn[0m [...grouped.entries()].map(([key, groupRows]) => ({ key, rows: groupRows })).sort(...
+  [90m74 |[0m ...filteredRows, groupBy]);
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/ui/data-table.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/ui/data-table.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/lib/supabase.ts:3:89
+Expected ':', got ';'
+  [90m1 |[0m [36mimport[0m { createClient } [36mfrom[0m [32m"@supabase/supabase-js"[0m;
+  [90m2 |[0m
+[31m[1m>[0m [90m3 |[0m [36mconst[0m supabaseUrl = process.env.[33mNEXT_PUBLIC_SUPABASE_URL[0m ? [32m"https://example.supabase.co"[0m;
+  [90m  |[0m                                                                                         [31m[1m^[0m
+  [90m4 |[0m [36mconst[0m supabaseAnonKey = process.env.[33mNEXT_PUBLIC_SUPABASE_ANON_KEY[0m ? [32m"demo-anon-key"[0m;
+  [90m5 |[0m
+  [90m6 |[0m [36mexport[0m [36mconst[0m supabase = createClient(supabaseUrl, supabaseAnonKey, {
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/lib/supabase.ts [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/lib/supabase.ts [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/services/erp-service.ts:15:58
+Expected ':', got ';'
+  [90m13 |[0m ...[36mn[0m getName<[33mT[0m [36mextends[0m { id: string; name: string }>(items: [33mT[0m[], id?: string): string {
+  [90m14 |[0m ...[36murn[0m [32m"-"[0m;
+[31m[1m>[0m [90m15 |[0m ....find((item) => item.id === id)?.name ? [32m"-"[0m;
+  [90m   |[0m                                               [31m[1m^[0m
+  [90m16 |[0m ...
+  [90m17 |[0m ...
+  [90m18 |[0m ...[36mn[0m nextCode(prefix: [33mStockType[0m, cards: [33mStockCard[0m[]): string {
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/services/erp-service.ts [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/services/erp-service.ts [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/components/forms.tsx:70:102
+Expected ':', got '}'
+  [90m68 |[0m ...yarnCounts, base) };
+  [90m69 |[0m ...
+[31m[1m>[0m [90m70 |[0m ...arnTypes, { ...base, code: value.code ? [32m""[0m }) };
+  [90m   |[0m                                               [31m[1m^[0m
+  [90m71 |[0m ...
+  [90m72 |[0m ...t.processTypes, base) };
+  [90m73 |[0m ...
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/forms.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Client Component Browser]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/forms.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Client Component SSR]
+    ./src/components/pages.tsx [Server Component]
+    ./src/app/orders/page.tsx [Server Component]
+
+
+
+./src/components/pages.tsx:76:140
+Expected ':', got '}'
+  [90m74 |[0m ...
+  [90m75 |[0m ...
+[31m[1m>[0m [90m76 |[0m ....item, ...base, kind: row.kind ? item.kind } : item)) };
+  [90m   |[0m                                               [31m[1m^[0m
+  [90m77 |[0m ...
+  [90m78 |[0m ...
+  [90m79 |[0m ...m, ...base, [36mtype[0m: row.[36mtype[0m ? item.[36mtype[0m } : item)) };
+
+Parsing ecmascript source code failed
+
+Import trace:
+  Server Component:
+    ./src/components/pages.tsx
+    ./src/app/orders/page.tsx
+
+
+[browser] Uncaught Error: ./src/components/erp-data-provider.tsx:63:60
+Expected ':', got ')'
+  61 |     const result = (await response.json()) as ApiResponse;
+  62 |     if (!response.ok || !result.ok || !result.data) {
+> 63 |       throw new Error(result.error ? "Veriler alınamadı.");
+     |                                                          ^
+  64 |     }
+  65 |     setData(result.data);
+  66 |     setLoading(false);
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/components/erp-data-provider.tsx [Client Component Browser]
+    ./src/components/dashboard.tsx [Client Component Browser]
+    ./src/components/dashboard.tsx [Server Component]
+    ./src/app/dashboard/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/erp-data-provider.tsx [Client Component SSR]
+    ./src/components/dashboard.tsx [Client Component SSR]
+    ./src/components/dashboard.tsx [Server Component]
+    ./src/app/dashboard/page.tsx [Server Component]
+
+
+    at <unknown> (Error: ./src/components/erp-data-provider.tsx:63:60)
+    at <unknown> (Error: (./src/components/erp-data-provider.tsx:63:60)
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src\lib\supabase.ts:6:37)
+    at module evaluation (src\components\erp-data-provider.tsx:6:1)
+    at module evaluation (src\components\app-shell.tsx:23:1)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "demo-anon-key";
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    |                                     ^
+  7 |   auth: {
+  8 |     persistSession: true,
+  9 |     autoRefreshToken: true, {
+  digest: '3707772171'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src\lib\supabase.ts:6:37)
+    at module evaluation (src\components\erp-data-provider.tsx:6:1)
+    at module evaluation (src\components\app-shell.tsx:23:1)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "demo-anon-key";
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    |                                     ^
+  7 |   auth: {
+  8 |     persistSession: true,
+  9 |     autoRefreshToken: true, {
+  digest: '3707772171'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src\lib\supabase.ts:6:37)
+    at module evaluation (src\components\erp-data-provider.tsx:6:1)
+    at module evaluation (src\components\app-shell.tsx:23:1)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "demo-anon-key";
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    |                                     ^
+  7 |   auth: {
+  8 |     persistSession: true,
+  9 |     autoRefreshToken: true, {
+  digest: '3707772171'
+}
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src\lib\supabase.ts:6:37)
+    at module evaluation (src\components\erp-data-provider.tsx:6:1)
+    at module evaluation (src\components\app-shell.tsx:23:1)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "demo-anon-key";
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    |                                     ^
+  7 |   auth: {
+  8 |     persistSession: true,
+  9 |     autoRefreshToken: true, {
+  digest: '3707772171'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src\lib\supabase.ts:6:37)
+    at module evaluation (src\components\erp-data-provider.tsx:6:1)
+    at module evaluation (src\components\app-shell.tsx:23:1)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "demo-anon-key";
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    |                                     ^
+  7 |   auth: {
+  8 |     persistSession: true,
+  9 |     autoRefreshToken: true, {
+  digest: '3707772171'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src\lib\supabase.ts:6:37)
+    at module evaluation (src\components\erp-data-provider.tsx:6:1)
+    at module evaluation (src\components\app-shell.tsx:23:1)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "demo-anon-key";
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    |                                     ^
+  7 |   auth: {
+  8 |     persistSession: true,
+  9 |     autoRefreshToken: true, {
+  digest: '3707772171'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src\lib\supabase.ts:6:37)
+    at module evaluation (src\components\erp-data-provider.tsx:6:1)
+    at module evaluation (src\components\app-shell.tsx:23:1)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "demo-anon-key";
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    |                                     ^
+  7 |   auth: {
+  8 |     persistSession: true,
+  9 |     autoRefreshToken: true, {
+  digest: '3707772171'
+}
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src\lib\supabase.ts:6:37)
+    at module evaluation (src\components\erp-data-provider.tsx:6:1)
+    at module evaluation (src\components\app-shell.tsx:23:1)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "demo-anon-key";
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    |                                     ^
+  7 |   auth: {
+  8 |     persistSession: true,
+  9 |     autoRefreshToken: true, {
+  digest: '3707772171'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src\lib\supabase.ts:6:37)
+    at module evaluation (src\components\erp-data-provider.tsx:6:1)
+    at module evaluation (src\components\app-shell.tsx:23:1)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "demo-anon-key";
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    |                                     ^
+  7 |   auth: {
+  8 |     persistSession: true,
+  9 |     autoRefreshToken: true, {
+  digest: '3707772171'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src\lib\supabase.ts:6:37)
+    at module evaluation (src\components\erp-data-provider.tsx:6:1)
+    at module evaluation (src\components\app-shell.tsx:23:1)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "demo-anon-key";
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    |                                     ^
+  7 |   auth: {
+  8 |     persistSession: true,
+  9 |     autoRefreshToken: true, {
+  digest: '3707772171'
+}
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src\lib\supabase.ts:6:37)
+    at module evaluation (src\components\erp-data-provider.tsx:6:1)
+    at module evaluation (src\components\app-shell.tsx:23:1)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "demo-anon-key";
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    |                                     ^
+  7 |   auth: {
+  8 |     persistSession: true,
+  9 |     autoRefreshToken: true, {
+  digest: '3707772171'
+}
+[browser] Uncaught Error: supabaseUrl is required.
+    at validateSupabaseUrl (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:7676:28)
+    at new SupabaseClient (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:7888:25)
+    at createClient (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:8110:12)
+    at module evaluation (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/src_0i3icd4._.js:116:216)
+    at module evaluation (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/src_0i3icd4._.js:149:151)
+    at module evaluation (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/src_0i3icd4._.js:343:174)
+    at requireModule (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:95:84)
+    at initializeModuleChunk (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:1110:25)
+    at resolveModuleChunk (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:1030:43)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:1758:24)
+    at DashboardPage (src\app\dashboard\page.tsx:8:5)
+   6 | export default function DashboardPage() {
+   7 |   return (
+>  8 |     <AppShell>
+     |     ^
+   9 |       <div className="space-y-6">
+  10 |         <PageHeader eyebrow="ERP Dashboard" title="Üretim Operasyon Paneli" description="S...
+  11 |         <Dashboard />
+⨯ Error: supabaseUrl is required.
+    at module evaluation (src\lib\supabase.ts:6:37)
+    at module evaluation (src\components\erp-data-provider.tsx:6:1)
+    at module evaluation (src\components\app-shell.tsx:23:1)
+  4 | const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "demo-anon-key";
+  5 |
+> 6 | export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    |                                     ^
+  7 |   auth: {
+  8 |     persistSession: true,
+  9 |     autoRefreshToken: true, {
+  digest: '3707772171'
+}
+[browser] Uncaught Error: supabaseUrl is required.
+    at validateSupabaseUrl (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:7676:28)
+    at new SupabaseClient (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:7888:25)
+    at createClient (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:8110:12)
+    at module evaluation (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/src_0i3icd4._.js:116:216)
+    at module evaluation (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/src_0i3icd4._.js:149:151)
+    at module evaluation (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/src_0i3icd4._.js:343:174)
+    at requireModule (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:95:84)
+    at initializeModuleChunk (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:1110:25)
+    at resolveModuleChunk (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:1030:43)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_0p3wegg._.js:1758:24)
+    at DashboardPage (src\app\dashboard\page.tsx:8:5)
+   6 | export default function DashboardPage() {
+   7 |   return (
+>  8 |     <AppShell>
+     |     ^
+   9 |       <div className="space-y-6">
+  10 |         <PageHeader eyebrow="ERP Dashboard" title="Üretim Operasyon Paneli" description="S...
+  11 |         <Dashboard />
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload when ./src/lib/supabase.ts changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+[browser] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:1143:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:1414:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:3054:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:3232:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4390:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4388:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4381:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4215:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:1143:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:1414:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:3054:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:3232:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4390:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4388:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4381:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4215:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:1143:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:1414:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:3054:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:3232:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4390:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4388:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4381:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4215:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:1143:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:1414:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:3054:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:3232:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4390:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4388:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4381:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4215:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:1143:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:1414:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:3054:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:3232:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4390:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4388:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4381:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4215:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:1143:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:1414:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:3054:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:3232:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4390:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4388:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4381:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4215:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:1143:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:1414:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:3054:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:3232:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4390:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4388:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4381:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4215:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[browser] Realtime subscription error: Error: channel error: transport failure
+    at normalizeChannelError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:1143:16)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:1414:342)
+    at Object.callback (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:3054:56)
+    at Channel.trigger (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:3232:18)
+    at <unknown> (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4390:25)
+    at Array.forEach (<anonymous>)
+    at Socket.triggerChanError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4388:23)
+    at Socket.onConnError (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4381:18)
+    at conn.onerror (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_%40supabase_0hc30zi._.js:4215:43) (file://C:/Users/ibrahimyokus/Desktop/convert/Yokus Orme Erp Yazilimi/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+memory allocation of 1615669 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

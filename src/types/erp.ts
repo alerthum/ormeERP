@@ -300,6 +300,21 @@ export interface UserProfile {
   updatedAt: string;
 }
 
+export interface UISettings {
+  menuMode: "static" | "collapsible";
+  submenuDefaultState: "open" | "closed";
+  modalPosition: "right" | "left" | "center" | "top" | "bottom";
+  modalPositionMobile: "right" | "left" | "center" | "top" | "bottom";
+  notificationsEnabled: boolean;
+  notificationModules: string[];
+  maxNotificationCount: number;
+  showCriticalStock: boolean;
+  showDelayedOrders: boolean;
+  showProductionAlerts: boolean;
+  sidebarGroupBg?: string;
+  sidebarGroupText?: string;
+}
+
 export interface Counter {
   key: string;
   prefix: string;
@@ -331,4 +346,5 @@ export interface ErpData {
   roles: Role[];
   userProfiles: UserProfile[];
   counters: Counter[];
+  uiSettings: UISettings;
 }

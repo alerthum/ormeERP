@@ -50,6 +50,7 @@ const realtimeTables = [
   "roles",
   "user_profiles",
   "counters",
+  "ui_settings",
 ];
 
 export function ErpDataProvider({ children }: { children: React.ReactNode }) {
