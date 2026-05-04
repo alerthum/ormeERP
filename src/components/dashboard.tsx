@@ -38,19 +38,19 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Aktif siparişler" value={String(metrics.activeOrders)} helper="Müşteri üretim talepleri" icon={ShoppingCart} />
-        <StatCard title="Bu ay üretim" value={formatKg(metrics.monthlyProductionKg)} helper="Ham + mamül üretim toplamı" icon={Factory} tone="green" />
-        <StatCard title="Toplam fire" value={formatKg(metrics.wasteKg)} helper={`Ham ${formatPercent(metrics.avgRawWaste)} / Boya ${formatPercent(metrics.avgDyeWaste)}`} icon={TrendingDown} tone="red" />
-        <StatCard title="Bekleyen hammadde" value={formatKg(metrics.pendingRawMaterialKg)} helper={`${metrics.openPurchaseCount} açık satıcı siparişi`} icon={PackageCheck} tone="amber" />
+      <div className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
+        <StatCard title="Aktif siparişler" value={String(metrics.activeOrders)} helper="Müşteri üretim talepleri" icon={ShoppingCart} compact />
+        <StatCard title="Bu ay üretim" value={formatKg(metrics.monthlyProductionKg)} helper="Ham + mamül üretim toplamı" icon={Factory} tone="green" compact />
+        <StatCard title="Toplam fire" value={formatKg(metrics.wasteKg)} helper={`Ham ${formatPercent(metrics.avgRawWaste)} / Boya ${formatPercent(metrics.avgDyeWaste)}`} icon={TrendingDown} tone="red" compact />
+        <StatCard title="Bekleyen hammadde" value={formatKg(metrics.pendingRawMaterialKg)} helper={`${metrics.openPurchaseCount} açık satıcı siparişi`} icon={PackageCheck} tone="amber" compact />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <StatCard title="Örmede" value={String(metrics.knittingOrders)} helper="Fason örmeci üzerinde" icon={Factory} />
-        <StatCard title="Boyahanede" value={String(metrics.dyehouseOrders)} helper="Proses bekleyen işler" icon={Truck} />
-        <StatCard title="Kısmi gelen" value={String(metrics.partialPurchaseCount)} helper="Satıcı siparişleri" icon={Boxes} tone="amber" />
-        <StatCard title="Bu ay gelen" value={formatKg(metrics.monthlyReceivedKg)} helper="Mal kabul toplamı" icon={PackageCheck} tone="green" />
-        <StatCard title="Geciken satın alma" value={String(metrics.delayedPurchaseCount)} helper="Termin riski" icon={AlertTriangle} tone="red" />
+      <div className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-5">
+        <StatCard title="Örmede" value={String(metrics.knittingOrders)} helper="Fason örmeci üzerinde" icon={Factory} compact />
+        <StatCard title="Boyahanede" value={String(metrics.dyehouseOrders)} helper="Proses bekleyen işler" icon={Truck} compact />
+        <StatCard title="Kısmi gelen" value={String(metrics.partialPurchaseCount)} helper="Satıcı siparişleri" icon={Boxes} tone="amber" compact />
+        <StatCard title="Bu ay gelen" value={formatKg(metrics.monthlyReceivedKg)} helper="Mal kabul toplamı" icon={PackageCheck} tone="green" compact />
+        <StatCard title="Geciken satın alma" value={String(metrics.delayedPurchaseCount)} helper="Termin riski" icon={AlertTriangle} tone="red" compact />
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1.4fr_0.8fr]">

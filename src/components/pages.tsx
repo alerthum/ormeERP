@@ -152,6 +152,7 @@ export function OrdersPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Order | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Order | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState<OrderFilters>(emptyOrderFilters);
   const [groupMode, setGroupMode] = useState<OrderGroupMode>("none");
   const ymStocks = data.stockCards.filter((stock) => stock.type === "YM");
@@ -176,6 +177,31 @@ export function OrdersPage() {
     [data, filters],
   );
   const setOrderFilter = (key: keyof OrderFilters, value: string) => setFilters((current) => ({ ...current, [key]: value }));
+  const groupLabels: Record<OrderGroupMode, string> = {
+    none: "Gruplama yok",
+    ymStock: "YM stok",
+    mmStock: "MM stok",
+    fabricType: "Kumaş cinsi",
+    color: "Renk",
+    yarnCount: "Ne",
+    customer: "Müşteri",
+    status: "Durum",
+  };
+  const activeFilterChips = [
+    groupMode !== "none" ? `Gruplama: ${groupLabels[groupMode]}` : "",
+    filters.status !== "ALL" ? `Durum: ${filters.status}` : "",
+    filters.customer ? `Müşteri: ${filters.customer}` : "",
+    filters.fabricTypeId !== "ALL" ? `Kumaş: ${getName(data.fabricTypes, filters.fabricTypeId)}` : "",
+    filters.colorId !== "ALL" ? `Renk: ${getName(data.colors, filters.colorId)}` : "",
+    filters.yarnCountId !== "ALL" ? `Ne: ${getName(data.yarnCounts, filters.yarnCountId)}` : "",
+    filters.ymStockId !== "ALL" ? `YM: ${getName(data.stockCards, filters.ymStockId)}` : "",
+    filters.mmStockId !== "ALL" ? `MM: ${getName(data.stockCards, filters.mmStockId)}` : "",
+    filters.smart ? `Akıllı: ${filters.smart}` : "",
+    filters.dateFrom ? `Sipariş başlangıç: ${formatDate(filters.dateFrom)}` : "",
+    filters.dateTo ? `Sipariş bitiş: ${formatDate(filters.dateTo)}` : "",
+    filters.dueFrom ? `Termin başlangıç: ${formatDate(filters.dueFrom)}` : "",
+    filters.dueTo ? `Termin bitiş: ${formatDate(filters.dueTo)}` : "",
+  ].filter((item): item is string => Boolean(item));
   const orderGroupBy = groupMode === "none" ? undefined : {
     label: {
       ymStock: "YM stok",
@@ -218,84 +244,105 @@ export function OrdersPage() {
     { header: "Durum", cell: (row) => <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge> },
     { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end gap-2"><button className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditing(row)} type="button">Düzenle</button><button className={dangerButton} onClick={() => setDeleteTarget(row)} type="button">Sil</button></div> },
   ];
+  const filterControls = (
+    <div className="grid gap-3 md:grid-cols-2">
+      <select className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 outline-none" value={groupMode} onChange={(event) => setGroupMode(event.target.value as OrderGroupMode)}>
+        <option value="none">Gruplama yok</option>
+        <option value="ymStock">YM stok adına göre grupla</option>
+        <option value="mmStock">MM stok adına göre grupla</option>
+        <option value="fabricType">Kumaş cinsine göre grupla</option>
+        <option value="color">Renge göre grupla</option>
+        <option value="yarnCount">Ne numarasına göre grupla</option>
+        <option value="customer">Müşteriye göre grupla</option>
+        <option value="status">Duruma göre grupla</option>
+      </select>
+      <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.status} onChange={(event) => setOrderFilter("status", event.target.value)}>
+        <option value="ALL">Tüm durumlar</option>
+        {["Taslak", "Onaylandı", "İplik Bekliyor", "Örmede", "Ham Geldi", "Boyahanede", "Mamül Hazır", "Sevk Edildi", "Kapandı", "İptal"].map((status) => <option key={status}>{status}</option>)}
+      </select>
+      <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.customer} onChange={(event) => setOrderFilter("customer", event.target.value)}>
+        <option value="">Tüm müşteriler</option>
+        {customerNames.map((customer) => <option key={customer}>{customer}</option>)}
+      </select>
+      <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.fabricTypeId} onChange={(event) => setOrderFilter("fabricTypeId", event.target.value)}>
+        <option value="ALL">Tüm kumaşlar</option>
+        {data.fabricTypes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+      </select>
+      <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.colorId} onChange={(event) => setOrderFilter("colorId", event.target.value)}>
+        <option value="ALL">Tüm renkler</option>
+        {data.colors.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+      </select>
+      <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.yarnCountId} onChange={(event) => setOrderFilter("yarnCountId", event.target.value)}>
+        <option value="ALL">Tüm Ne numaraları</option>
+        {data.yarnCounts.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+      </select>
+      <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.ymStockId} onChange={(event) => setOrderFilter("ymStockId", event.target.value)}>
+        <option value="ALL">Tüm YM stokları</option>
+        {ymStocks.map((stock) => <option key={stock.id} value={stock.id}>{stock.code} - {stock.name}</option>)}
+      </select>
+      <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.mmStockId} onChange={(event) => setOrderFilter("mmStockId", event.target.value)}>
+        <option value="ALL">Tüm MM stokları</option>
+        {mmStocks.map((stock) => <option key={stock.id} value={stock.id}>{stock.code} - {stock.name}</option>)}
+      </select>
+      <input className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none md:col-span-2" placeholder="Akıllı filtre: bekleyen boyahanede lacivert" value={filters.smart} onChange={(event) => setOrderFilter("smart", event.target.value)} />
+      <label className="space-y-1 text-xs font-semibold text-slate-400">
+        Sipariş başlangıç
+        <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dateFrom} onChange={(event) => setOrderFilter("dateFrom", event.target.value)} />
+      </label>
+      <label className="space-y-1 text-xs font-semibold text-slate-400">
+        Sipariş bitiş
+        <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dateTo} onChange={(event) => setOrderFilter("dateTo", event.target.value)} />
+      </label>
+      <label className="space-y-1 text-xs font-semibold text-slate-400">
+        Termin başlangıç
+        <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dueFrom} onChange={(event) => setOrderFilter("dueFrom", event.target.value)} />
+      </label>
+      <label className="space-y-1 text-xs font-semibold text-slate-400">
+        Termin bitiş
+        <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dueTo} onChange={(event) => setOrderFilter("dueTo", event.target.value)} />
+      </label>
+    </div>
+  );
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Siparişler" title="Müşteri Siparişleri" description="Kumaş üretim talepleri, otomatik YM/MM stok eşleşmesi ve üretim durum takibi." icon={ShoppingCart} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Yeni sipariş</button>} />
-      <div className="premium-card rounded-2xl p-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div className="premium-card rounded-2xl p-4 sm:p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="font-semibold text-slate-950">Sipariş filtreleri</h2>
-            <p className="mt-1 text-sm text-slate-500">Durum, tarih, müşteri, stok ve akıllı ifade ile daralt.</p>
+            <h2 className="font-semibold text-slate-950">Sipariş görünümü</h2>
+            <p className="mt-1 text-sm text-slate-500">{filteredOrders.length} sipariş listeleniyor.</p>
           </div>
-          <button className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600" onClick={() => setFilters(emptyOrderFilters)} type="button">
-            Filtreleri temizle
-          </button>
+          <div className="flex gap-2">
+            <button className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-100" onClick={() => setFiltersOpen(true)} type="button">
+              <SlidersHorizontal className="size-4" />
+              Filtrele
+            </button>
+            {(activeFilterChips.length > 0) ? (
+              <button className="rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600" onClick={() => { setFilters(emptyOrderFilters); setGroupMode("none"); }} type="button">
+                Temizle
+              </button>
+            ) : null}
+          </div>
         </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-4">
-          <select className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 outline-none" value={groupMode} onChange={(event) => setGroupMode(event.target.value as OrderGroupMode)}>
-            <option value="none">Gruplama yok</option>
-            <option value="ymStock">YM stok adına göre grupla</option>
-            <option value="mmStock">MM stok adına göre grupla</option>
-            <option value="fabricType">Kumaş cinsine göre grupla</option>
-            <option value="color">Renge göre grupla</option>
-            <option value="yarnCount">Ne numarasına göre grupla</option>
-            <option value="customer">Müşteriye göre grupla</option>
-            <option value="status">Duruma göre grupla</option>
-          </select>
-          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.status} onChange={(event) => setOrderFilter("status", event.target.value)}>
-            <option value="ALL">Tüm durumlar</option>
-            {["Taslak", "Onaylandı", "İplik Bekliyor", "Örmede", "Ham Geldi", "Boyahanede", "Mamül Hazır", "Sevk Edildi", "Kapandı", "İptal"].map((status) => <option key={status}>{status}</option>)}
-          </select>
-          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.customer} onChange={(event) => setOrderFilter("customer", event.target.value)}>
-            <option value="">Tüm müşteriler</option>
-            {customerNames.map((customer) => <option key={customer}>{customer}</option>)}
-          </select>
-          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.fabricTypeId} onChange={(event) => setOrderFilter("fabricTypeId", event.target.value)}>
-            <option value="ALL">Tüm kumaşlar</option>
-            {data.fabricTypes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-          </select>
-          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.colorId} onChange={(event) => setOrderFilter("colorId", event.target.value)}>
-            <option value="ALL">Tüm renkler</option>
-            {data.colors.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-          </select>
-          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.yarnCountId} onChange={(event) => setOrderFilter("yarnCountId", event.target.value)}>
-            <option value="ALL">Tüm Ne numaraları</option>
-            {data.yarnCounts.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-          </select>
-          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.ymStockId} onChange={(event) => setOrderFilter("ymStockId", event.target.value)}>
-            <option value="ALL">Tüm YM stokları</option>
-            {ymStocks.map((stock) => <option key={stock.id} value={stock.id}>{stock.code} - {stock.name}</option>)}
-          </select>
-          <select className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" value={filters.mmStockId} onChange={(event) => setOrderFilter("mmStockId", event.target.value)}>
-            <option value="ALL">Tüm MM stokları</option>
-            {mmStocks.map((stock) => <option key={stock.id} value={stock.id}>{stock.code} - {stock.name}</option>)}
-          </select>
-          <input className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" placeholder="Akıllı filtre: bekleyen boyahanede lacivert" value={filters.smart} onChange={(event) => setOrderFilter("smart", event.target.value)} />
-          <label className="space-y-1 text-xs font-semibold text-slate-400">
-            Sipariş başlangıç
-            <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dateFrom} onChange={(event) => setOrderFilter("dateFrom", event.target.value)} />
-          </label>
-          <label className="space-y-1 text-xs font-semibold text-slate-400">
-            Sipariş bitiş
-            <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dateTo} onChange={(event) => setOrderFilter("dateTo", event.target.value)} />
-          </label>
-          <label className="space-y-1 text-xs font-semibold text-slate-400">
-            Termin başlangıç
-            <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dueFrom} onChange={(event) => setOrderFilter("dueFrom", event.target.value)} />
-          </label>
-          <label className="space-y-1 text-xs font-semibold text-slate-400">
-            Termin bitiş
-            <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-700 outline-none" type="date" value={filters.dueTo} onChange={(event) => setOrderFilter("dueTo", event.target.value)} />
-          </label>
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-slate-500">
-          <StatusBadge tone="blue">{filteredOrders.length} sipariş</StatusBadge>
-          {groupMode !== "none" ? <StatusBadge tone="blue">Gruplu görünüm aktif</StatusBadge> : null}
-          <StatusBadge tone="amber">Akıllı örnek: bekleyen boyahanede lacivert</StatusBadge>
-          <StatusBadge tone="green">Çoklu filtre aktif</StatusBadge>
+        <div className="mt-4 flex gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible">
+          {activeFilterChips.length === 0 ? (
+            <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500">Filtre yok</span>
+          ) : activeFilterChips.map((chip) => (
+            <span key={chip} className="shrink-0 rounded-full border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">{chip}</span>
+          ))}
         </div>
       </div>
       <DataTable rows={filteredOrders} columns={columns} groupBy={orderGroupBy} searchPlaceholder="Liste içinde hızlı ara" getSearchText={(row) => [row.orderNo, row.customerName, row.status, getName(data.fabricTypes, row.fabricTypeId), getName(data.colors, row.colorId), getName(data.yarnCounts, row.yarnCountId), getName(data.stockCards, row.ymStockId), getName(data.stockCards, row.mmStockId), row.quantityKg].join(" ")} />
+      <FormDrawer open={filtersOpen} title="Sipariş filtreleri" onClose={() => setFiltersOpen(false)}>
+        <div className="space-y-4">
+          <p className="text-sm leading-6 text-slate-500">Durum, tarih, müşteri, stok ve akıllı ifade ile listeyi daraltın. Seçimler sayfada chip olarak görünür.</p>
+          {filterControls}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600" onClick={() => { setFilters(emptyOrderFilters); setGroupMode("none"); }} type="button">Filtreleri temizle</button>
+            <button className="rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-100" onClick={() => setFiltersOpen(false)} type="button">Sonuçları göster</button>
+          </div>
+        </div>
+      </FormDrawer>
       <FormDrawer open={open} title="Yeni müşteri siparişi" onClose={() => setOpen(false)}><OrderForm /></FormDrawer>
       <FormDrawer open={Boolean(editing)} title="Sipariş düzenle" onClose={() => setEditing(null)}>{editing ? <OrderEditForm order={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
       <ConfirmModal
@@ -1707,6 +1754,8 @@ const developmentTimeline = [
       "Hammadde isimlendirme kuralı kumaş stoklarına da taşındı; YM/MM adları Ne + kumaş cinsi + renk + YM/MM + HAM/MAMÜL + LYC/POLY formatında otomatik oluşur.",
       "Müşteri siparişi ve satış/sevkiyat formlarında müşteri alanı elle yazım yerine Cari/Fasoncu tanımlarındaki müşteri carilerinden seçilecek hale getirildi.",
       "Parti Kaydırma ayrı menü olmaktan çıkarıldı; Partiler ekranındaki butondan açılan modal akışına taşındı.",
+      "Mobil müşteri siparişlerinde filtre kartı modal/drawer akışına taşındı; sayfada aktif filtreler chip olarak gösterildi.",
+      "Mobil dashboard KPI kartları kompakt iki kolon düzene alındı; sayfayı aşağı iten tek kolon kart yoğunluğu azaltıldı.",
     ],
   },
 ];
