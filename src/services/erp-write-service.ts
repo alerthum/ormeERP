@@ -261,11 +261,12 @@ async function addMovement(
     description: string;
     referenceType: string;
     referenceId: string;
+    skipBalanceCheck?: boolean;
   },
 ) {
   const movementId = id("mov");
   const signedQuantity = input.direction === "IN" ? input.quantity : -input.quantity;
-  if (input.direction === "OUT") {
+  if (input.direction === "OUT" && !input.skipBalanceCheck) {
     await assertAvailableBalance(tx, input.stockId, input.warehouseId, input.partyId ?? null, input.lotNo ?? null, input.quantity);
   }
   await tx`
@@ -1517,18 +1518,46 @@ export async function updatePurchaseReceipt(recordId: string, payload: Record<st
 
     const oldQty = numberValue(oldItem.receivedKg, "Eski Miktar");
     const diffQty = newReceivedKg - oldQty;
+    const oldLotNo = optionalString(oldItem.lotNo);
+
+    if (newLotNo !== oldLotNo) {
+      const outMovements = await tx`
+        select movement_type, quantity, date
+        from stock_movements
+        where stock_id = ${String(oldItem.stockId)}
+          and warehouse_id = ${String(receipt.warehouse_id)}
+          and (lot_no = ${oldLotNo} or (lot_no is null and ${oldLotNo} is null))
+          and direction = 'OUT'
+          and reference_id != ${recordId}
+        limit 5
+      `;
+      if (outMovements.length > 0) {
+        const details = outMovements.map(m => `${m.movement_type} (${m.quantity}kg, ${m.date})`).join(", ");
+        throw new Error(`Lot numarası değiştirilemez çünkü bu lottan çıkış yapılmış. Lütfen önce şu çıkış hareketlerini iptal edin: ${details}`);
+      }
+    }
+
+    if (newReceivedKg < oldQty) {
+        const balanceId = `bal-${oldItem.stockId}-${receipt.warehouse_id}-none-${oldLotNo ?? "none"}`;
+        const bRows = await tx`select quantity from warehouse_balances where id = ${balanceId} limit 1`;
+        const currentBalance = Number(bRows[0]?.quantity ?? 0);
+        if (currentBalance + diffQty < 0) {
+            throw new Error(`Miktar ${newReceivedKg} kg'a düşürülemez çünkü bu lottan zaten kullanım yapılmış. Mevcut bakiye: ${currentBalance} kg.`);
+        }
+    }
 
     await addMovement(tx, {
       date: new Date().toISOString().slice(0, 10),
       stockId: String(oldItem.stockId),
       warehouseId: String(receipt.warehouse_id),
-      lotNo: optionalString(oldItem.lotNo),
+      lotNo: oldLotNo,
       movementType: "Düzeltme Çıkışı",
       direction: "OUT",
       quantity: oldQty,
       description: "Mal kabul düzeltme çıkışı",
       referenceType: "purchase_receipt_edit",
       referenceId: recordId,
+      skipBalanceCheck: true,
     });
 
     await addMovement(tx, {
@@ -1544,7 +1573,6 @@ export async function updatePurchaseReceipt(recordId: string, payload: Record<st
       referenceId: recordId,
     });
 
-    // Update receipt
     const newSupplierId = payload.supplierId ? String(payload.supplierId) : String(receipt.supplier_id);
     const newStockId = payload.stockId ? String(payload.stockId) : String(oldItem.stockId);
     const newUnitPrice = payload.unitPrice ? Number(payload.unitPrice) : Number(oldItem.unitPrice || 0);
@@ -1552,7 +1580,6 @@ export async function updatePurchaseReceipt(recordId: string, payload: Record<st
     const updatedItems = [{ ...oldItem, stockId: newStockId, receivedKg: newReceivedKg, unitPrice: newUnitPrice, lotNo: newLotNo, description: newDescription }];
     await tx`update purchase_receipts set receipt_date = ${newDate}, warehouse_id = ${newWarehouseId}, supplier_id = ${newSupplierId}, items = ${tx.json(asJson(updatedItems))}, description = ${newDescription} where id = ${recordId}`;
 
-    // Update purchase order
     const purchaseOrderId = String(receipt.purchase_order_id);
     const orderRows = await tx`select items, total_received_kg, total_ordered_kg from purchase_orders where id = ${purchaseOrderId} limit 1`;
     if (orderRows[0]) {

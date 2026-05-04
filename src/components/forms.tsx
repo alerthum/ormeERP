@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { useErpData } from "@/components/erp-data-provider";
 import { calculateDyehouseWaste, calculateRawWaste, getName } from "@/services/erp-service";
@@ -181,7 +182,10 @@ function getAvailableBalance(data: ErpData, input: { stockId?: string; warehouse
   return data.warehouseBalances
     .filter((item) => item.stockId === input.stockId && item.warehouseId === input.warehouseId)
     .filter((item) => input.partyId ? item.partyId === input.partyId : true)
-    .filter((item) => input.lotNo ? item.lotNo === input.lotNo : true)
+    .filter((item) => {
+      if (input.lotNo === undefined) return true;
+      return (item.lotNo || "") === (input.lotNo || "");
+    })
     .reduce((sum, item) => sum + item.quantity, 0);
 }
 
@@ -777,7 +781,7 @@ export function PurchaseReceiptForm() {
         <Field label="Mal kabul tarihi"><input className={inputClass} name="receiptDate" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required /></Field>
         <Field label="Depo"><select className={inputClass} name="warehouseId" required>{data.warehouses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
         <Field label="Gelen kg"><input className={inputClass} name="receivedKg" type="number" required /></Field>
-        <Field label="Lot no"><input className={inputClass} name="lotNo" /></Field>
+        <Field label="Lot no (Girmek zorunludur)"><input className={inputClass} name="lotNo" required /></Field>
       </div>
       <Field label="Açıklama"><textarea className={inputClass} name="description" rows={3} /></Field>
       <FormButton loading={loading}>Mal kabul kaydet</FormButton>
@@ -828,7 +832,7 @@ export function DirectPurchaseForm() {
         <Field label="Gelen kg"><input className={inputClass} name="quantityKg" type="number" required /></Field>
         <Field label="Birim fiyat"><input className={inputClass} name="unitPrice" type="number" step="0.01" /></Field>
         <Field label="Para birimi"><select className={inputClass} name="currency" defaultValue="TRY"><option>TRY</option><option>USD</option><option>EUR</option></select></Field>
-        <Field label="Lot no"><input className={inputClass} name="lotNo" /></Field>
+        <Field label="Lot no (Girmek zorunludur)"><input className={inputClass} name="lotNo" required /></Field>
       </div>
       <Field label="Açıklama"><textarea className={inputClass} name="description" rows={3} /></Field>
       <FormButton loading={loading}>Hammadde alışını kaydet</FormButton>
@@ -891,6 +895,124 @@ export function TransferForm() {
   );
 }
 
+function OrderSelect({ value, onChange, required }: { value: string; onChange: (id: string) => void; required?: boolean }) {
+  const { data } = useErpData();
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const selected = data.orders.find((item) => item.id === value);
+  const filtered = data.orders.filter((item) => !search || `${item.orderNo} ${item.customerName}`.toLocaleLowerCase("tr-TR").includes(search.toLocaleLowerCase("tr-TR")));
+
+  return (
+    <>
+      <button className={inputClass + " flex items-center justify-between"} type="button" onClick={() => setOpen(true)}>
+        <span className={selected ? "text-slate-950" : "text-slate-500"}>{selected ? `${selected.orderNo} - ${selected.customerName}` : "Sipariş seçiniz"}</span>
+      </button>
+      {required && !value && <input type="hidden" required />}
+      {value && <input type="hidden" name="orderId" value={value} />}
+      {open && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/30 p-4 backdrop-blur-sm">
+          <div className="flex h-full max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-100 p-4">
+              <h2 className="text-lg font-semibold text-slate-950">Sipariş Seç</h2>
+              <button className="grid size-9 place-items-center rounded-xl bg-slate-50 text-slate-500" onClick={() => setOpen(false)} type="button">
+                <X className="size-4" />
+              </button>
+            </div>
+            <div className="border-b border-slate-100 p-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                <input autoFocus className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" placeholder="Ara..." value={search} onChange={(e) => setSearch(e.target.value)} />
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2">
+              {filtered.length === 0 ? (
+                <div className="p-4 text-center text-sm text-slate-500">Sipariş bulunamadı.</div>
+              ) : (
+                <div className="grid gap-1">
+                  {filtered.map((item, i) => (
+                    <button key={i} className="flex items-center justify-between rounded-xl p-3 text-left hover:bg-slate-50" onClick={() => { onChange(item.id); setOpen(false); }} type="button">
+                      <div>
+                        <div className="font-medium text-slate-900">{item.orderNo}</div>
+                        <div className="text-sm text-slate-500">{item.customerName} · {formatKg(item.quantityKg)}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function BalanceSelect({ warehouseId, stockId, lotNo, onChange, required }: { warehouseId: string; stockId: string; lotNo: string; onChange: (stockId: string, lotNo: string) => void; required?: boolean }) {
+  const { data } = useErpData();
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  
+  const balances = useMemo(() => {
+    if (!warehouseId) return [];
+    return data.warehouseBalances
+      .filter((b) => b.warehouseId === warehouseId && b.quantity > 0)
+      .map((b) => ({ ...b, stock: data.stockCards.find(s => s.id === b.stockId) }))
+      .filter(b => b.stock && ["IP", "LYC", "POLY"].includes(b.stock.type));
+  }, [data, warehouseId]);
+
+  const filtered = balances.filter((item) => !search || `${item.stock?.code} ${item.stock?.name} ${item.lotNo || ""}`.toLocaleLowerCase("tr-TR").includes(search.toLocaleLowerCase("tr-TR")));
+
+  const selectedStock = data.stockCards.find((item) => item.id === stockId);
+  const selectedLabel = selectedStock ? `${selectedStock.code} - ${selectedStock.name} (Lot: ${lotNo || "BELİRTİLMEMİŞ!"})` : "Seçiniz";
+
+  return (
+    <>
+      <button className={inputClass + " flex items-center justify-between disabled:opacity-50"} type="button" onClick={() => setOpen(true)} disabled={!warehouseId}>
+        <span className={stockId ? "text-slate-950" : "text-slate-500"}>{stockId ? selectedLabel : (warehouseId ? "Tüketilecek stok ve lot seçiniz" : "Önce tüketim deposu seçiniz")}</span>
+      </button>
+      <input type="hidden" name="consumedStockId" value={stockId || ""} />
+      <input type="hidden" name="consumedLotNo" value={lotNo || ""} />
+      {open && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/30 p-4 backdrop-blur-sm">
+          <div className="flex h-full max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-100 p-4">
+              <h2 className="text-lg font-semibold text-slate-950">Depodaki Stok ve Lotu Seç</h2>
+              <button className="grid size-9 place-items-center rounded-xl bg-slate-50 text-slate-500" onClick={() => setOpen(false)} type="button">
+                <X className="size-4" />
+              </button>
+            </div>
+            <div className="border-b border-slate-100 p-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                <input autoFocus className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" placeholder="Ara..." value={search} onChange={(e) => setSearch(e.target.value)} />
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2">
+              {filtered.length === 0 ? (
+                <div className="p-4 text-center text-sm text-slate-500">Bu depoda tüketilebilecek hammadde bakiyesi bulunamadı.</div>
+              ) : (
+                <div className="grid gap-1">
+                  {filtered.map((item, i) => (
+                    <button key={i} className="flex items-center justify-between rounded-xl p-3 text-left hover:bg-slate-50" onClick={() => { onChange(item.stockId, item.lotNo || ""); setOpen(false); }} type="button">
+                      <div>
+                        <div className="font-medium text-slate-900">{item.stock?.code} - {item.stock?.name}</div>
+                        <div className="text-sm text-slate-500">Lot: {item.lotNo || <span className="font-bold text-red-500 underline">GİRİLMEMİŞ!</span>}</div>
+                      </div>
+                      <div className="font-semibold text-emerald-600">
+                        {formatKg(item.quantity)}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 export function RawProductionForm() {
   const { data, refresh } = useErpData();
   const [loading, setLoading] = useState(false);
@@ -901,7 +1023,6 @@ export function RawProductionForm() {
   const [consumedWarehouseId, setConsumedWarehouseId] = useState("");
   const [consumedKg, setConsumedKg] = useState("");
   const waste = calculateRawWaste(930, 860);
-  const lotOptions = Array.from(new Set(data.purchaseReceipts.flatMap((receipt) => normalizeItems(receipt.items).map((item) => item.lotNo).filter(Boolean) as string[])));
   const selectedOrder = data.orders.find((item) => item.id === orderId);
   const selectedParty = data.parties.find((item) => item.id === partyId);
   const consumedAvailable = getAvailableBalance(data, { stockId: consumedStockId, warehouseId: consumedWarehouseId, lotNo: consumedLotNo });
@@ -943,19 +1064,24 @@ export function RawProductionForm() {
       }} />
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Tarih"><input className={inputClass} name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required /></Field>
-        <Field label="Sipariş"><select className={inputClass} name="orderId" value={orderId} onChange={(event) => setOrderId(event.target.value)} required><option value="">Seçiniz</option>{data.orders.map((item) => <option key={item.id} value={item.id}>{item.orderNo} - {item.customerName}</option>)}</select></Field>
+        <Field label="Sipariş">
+          <OrderSelect value={orderId} onChange={setOrderId} required />
+        </Field>
         <Field label="Mevcut parti"><select className={inputClass} name="partyId" value={partyId} onChange={(event) => setPartyId(event.target.value)}><option value="">Yeni parti aç</option>{data.parties.map((item) => <option key={item.id} value={item.id}>{item.partyNo}</option>)}</select></Field>
         <Field label="Fason örmeci"><select className={inputClass} name="knitterPartnerId" required>{data.partners.filter((item) => item.type === "KNITTER").map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
         <Field label="Ham giriş deposu"><select className={inputClass} name="warehouseId" required>{data.warehouses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
         <Field label="Üretilen ham kg"><input className={inputClass} name="producedRawKg" type="number" required /></Field>
         <Field label="Ham en"><input className={inputClass} name="rawWidth" type="number" required /></Field>
         <Field label="Ham gramaj"><input className={inputClass} name="rawGsm" type="number" required /></Field>
-        <Field label="Tüketilen stok"><select className={inputClass} name="consumedStockId" value={consumedStockId} onChange={(event) => setConsumedStockId(event.target.value)} required><option value="">Seçiniz</option>{data.stockCards.filter((item) => ["IP", "LYC", "POLY"].includes(item.type)).map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}</select></Field>
-        <Field label="Tüketim deposu"><select className={inputClass} name="consumedWarehouseId" value={consumedWarehouseId} onChange={(event) => setConsumedWarehouseId(event.target.value)} required><option value="">Seçiniz</option>{data.warehouses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
-        <Field label="Tüketilen lot"><select className={inputClass} name="consumedLotNo" value={consumedLotNo} onChange={(event) => setConsumedLotNo(event.target.value)} required><option value="">Lot seçiniz</option>{lotOptions.map((lotNo) => <option key={lotNo} value={lotNo}>{lotNo}</option>)}</select></Field>
+        <Field label="Tüketim deposu"><select className={inputClass} name="consumedWarehouseId" value={consumedWarehouseId} onChange={(event) => { setConsumedWarehouseId(event.target.value); setConsumedStockId(""); setConsumedLotNo(""); }} required><option value="">Seçiniz</option>{data.warehouses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
         <Field label="Tüketilen kg"><input className={inputClass} name="consumedKg" type="number" value={consumedKg} onChange={(event) => setConsumedKg(event.target.value)} required /></Field>
+        <div className="sm:col-span-2">
+          <Field label="Tüketilecek Stok ve Lot">
+            <BalanceSelect warehouseId={consumedWarehouseId} stockId={consumedStockId} lotNo={consumedLotNo} onChange={(stockId, lotNo) => { setConsumedStockId(stockId); setConsumedLotNo(lotNo); }} required />
+          </Field>
+        </div>
       </div>
-      {(consumedStockId && consumedWarehouseId && consumedLotNo) ? <BalanceHint available={consumedAvailable} quantity={Number(consumedKg)} label="Lot kullanılabilir bakiye" /> : null}
+      {(consumedStockId && consumedWarehouseId) ? <BalanceHint available={consumedAvailable} quantity={Number(consumedKg)} label="Lot kullanılabilir bakiye" /> : null}
       <div className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-800">
         Örnek fire hesabı: <strong>{formatKg(waste.wasteKg)} / {formatPercent(waste.wastePercent)}</strong>. Kayıtta gerçek tüketim ve üretim kg değerleriyle hesaplanır.
       </div>
