@@ -630,7 +630,23 @@ export async function updatePurchaseOrder(recordId: string, payload: Record<stri
   if (!firstItem) throw new Error("Satıcı sipariş kalemi bulunamadı.");
   const orderedKg = numberValue(payload.orderedKg, "Sipariş kg");
   const receivedKg = Number(firstItem.receivedKg ?? 0);
-  const nextItems = [{ ...firstItem, orderedKg, remainingKg: Math.max(orderedKg - receivedKg, 0), unitPrice: payload.unitPrice ? numberValue(payload.unitPrice, "Birim fiyat") : null, currency: optionalString(payload.currency) ?? "TRY" }];
+  const stockId = optionalString(payload.stockId) ?? String(firstItem.stockId);
+  const stockCode = optionalString(payload.stockCode) ?? String(firstItem.stockCode ?? "");
+  const stockName = optionalString(payload.stockName) ?? String(firstItem.stockName ?? "");
+  const stockType = optionalString(payload.stockType) ?? String(firstItem.stockType ?? "");
+  const nextItems = [{
+    ...firstItem,
+    stockId,
+    stockCode,
+    stockName,
+    stockType,
+    yarnCountId: optionalString(payload.yarnCountId) ?? optionalString(firstItem.yarnCountId),
+    colorId: optionalString(payload.colorId) ?? optionalString(firstItem.colorId),
+    orderedKg,
+    remainingKg: Math.max(orderedKg - receivedKg, 0),
+    unitPrice: payload.unitPrice ? numberValue(payload.unitPrice, "Birim fiyat") : null,
+    currency: optionalString(payload.currency) ?? "TRY",
+  }];
   const totalReceived = Number(rows[0].total_received_kg ?? 0);
   const totalRemaining = Math.max(orderedKg - totalReceived, 0);
   await sql`

@@ -688,13 +688,23 @@ export function PurchaseOrderEditForm({ order, onDone }: { order: PurchaseOrder;
   const { data, refresh } = useErpData();
   const [loading, setLoading] = useState(false);
   const item = order.items[0];
+  const rawMaterialStocks = data.stockCards.filter((stock) => ["IP", "LYC", "POLY", "YM"].includes(stock.type) && stock.isActive !== false);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
+    const stock = data.stockCards.find((row) => row.id === form.get("stockId"));
     try {
-      await patchJson(`/api/purchase-orders/${order.id}`, Object.fromEntries(form.entries()));
+      if (!stock) throw new Error("Stok seçilmelidir.");
+      await patchJson(`/api/purchase-orders/${order.id}`, {
+        ...Object.fromEntries(form.entries()),
+        stockCode: stock.code,
+        stockName: stock.name,
+        stockType: stock.type,
+        yarnCountId: stock.yarnCountId,
+        colorId: stock.colorId,
+      });
       refreshInBackground(refresh);
       onDone();
       toast.success("Satıcı siparişi güncellendi.");
@@ -709,6 +719,7 @@ export function PurchaseOrderEditForm({ order, onDone }: { order: PurchaseOrder;
     <form className="grid gap-4" onSubmit={submit}>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Satıcı"><select className={inputClass} name="supplierId" defaultValue={order.supplierId} required>{data.partners.filter((partner) => partner.type === "SUPPLIER").map((partner) => <option key={partner.id} value={partner.id}>{partner.name}</option>)}</select></Field>
+        <Field label="Stok"><select className={inputClass} name="stockId" defaultValue={item?.stockId ?? ""} required>{rawMaterialStocks.map((stock) => <option key={stock.id} value={stock.id}>{stock.code} - {stock.name}</option>)}</select></Field>
         <Field label="Sipariş tarihi"><input className={inputClass} name="orderDate" type="date" defaultValue={order.orderDate} required /></Field>
         <Field label="Termin"><input className={inputClass} name="dueDate" type="date" defaultValue={order.dueDate} required /></Field>
         <Field label="Sipariş kg"><input className={inputClass} name="orderedKg" type="number" defaultValue={item?.orderedKg ?? order.totalOrderedKg} required /></Field>
@@ -728,9 +739,8 @@ export function PurchaseReceiptForm() {
   const getPurchaseReceiptOptionLabel = (order: PurchaseOrder) => {
     const item = order.items[0];
     const stockName = item?.stockName || data.stockCards.find((stock) => stock.id === item?.stockId)?.name || "Stok seçilmemiş";
-    const colorName = item?.colorId ? getName(data.colors, item.colorId) : "-";
     const supplierName = getName(data.partners, order.supplierId);
-    return `${order.purchaseOrderNo} · ${supplierName} · ${stockName} · ${colorName} · ${formatKg(order.totalRemainingKg)} kalan`;
+    return `${order.purchaseOrderNo} · ${supplierName} · ${stockName} · ${formatKg(order.totalRemainingKg)} kalan`;
   };
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

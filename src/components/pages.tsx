@@ -391,7 +391,6 @@ export function PurchaseOrdersPage() {
   
   const uniqueSuppliers = Array.from(new Set(data.purchaseOrders.map(o => o.supplierId)));
   const getPurchaseStockSummary = (order: PurchaseOrder) => normalizeItems(order.items).map((item) => item.stockName || getName(data.stockCards, item.stockId)).filter(Boolean).join(", ") || "-";
-  const getPurchaseColorSummary = (order: PurchaseOrder) => normalizeItems(order.items).map((item) => item.colorId ? getName(data.colors, item.colorId) : "-").filter(Boolean).join(", ") || "-";
   async function deletePurchase() {
     if (!deleteTarget) return;
     try {
@@ -408,7 +407,6 @@ export function PurchaseOrdersPage() {
     { header: "Sipariş", cell: (row) => <span className="font-semibold text-blue-700">{row.purchaseOrderNo}</span> },
     { header: "Satıcı", cell: (row) => getName(data.partners, row.supplierId) },
     { header: "Stok", cell: (row) => getPurchaseStockSummary(row) },
-    { header: "Renk", cell: (row) => getPurchaseColorSummary(row) },
     { header: "Sipariş kg", cell: (row) => formatKg(row.totalOrderedKg) },
     { header: "Gelen", cell: (row) => formatKg(row.totalReceivedKg) },
     { header: "Kalan", cell: (row) => formatKg(row.totalRemainingKg) },
@@ -444,7 +442,6 @@ export function PurchaseOrdersPage() {
               <div>
                 <p className="font-semibold text-slate-950">{order.purchaseOrderNo} · {getName(data.partners, order.supplierId)}</p>
                 <p className="text-sm text-slate-500">{getPurchaseStockSummary(order)}</p>
-                <p className="mt-1 text-xs font-semibold text-slate-400">Renk: {getPurchaseColorSummary(order)}</p>
               </div>
               <StatusBadge tone={statusTone(order.status)}>{order.status}</StatusBadge>
             </div>
@@ -457,7 +454,7 @@ export function PurchaseOrdersPage() {
           </div>
         ))}
       </div>
-      <DataTable rows={filteredOrders} columns={columns} searchPlaceholder="Satıcı siparişi, tedarikçi, renk, durum veya stokta ara" getSearchText={(row) => [row.purchaseOrderNo, getName(data.partners, row.supplierId), row.status, getPurchaseStockSummary(row), getPurchaseColorSummary(row), normalizeItems(row.items).map((item) => `${item.stockCode} ${item.stockName}`).join(" ")].join(" ")} />
+      <DataTable rows={filteredOrders} columns={columns} searchPlaceholder="Satıcı siparişi, tedarikçi, durum veya stokta ara" getSearchText={(row) => [row.purchaseOrderNo, getName(data.partners, row.supplierId), row.status, getPurchaseStockSummary(row), normalizeItems(row.items).map((item) => `${item.stockCode} ${item.stockName}`).join(" ")].join(" ")} />
       <FormDrawer open={orderOpen} title="Yeni satıcı siparişi" onClose={() => setOrderOpen(false)}><PurchaseOrderForm /></FormDrawer>
       <FormDrawer open={Boolean(editing)} title="Satıcı siparişi düzenle" onClose={() => setEditing(null)}>{editing ? <PurchaseOrderEditForm order={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
       <ConfirmModal
@@ -1763,6 +1760,7 @@ const developmentTimeline = [
       "Mobil dashboard KPI kartları kompakt iki kolon düzene alındı; sayfayı aşağı iten tek kolon kart yoğunluğu azaltıldı.",
       "Kaynak dosyalardaki kalan mojibake Türkçe karakterler temizlendi; PowerShell kaynaklı encoding riskine karşı Unicode escape tabanlı kontrollü düzeltme uygulandı.",
       "Satıcı siparişi ve mal kabul seçimlerinde sipariş numarası yanında satıcı, stok adı, renk ve kalan kg bilgisi gösterildi.",
+      "Satıcı siparişi düzeltme formuna stok seçimi eklendi; stok adı zaten renk/Ne bilgisini taşıdığı için liste ve mal kabul seçimleri stok adına sadeleştirildi.",
     ],
   },
 ];
