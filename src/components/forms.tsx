@@ -725,6 +725,13 @@ export function PurchaseOrderEditForm({ order, onDone }: { order: PurchaseOrder;
 export function PurchaseReceiptForm() {
   const { data, refresh } = useErpData();
   const [loading, setLoading] = useState(false);
+  const getPurchaseReceiptOptionLabel = (order: PurchaseOrder) => {
+    const item = order.items[0];
+    const stockName = item?.stockName || data.stockCards.find((stock) => stock.id === item?.stockId)?.name || "Stok seçilmemiş";
+    const colorName = item?.colorId ? getName(data.colors, item.colorId) : "-";
+    const supplierName = getName(data.partners, order.supplierId);
+    return `${order.purchaseOrderNo} · ${supplierName} · ${stockName} · ${colorName} · ${formatKg(order.totalRemainingKg)} kalan`;
+  };
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
@@ -755,7 +762,7 @@ export function PurchaseReceiptForm() {
   }
   return (
     <form className="grid gap-4" onSubmit={submit}>
-      <Field label="Satıcı siparişi"><select className={inputClass} name="purchaseOrderId" required>{data.purchaseOrders.filter((item) => item.status !== "Tamamlandı").map((item) => <option key={item.id} value={item.id}>{item.purchaseOrderNo} - {formatKg(item.totalRemainingKg)} kalan</option>)}</select></Field>
+      <Field label="Satıcı siparişi"><select className={inputClass} name="purchaseOrderId" required>{data.purchaseOrders.filter((item) => item.status !== "Tamamlandı").map((item) => <option key={item.id} value={item.id}>{getPurchaseReceiptOptionLabel(item)}</option>)}</select></Field>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Mal kabul tarihi"><input className={inputClass} name="receiptDate" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required /></Field>
         <Field label="Depo"><select className={inputClass} name="warehouseId" required>{data.warehouses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
