@@ -18,6 +18,13 @@ export const yarnCounts = pgTable("settings_yarn_counts", {
   isActive: boolean("is_active").default(true).notNull(),
 });
 
+export const yarnTypes = pgTable("settings_yarn_types", {
+  id: text("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  name: text("name").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+});
+
 export const processTypes = pgTable("settings_process_types", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -47,6 +54,7 @@ export const stockCards = pgTable("stock_cards", {
   fabricTypeId: text("fabric_type_id"),
   colorId: text("color_id"),
   yarnCountId: text("yarn_count_id"),
+  yarnTypeId: text("yarn_type_id"),
   hasPolyester: boolean("has_polyester").default(false).notNull(),
   hasLycra: boolean("has_lycra").default(false).notNull(),
   rawWidth: integer("raw_width"),
@@ -101,6 +109,10 @@ export const parties = pgTable("parties", {
   finishedKg: numeric("finished_kg", { precision: 14, scale: 3 }).default("0").notNull(),
   dyehouseWasteKg: numeric("dyehouse_waste_kg", { precision: 14, scale: 3 }).default("0").notNull(),
   dyehouseWastePercent: numeric("dyehouse_waste_percent", { precision: 8, scale: 3 }).default("0").notNull(),
+  rawWidth: integer("raw_width"),
+  rawGsm: integer("raw_gsm"),
+  finishWidth: integer("finish_width"),
+  finishGsm: integer("finish_gsm"),
   currentWarehouseId: text("current_warehouse_id"),
   timeline: jsonb("timeline").default([]).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -113,6 +125,7 @@ export const stockMovements = pgTable("stock_movements", {
   stockId: text("stock_id").notNull(),
   warehouseId: text("warehouse_id").notNull(),
   partyId: text("party_id"),
+  lotNo: text("lot_no"),
   orderId: text("order_id"),
   movementType: text("movement_type").notNull(),
   direction: text("direction").notNull(),
@@ -130,7 +143,21 @@ export const warehouseBalances = pgTable("warehouse_balances", {
   stockId: text("stock_id").notNull(),
   warehouseId: text("warehouse_id").notNull(),
   partyId: text("party_id"),
+  lotNo: text("lot_no"),
   quantity: numeric("quantity", { precision: 14, scale: 3 }).default("0").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const orderPartyAllocations = pgTable("order_party_allocations", {
+  id: text("id").primaryKey(),
+  orderId: text("order_id").notNull(),
+  partyId: text("party_id").notNull(),
+  allocatedKg: numeric("allocated_kg", { precision: 14, scale: 3 }).default("0").notNull(),
+  producedRawKg: numeric("produced_raw_kg", { precision: 14, scale: 3 }).default("0").notNull(),
+  producedFinishedKg: numeric("produced_finished_kg", { precision: 14, scale: 3 }).default("0").notNull(),
+  shippedKg: numeric("shipped_kg", { precision: 14, scale: 3 }).default("0").notNull(),
+  status: text("status").default("Aktif").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -143,6 +170,8 @@ export const productionRaw = pgTable("production_raw", {
   warehouseId: text("warehouse_id").notNull(),
   ymStockId: text("ym_stock_id").notNull(),
   producedRawKg: numeric("produced_raw_kg", { precision: 14, scale: 3 }).notNull(),
+  rawWidth: integer("raw_width").notNull(),
+  rawGsm: integer("raw_gsm").notNull(),
   consumedItems: jsonb("consumed_items").default([]).notNull(),
   wasteKg: numeric("waste_kg", { precision: 14, scale: 3 }).notNull(),
   wastePercent: numeric("waste_percent", { precision: 8, scale: 3 }).notNull(),
@@ -246,6 +275,18 @@ export const userProfiles = pgTable("user_profiles", {
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const notifications = pgTable("notifications", {
+  id: text("id").primaryKey(),
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  severity: text("severity").notNull(),
+  relatedType: text("related_type"),
+  relatedId: text("related_id"),
+  isRead: boolean("is_read").default(false).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const counters = pgTable("counters", {

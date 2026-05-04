@@ -21,6 +21,7 @@ const tables = [
   ["settings_fabric_types", erpSeed.fabricTypes],
   ["settings_colors", erpSeed.colors],
   ["settings_yarn_counts", erpSeed.yarnCounts],
+  ["settings_yarn_types", erpSeed.yarnTypes],
   ["settings_process_types", erpSeed.processTypes],
   ["warehouses", erpSeed.warehouses],
   ["partners", erpSeed.partners],

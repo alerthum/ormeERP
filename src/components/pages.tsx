@@ -10,7 +10,7 @@ import { StatusBadge, statusTone } from "@/components/ui/status-badge";
 import { StatCard } from "@/components/ui/stat-card";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { FormDrawer } from "@/components/ui/form-drawer";
-import { DirectPurchaseForm, DyehouseProductionForm, OrderEditForm, OrderForm, PurchaseOrderEditForm, PurchaseOrderForm, PurchaseReceiptEditForm, PurchaseReceiptForm, RawProductionForm, RoleForm, SaleForm, SettingForm, StockCardEditForm, StockCardForm, TransferForm, UserProfileForm } from "@/components/forms";
+import { DirectPurchaseForm, DyehouseProductionForm, OrderEditForm, OrderForm, PartyShiftForm, PurchaseOrderEditForm, PurchaseOrderForm, PurchaseReceiptEditForm, PurchaseReceiptForm, RawProductionForm, RoleForm, SaleForm, SettingForm, StockCardEditForm, StockCardForm, TransferForm, UserProfileForm } from "@/components/forms";
 import { PartyTimeline } from "@/components/party-timeline";
 import { useErpData } from "@/components/erp-data-provider";
 import { getDashboardMetrics, getName, getPurchaseProgress } from "@/services/erp-service";
@@ -31,8 +31,8 @@ function refreshInBackground(refresh: () => Promise<void>) {
   void refresh().catch(() => undefined);
 }
 
-type SettingEntity = "fabricTypes" | "colors" | "yarnCounts" | "processTypes" | "warehouses" | "partners";
-type EditableSetting = { id: string; name: string; kind?: WarehouseEntity["kind"]; type?: Partner["type"] };
+type SettingEntity = "fabricTypes" | "colors" | "yarnCounts" | "yarnTypes" | "processTypes" | "warehouses" | "partners";
+type EditableSetting = { id: string; name: string; code?: string; isActive?: boolean; kind?: WarehouseEntity["kind"]; type?: Partner["type"] };
 type OrderGroupMode = "none" | "ymStock" | "mmStock" | "fabricType" | "color" | "yarnCount" | "customer" | "status";
 type OrderFilters = {
   status: string;
@@ -77,6 +77,9 @@ function replaceSettingInData(current: ErpData, entity: SettingEntity, row: Edit
   }
   if (entity === "partners") {
     return { ...current, partners: current.partners.map((item) => (item.id === row.id ? { ...item, ...base, type: row.type ?? item.type } : item)) };
+  }
+  if (entity === "yarnTypes") {
+    return { ...current, yarnTypes: current.yarnTypes.map((item) => (item.id === row.id ? { ...item, ...base, code: row.code ?? item.code, isActive: row.isActive ?? item.isActive } : item)) };
   }
   return { ...current, [entity]: current[entity].map((item) => (item.id === row.id ? base : item)) };
 }
@@ -421,25 +424,25 @@ export function PurchasesPage() {
   const [directOpen, setDirectOpen] = useState(false);
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [editingReceipt, setEditingReceipt] = useState<PurchaseReceipt | null>(null);
-  const [cancelTarget, setCancelTarget] = useState<PurchaseReceipt | null>(null);
+  const [deleteReceiptTarget, setDeleteReceiptTarget] = useState<PurchaseReceipt | null>(null);
   const { refresh } = useErpData();
 
-  async function cancelReceipt() {
-    if (!cancelTarget) return;
+  async function deleteReceipt() {
+    if (!deleteReceiptTarget) return;
     try {
-      await apiDelete(`/api/purchase-receipts/${cancelTarget.id}`);
+      await apiDelete(`/api/purchase-receipts/${deleteReceiptTarget.id}`);
       refreshInBackground(refresh);
-      setCancelTarget(null);
-      toast.success("Mal kabul iptal edildi ve stok iadesi işlendi.");
+      setDeleteReceiptTarget(null);
+      toast.success("Alış kaydı silindi; stok ve satıcı siparişi bakiyeleri güncellendi.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Mal kabul iptal edilemedi.");
+      toast.error(error instanceof Error ? error.message : "Alış kaydı silinemedi.");
     }
   }
 
   const [filters, setFilters] = useState({ type: "ALL", warehouseId: "ALL" });
   const setFilter = (key: string, value: string) => setFilters((curr) => ({ ...curr, [key]: value }));
   const openOrders = data.purchaseOrders.filter((order) => order.status !== "Tamamlandı" && order.status !== "İptal");
-  const directReceiptIds = new Set(data.stockMovements.filter((movement) => movement.referenceType === "direct_purchase_receipt").map((movement) => movement.referenceId));
+  const directReceiptIds = useMemo(() => new Set(data.stockMovements.filter((movement) => movement.referenceType === "direct_purchase_receipt").map((movement) => movement.referenceId)), [data.stockMovements]);
   const filteredReceipts = useMemo(() => data.purchaseReceipts.filter((row) => {
     const isDirect = directReceiptIds.has(row.id);
     if (filters.type === "Hızlı" && !isDirect) return false;
@@ -460,8 +463,8 @@ export function PurchasesPage() {
       className: "text-right",
       cell: (row) => (
         <div className="flex justify-end gap-2">
-          <button className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" disabled={String(row.description).startsWith("[İPTAL]")} onClick={() => setEditingReceipt(row)} type="button">Düzenle</button>
-          <button className={dangerButton} disabled={String(row.description).startsWith("[İPTAL]")} onClick={() => setCancelTarget(row)} type="button">{String(row.description).startsWith("[İPTAL]") ? "İptal edildi" : "İptal et"}</button>
+          <button className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditingReceipt(row)} type="button">Düzenle</button>
+          <button className={dangerButton} onClick={() => setDeleteReceiptTarget(row)} type="button">Sil</button>
         </div>
       ),
     },
@@ -521,11 +524,12 @@ export function PurchasesPage() {
       <FormDrawer open={receiptOpen} title="Siparişe bağlı mal kabul" onClose={() => setReceiptOpen(false)}><PurchaseReceiptForm /></FormDrawer>
       <FormDrawer open={Boolean(editingReceipt)} title="Mal kabul düzenle" onClose={() => setEditingReceipt(null)}>{editingReceipt ? <PurchaseReceiptEditForm receipt={editingReceipt} onDone={() => setEditingReceipt(null)} /> : null}</FormDrawer>
       <ConfirmModal
-        open={Boolean(cancelTarget)}
-        title="Mal kabul iptal edilsin mi?"
-        description="Bu işlem geri alınamaz. Stok girişi iptal edilecek ve miktar satıcı siparişine geri yüklenecektir."
-        onClose={() => setCancelTarget(null)}
-        onConfirm={cancelReceipt}
+        open={Boolean(deleteReceiptTarget)}
+        title="Alış kaydı silinsin mi?"
+        description="Bu işlem fişi kaldırır; ilgili stok hareketleri, depo bakiyeleri ve satıcı siparişi kalan miktarı otomatik güncellenir."
+        confirmLabel="Sil"
+        onClose={() => setDeleteReceiptTarget(null)}
+        onConfirm={deleteReceipt}
       />
     </div>
   );
@@ -536,6 +540,7 @@ export function StocksPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<StockCard | null>(null);
   const [actionTarget, setActionTarget] = useState<StockCard | null>(null);
+  const [detailTarget, setDetailTarget] = useState<StockCard | null>(null);
   async function deactivateStock(id: string) {
     try {
       const response = await fetch(`/api/stocks/${id}`, { method: "DELETE" });
@@ -588,9 +593,9 @@ export function StocksPage() {
     { header: "Ad", cell: (row) => row.name },
     { header: "Tip", cell: (row) => <StatusBadge tone={row.type === "MM" ? "green" : row.type === "YM" ? "blue" : "amber"}>{row.type}</StatusBadge> },
     { header: "Ne", cell: (row) => getName(data.yarnCounts, row.yarnCountId) },
-    { header: "Stok", cell: (row) => formatKg(row.currentStockKg) },
+    { header: "Stok", cell: (row) => formatKg(data.stockMovements.filter((movement) => movement.stockId === row.id).reduce((sum, movement) => sum + (movement.direction === "IN" ? movement.quantity : -movement.quantity), 0)) },
     { header: "Kritik", cell: (row) => formatKg(row.criticalStockKg) },
-    { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end gap-2"><button className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditing(row)} type="button">Düzenle</button><button className={dangerButton} onClick={() => setActionTarget(row)} type="button">Sil/Pasif</button></div> },
+    { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end gap-2"><button className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700" onClick={() => setDetailTarget(row)} type="button">Detay</button><button className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditing(row)} type="button">Düzenle</button><button className={dangerButton} onClick={() => setActionTarget(row)} type="button">Sil/Pasif</button></div> },
   ];
   return (
     <div className="space-y-6">
@@ -615,6 +620,31 @@ export function StocksPage() {
       <DataTable rows={filteredStocks} columns={columns} searchPlaceholder="Stok kodu, ad, tip veya özellikte ara" getSearchText={(row) => [row.code, row.name, row.type, getName(data.fabricTypes, row.fabricTypeId), getName(data.colors, row.colorId), getName(data.yarnCounts, row.yarnCountId)].join(" ")} />
       <FormDrawer open={open} title="Yeni stok kartı" onClose={() => setOpen(false)}><StockCardForm /></FormDrawer>
       <FormDrawer open={Boolean(editing)} title="Stok kartı düzenle" onClose={() => setEditing(null)}>{editing ? <StockCardEditForm stock={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
+      <FormDrawer open={Boolean(detailTarget)} title={`${detailTarget?.code ?? "Stok"} hareket detayları`} onClose={() => setDetailTarget(null)}>
+        {detailTarget ? (
+          <div className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-3">
+              <StatCard title="Hareket bakiyesi" value={formatKg(data.stockMovements.filter((movement) => movement.stockId === detailTarget.id).reduce((sum, movement) => sum + (movement.direction === "IN" ? movement.quantity : -movement.quantity), 0))} helper="Giriş eksi çıkış" icon={Boxes} />
+              <StatCard title="Giriş" value={formatKg(data.stockMovements.filter((movement) => movement.stockId === detailTarget.id && movement.direction === "IN").reduce((sum, movement) => sum + movement.quantity, 0))} helper="Tüm girişler" icon={PackagePlus} tone="green" />
+              <StatCard title="Çıkış" value={formatKg(data.stockMovements.filter((movement) => movement.stockId === detailTarget.id && movement.direction === "OUT").reduce((sum, movement) => sum + movement.quantity, 0))} helper="Tüm çıkışlar" icon={Truck} tone="red" />
+            </div>
+            <DataTable
+              rows={data.stockMovements.filter((movement) => movement.stockId === detailTarget.id)}
+              columns={[
+                { header: "Tarih", cell: (row: StockMovement) => formatDate(row.date) },
+                { header: "Depo", cell: (row: StockMovement) => getName(data.warehouses, row.warehouseId) },
+                { header: "Parti / lot", cell: (row: StockMovement) => data.parties.find((party) => party.id === row.partyId)?.partyNo ?? row.partyId ?? "-" },
+                { header: "Tip", cell: (row: StockMovement) => row.movementType },
+                { header: "Yön", cell: (row: StockMovement) => <StatusBadge tone={row.direction === "IN" ? "green" : "red"}>{row.direction}</StatusBadge> },
+                { header: "Miktar", cell: (row: StockMovement) => formatKg(row.quantity) },
+                { header: "Açıklama", cell: (row: StockMovement) => row.description },
+              ]}
+              searchPlaceholder="Depo, parti, lot, tip veya açıklamada ara"
+              getSearchText={(row) => [getName(data.warehouses, row.warehouseId), data.parties.find((party) => party.id === row.partyId)?.partyNo, row.partyId, row.movementType, row.description].join(" ")}
+            />
+          </div>
+        ) : null}
+      </FormDrawer>
       <FormDrawer open={Boolean(actionTarget)} title="Stok Kartı Sil / Pasif" onClose={() => setActionTarget(null)}>
         {actionTarget && (
           <div className="space-y-6">
@@ -642,32 +672,191 @@ export function StocksPage() {
 
 export function StockDetailPage({ id }: { id: string }) {
   const { data } = useErpData();
+  const [activeTab, setActiveTab] = useState("Genel");
   const stock = data.stockCards.find((item) => item.id === id);
   if (!stock) return <DataTable rows={[]} columns={[]} />;
   const movements = data.stockMovements.filter((item) => item.stockId === stock.id);
+  const incomingKg = movements.filter((item) => item.direction === "IN").reduce((sum, item) => sum + item.quantity, 0);
+  const outgoingKg = movements.filter((item) => item.direction === "OUT").reduce((sum, item) => sum + item.quantity, 0);
+  const movementBalance = incomingKg - outgoingKg;
+  const warehouseRows = data.warehouseBalances
+    .filter((item) => item.stockId === stock.id)
+    .map((item) => ({
+      ...item,
+      warehouseName: getName(data.warehouses, item.warehouseId),
+      partyNo: data.parties.find((party) => party.id === item.partyId)?.partyNo ?? "-",
+      lotNo: item.lotNo ?? "-",
+    }));
+  const lotPartyRows = warehouseRows.filter((item) => item.partyNo !== "-" || item.lotNo !== "-");
   const purchaseItems = data.purchaseOrders.flatMap((order) => normalizeItems(order.items).filter((item) => item.stockId === stock.id).map((item) => ({ ...item, id: `${order.id}-${item.id}`, orderNo: order.purchaseOrderNo, status: order.status })));
+  const orderLinks = [
+    ...data.orders
+      .filter((order) => order.ymStockId === stock.id || order.mmStockId === stock.id)
+      .map((order) => ({
+        id: `order-${order.id}`,
+        type: "Müşteri siparişi",
+        no: order.orderNo,
+        partner: order.customerName,
+        quantity: order.quantityKg,
+        status: order.status,
+      })),
+    ...purchaseItems.map((item) => {
+      const order = data.purchaseOrders.find((purchaseOrder) => purchaseOrder.purchaseOrderNo === item.orderNo);
+      return {
+        id: `purchase-${item.id}`,
+        type: "Satıcı siparişi",
+        no: item.orderNo,
+        partner: order ? getName(data.partners, order.supplierId) : "-",
+        quantity: item.orderedKg,
+        status: item.status,
+      };
+    }),
+  ];
+  const productionRows = [
+    ...data.productionRaw
+      .filter((item) => item.ymStockId === stock.id || normalizeItems(item.consumedItems).some((consumed) => consumed.stockId === stock.id))
+      .map((item) => ({
+        id: `raw-${item.id}`,
+        date: item.date,
+        type: item.ymStockId === stock.id ? "Ham üretim girişi" : "Hammadde tüketimi",
+        partyNo: data.parties.find((party) => party.id === item.partyId)?.partyNo ?? "-",
+        warehouse: getName(data.warehouses, item.warehouseId),
+        quantity: item.ymStockId === stock.id ? item.producedRawKg : normalizeItems(item.consumedItems).filter((consumed) => consumed.stockId === stock.id).reduce((sum, consumed) => sum + consumed.quantityKg, 0),
+      })),
+    ...data.productionDyehouse
+      .filter((item) => item.ymStockId === stock.id || item.mmStockId === stock.id)
+      .map((item) => ({
+        id: `dye-${item.id}`,
+        date: item.date,
+        type: item.mmStockId === stock.id ? "Mamül üretim girişi" : "Boyahane ham tüketimi",
+        partyNo: data.parties.find((party) => party.id === item.partyId)?.partyNo ?? "-",
+        warehouse: item.mmStockId === stock.id ? getName(data.warehouses, item.outputWarehouseId) : getName(data.warehouses, item.inputWarehouseId),
+        quantity: item.mmStockId === stock.id ? item.finishedKg : item.inputRawKg,
+      })),
+  ];
+  const tabs = ["Genel", "Toplam Bakiye", "Depo Bakiyesi", "Lot / Parti Bakiyesi", "Hareketler", "Sipariş Bağlantıları", "Üretim Kullanımı"];
+  const movementColumns: Column<StockMovement>[] = [
+    { header: "Tarih", cell: (row) => formatDate(row.date) },
+    { header: "Depo", cell: (row) => getName(data.warehouses, row.warehouseId) },
+    { header: "Parti / lot", cell: (row) => data.parties.find((party) => party.id === row.partyId)?.partyNo ?? row.lotNo ?? "-" },
+    { header: "Tip", cell: (row) => row.movementType },
+    { header: "Yön", cell: (row) => <StatusBadge tone={row.direction === "IN" ? "green" : "red"}>{row.direction}</StatusBadge> },
+    { header: "Miktar", cell: (row) => formatKg(row.quantity) },
+  ];
   return (
     <div className="space-y-6">
       <PageHeader eyebrow={stock.code} title={stock.name} description="Genel, bakiye, hareketler, satıcı siparişleri ve üretim kullanımı tek kartta." icon={Boxes} action={<StatusBadge tone={stock.type === "MM" ? "green" : "blue"}>{stock.type}</StatusBadge>} />
-      <div className="grid gap-4 md:grid-cols-4">
-        <StatCard title="Mevcut stok" value={formatKg(stock.currentStockKg)} helper="Kart üstü özet" icon={Boxes} />
-        <StatCard title="Satın alınan" value={formatKg(purchaseItems.reduce((sum, item) => sum + item.orderedKg, 0))} helper="IP/LYC/POLY için" icon={PackagePlus} tone="green" />
-        <StatCard title="Bekleyen" value={formatKg(purchaseItems.reduce((sum, item) => sum + item.remainingKg, 0))} helper="Satıcı açık kg" icon={Truck} tone="amber" />
-        <StatCard title="Üretim tüketimi" value={formatKg(movements.filter((item) => item.movementType === "Üretim tüketim").reduce((sum, item) => sum + item.quantity, 0))} helper="Hareketlerden hesaplanır" icon={Factory} tone="red" />
+      <div className="flex flex-wrap gap-2">
+        {tabs.map((tab) => (
+          <button
+            key={tab}
+            className={`rounded-2xl px-4 py-2 text-sm font-semibold transition ${activeTab === tab ? "bg-blue-600 text-white shadow-lg shadow-blue-100" : "border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700"}`}
+            onClick={() => setActiveTab(tab)}
+            type="button"
+          >
+            {tab}
+          </button>
+        ))}
       </div>
-      <DataTable rows={movements} columns={[
-        { header: "Tarih", cell: (row: StockMovement) => formatDate(row.date) },
-        { header: "Depo", cell: (row: StockMovement) => getName(data.warehouses, row.warehouseId) },
-        { header: "Tip", cell: (row: StockMovement) => row.movementType },
-        { header: "Yön", cell: (row: StockMovement) => <StatusBadge tone={row.direction === "IN" ? "green" : "red"}>{row.direction}</StatusBadge> },
-        { header: "Miktar", cell: (row: StockMovement) => formatKg(row.quantity) },
-      ]} />
+      {activeTab === "Genel" ? (
+        <>
+          <div className="grid gap-4 md:grid-cols-4">
+            <StatCard title="Mevcut stok" value={formatKg(stock.currentStockKg)} helper="Kart üstü özet" icon={Boxes} />
+            <StatCard title="Hareket bakiyesi" value={formatKg(movementBalance)} helper="Giriş eksi çıkış" icon={Boxes} tone="blue" />
+            <StatCard title="Bekleyen alış" value={formatKg(purchaseItems.reduce((sum, item) => sum + item.remainingKg, 0))} helper="Satıcı açık kg" icon={Truck} tone="amber" />
+            <StatCard title="Üretim tüketimi" value={formatKg(movements.filter((item) => item.movementType === "Üretim tüketim").reduce((sum, item) => sum + item.quantity, 0))} helper="Hareketlerden hesaplanır" icon={Factory} tone="red" />
+          </div>
+          <div className="premium-card rounded-2xl p-5">
+            <h2 className="font-semibold text-slate-950">Kart bilgileri</h2>
+            <div className="mt-4 grid gap-3 text-sm text-slate-600 md:grid-cols-3">
+              <p><span className="font-semibold text-slate-900">Tip:</span> {stock.type}</p>
+              <p><span className="font-semibold text-slate-900">Renk:</span> {getName(data.colors, stock.colorId)}</p>
+              <p><span className="font-semibold text-slate-900">İplik no:</span> {getName(data.yarnCounts, stock.yarnCountId)}</p>
+              <p><span className="font-semibold text-slate-900">Kumaş cinsi:</span> {getName(data.fabricTypes, stock.fabricTypeId)}</p>
+              <p><span className="font-semibold text-slate-900">Kritik stok:</span> {formatKg(stock.criticalStockKg)}</p>
+              <p><span className="font-semibold text-slate-900">Durum:</span> {stock.isActive === false ? "Pasif" : "Aktif"}</p>
+            </div>
+          </div>
+        </>
+      ) : null}
+      {activeTab === "Toplam Bakiye" ? (
+        <div className="grid gap-4 md:grid-cols-4">
+          <StatCard title="Hareket bakiyesi" value={formatKg(movementBalance)} helper="Gerçek hareket hesabı" icon={Boxes} />
+          <StatCard title="Kart bakiyesi" value={formatKg(stock.currentStockKg)} helper="Kart alanındaki özet" icon={Boxes} tone="blue" />
+          <StatCard title="Toplam giriş" value={formatKg(incomingKg)} helper="IN hareketler" icon={PackagePlus} tone="green" />
+          <StatCard title="Toplam çıkış" value={formatKg(outgoingKg)} helper="OUT hareketler" icon={Truck} tone="red" />
+        </div>
+      ) : null}
+      {activeTab === "Depo Bakiyesi" ? (
+        <DataTable
+          rows={warehouseRows}
+          columns={[
+            { header: "Depo", cell: (row) => row.warehouseName },
+            { header: "Parti", cell: (row) => row.partyNo },
+            { header: "Lot", cell: (row) => row.lotNo },
+            { header: "Bakiye", cell: (row) => formatKg(row.quantity) },
+            { header: "Güncelleme", cell: (row) => formatDate(row.updatedAt) },
+          ]}
+          searchPlaceholder="Depo, parti veya lotta ara"
+          getSearchText={(row) => [row.warehouseName, row.partyNo, row.lotNo].join(" ")}
+        />
+      ) : null}
+      {activeTab === "Lot / Parti Bakiyesi" ? (
+        <DataTable
+          rows={lotPartyRows}
+          columns={[
+            { header: "Depo", cell: (row) => row.warehouseName },
+            { header: "Parti", cell: (row) => row.partyNo },
+            { header: "Lot", cell: (row) => row.lotNo },
+            { header: "Bakiye", cell: (row) => formatKg(row.quantity) },
+          ]}
+          searchPlaceholder="Parti veya lotta ara"
+          getSearchText={(row) => [row.warehouseName, row.partyNo, row.lotNo].join(" ")}
+        />
+      ) : null}
+      {activeTab === "Hareketler" ? (
+        <DataTable
+          rows={movements}
+          columns={movementColumns}
+          searchPlaceholder="Depo, parti, lot, tip veya açıklamada ara"
+          getSearchText={(row) => [getName(data.warehouses, row.warehouseId), data.parties.find((party) => party.id === row.partyId)?.partyNo, row.lotNo, row.movementType, row.description].join(" ")}
+        />
+      ) : null}
+      {activeTab === "Sipariş Bağlantıları" ? (
+        <DataTable
+          rows={orderLinks}
+          columns={[
+            { header: "Tip", cell: (row) => row.type },
+            { header: "No", cell: (row) => row.no },
+            { header: "Cari", cell: (row) => row.partner },
+            { header: "Kg", cell: (row) => formatKg(row.quantity) },
+            { header: "Durum", cell: (row) => <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge> },
+          ]}
+          searchPlaceholder="Sipariş no, cari veya durumda ara"
+          getSearchText={(row) => [row.type, row.no, row.partner, row.status].join(" ")}
+        />
+      ) : null}
+      {activeTab === "Üretim Kullanımı" ? (
+        <DataTable
+          rows={productionRows}
+          columns={[
+            { header: "Tarih", cell: (row) => formatDate(row.date) },
+            { header: "Tip", cell: (row) => row.type },
+            { header: "Parti", cell: (row) => row.partyNo },
+            { header: "Depo", cell: (row) => row.warehouse },
+            { header: "Kg", cell: (row) => formatKg(row.quantity) },
+          ]}
+          searchPlaceholder="Parti, depo veya üretim tipinde ara"
+          getSearchText={(row) => [row.type, row.partyNo, row.warehouse].join(" ")}
+        />
+      ) : null}
     </div>
   );
 }
 
 export function PartiesPage() {
   const { data } = useErpData();
+  const [shiftOpen, setShiftOpen] = useState(false);
   const columns: Column<Party>[] = [
     { header: "Parti", cell: (row) => <Link className="font-semibold text-blue-700" href={`/parties/${row.id}`}>{row.partyNo}</Link> },
     { header: "Sipariş", cell: (row) => data.orders.find((item) => item.id === row.orderId)?.orderNo },
@@ -678,8 +867,11 @@ export function PartiesPage() {
   ];
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Parti takibi" title="Partiler" description="İlk ham üretimden satışa kadar parti numarası, fire, depo ve timeline izleme." icon={Factory} />
+      <PageHeader eyebrow="Parti takibi" title="Partiler" description="İlk ham üretimden satışa kadar parti numarası, fire, depo ve timeline izleme." icon={Factory} action={<button className={primaryButton} onClick={() => setShiftOpen(true)} type="button"><PackageCheck className="size-4" />Parti kaydır</button>} />
       <DataTable rows={data.parties} columns={columns} />
+      <FormDrawer open={shiftOpen} title="Parti kaydırma" onClose={() => setShiftOpen(false)}>
+        <PartyShiftForm onDone={() => setShiftOpen(false)} />
+      </FormDrawer>
     </div>
   );
 }
@@ -703,6 +895,43 @@ export function PartyDetailPage({ id }: { id: string }) {
   );
 }
 
+export function PartyShiftPage() {
+  const { data } = useErpData();
+  const rows = data.orderPartyAllocations.map((item) => ({
+    ...item,
+    orderNo: data.orders.find((order) => order.id === item.orderId)?.orderNo ?? "-",
+    partyNo: data.parties.find((party) => party.id === item.partyId)?.partyNo ?? "-",
+  }));
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Parti"
+        title="Parti Kaydırma"
+        description="Bir partinin tamamını veya belirli kg kısmını başka bir müşteri siparişine bağlayın."
+        icon={PackageCheck}
+      />
+      <div className="premium-card rounded-2xl p-5">
+        <PartyShiftForm />
+      </div>
+      <DataTable
+        rows={rows}
+        columns={[
+          { header: "Sipariş", cell: (row) => row.orderNo },
+          { header: "Parti", cell: (row) => row.partyNo },
+          { header: "Bağlı kg", cell: (row) => formatKg(row.allocatedKg) },
+          { header: "Ham", cell: (row) => formatKg(row.producedRawKg) },
+          { header: "Mamül", cell: (row) => formatKg(row.producedFinishedKg) },
+          { header: "Sevk", cell: (row) => formatKg(row.shippedKg) },
+          { header: "Durum", cell: (row) => <StatusBadge tone={row.status === "Aktif" ? "green" : "amber"}>{row.status}</StatusBadge> },
+        ]}
+        searchPlaceholder="Sipariş veya parti ara"
+        getSearchText={(row) => [row.orderNo, row.partyNo, row.status].join(" ")}
+      />
+    </div>
+  );
+}
+
 export function ProductionPage({ type }: { type: "raw" | "dyehouse" }) {
   const { data, refresh } = useErpData();
   const [open, setOpen] = useState(false);
@@ -710,7 +939,7 @@ export function ProductionPage({ type }: { type: "raw" | "dyehouse" }) {
   const [filters, setFilters] = useState({ status: "ALL", dateFrom: "", dateTo: "" });
   const setFilter = (key: string, value: string) => setFilters((curr) => ({ ...curr, [key]: value }));
   const isRaw = type === "raw";
-  const cancelledIds = new Set(data.stockMovements.filter((movement) => movement.referenceType === (isRaw ? "production_raw_cancel" : "production_dyehouse_cancel")).map((movement) => movement.referenceId));
+  const cancelledIds = useMemo(() => new Set(data.stockMovements.filter((movement) => movement.referenceType === (isRaw ? "production_raw_cancel" : "production_dyehouse_cancel")).map((movement) => movement.referenceId)), [data.stockMovements, isRaw]);
   const filteredRaw = useMemo(() => data.productionRaw.filter((row) => {
     if (filters.status !== "ALL") {
       const isCancelled = cancelledIds.has(row.id);
@@ -809,7 +1038,7 @@ export function TransfersPage() {
   const [cancelTarget, setCancelTarget] = useState<Transfer | null>(null);
   const [filters, setFilters] = useState({ status: "ALL", dateFrom: "", dateTo: "" });
   const setFilter = (key: string, value: string) => setFilters((curr) => ({ ...curr, [key]: value }));
-  const cancelledTransferIds = new Set(data.stockMovements.filter((movement) => movement.referenceType === "transfer_cancel").map((movement) => movement.referenceId));
+  const cancelledTransferIds = useMemo(() => new Set(data.stockMovements.filter((movement) => movement.referenceType === "transfer_cancel").map((movement) => movement.referenceId)), [data.stockMovements]);
   const filteredTransfers = useMemo(() => data.transfers.filter((row) => {
     if (filters.status !== "ALL") {
       const isCancelled = cancelledTransferIds.has(row.id);
@@ -1260,6 +1489,12 @@ const settingGroups = [
     items: ["20/1", "24/1", "30/1", "36/1", "40/1"],
   },
   {
+    href: "/settings/yarn-types",
+    title: "İplik cinsleri",
+    description: "Open End, Ring, Compact gibi iplik cinsi kodları stok adında kontrollü kullanılır.",
+    items: ["OE - Open End", "RING", "COMPACT"],
+  },
+  {
     href: "/settings/process-types",
     title: "Boyahane işlem türleri",
     description: "Reaktif boya, şardon, sanfor, apre, yıkama gibi proses tanımları.",
@@ -1449,6 +1684,31 @@ const developmentTimeline = [
       "Ayarlar altındaki Depo Yönetimi sekmesine Depo Bakiye izleme sütunu ve Detaylı Stok Görüntüleme modalı entegre edildi.",
     ],
   },
+  {
+    date: "2026-05-04",
+    title: "Stok ve Üretim Mantığı Revizyonu",
+    summary: "En/Gramaj değerleri stok kartlarından arındırılarak sipariş ve üretim bazlı hale getirildi. İkili stok (YM/MM) açma süreci otomatize edildi.",
+    items: [
+      "Stok kartlarından En/Gramaj alanları kaldırılarak master data sadeleştirildi.",
+      "Kumaş stoğu açılırken sistemin otomatik olarak Ham (YM) ve Mamül (MM) kartlarını oluşturması sağlandı.",
+      "Üretim (Ham ve Boyahane) süreçlerine En/Gramaj takibi eklendi, bu değerlerin Parti (Lot) bazında saklanması sağlandı.",
+      "Sistem genelindeki Türkçe karakter bozulmaları için kalıcı düzeltme scripti uygulandı ve AGENTS.md kuralları güncellendi.",
+    ],
+  },
+  {
+    date: "2026-05-04",
+    title: "İzlenebilir MVP omurgası derinleştirildi",
+    summary: "Sipariş, parti, lot, depo ve stok hareketi ilişkileri kullanıcı ekranlarında daha görünür hale getirildi; hızlı arama ve otomatik doldurma deneyimi güçlendirildi.",
+    items: [
+      "Transfer, ham üretim, boyahane ve satış formlarında sipariş/parti/lot hızlı arama ile otomatik stok, depo ve parti doldurma akışı genişletildi.",
+      "Partide YM ve MM birlikte bulunduğunda kullanıcıya ham kumaş veya mamül kumaş seçeneği sunan seçim davranışı eklendi.",
+      "Transfer, üretim ve sevkiyat formlarında seçilen depo + lot + parti kırılımı için anlık kullanılabilir bakiye ve negatif stok uyarısı gösterildi.",
+      "Stok detay ekranı Genel, Toplam Bakiye, Depo Bakiyesi, Lot / Parti Bakiyesi, Hareketler, Sipariş Bağlantıları ve Üretim Kullanımı sekmelerine ayrıldı.",
+      "Hammadde isimlendirme kuralı kumaş stoklarına da taşındı; YM/MM adları Ne + kumaş cinsi + renk + YM/MM + HAM/MAMÜL + LYC/POLY formatında otomatik oluşur.",
+      "Müşteri siparişi ve satış/sevkiyat formlarında müşteri alanı elle yazım yerine Cari/Fasoncu tanımlarındaki müşteri carilerinden seçilecek hale getirildi.",
+      "Parti Kaydırma ayrı menü olmaktan çıkarıldı; Partiler ekranındaki butondan açılan modal akışına taşındı.",
+    ],
+  },
 ];
 
 const completedMilestones = [
@@ -1462,6 +1722,7 @@ const completedMilestones = [
   "Satıcı siparişleri, kısmi mal kabul ve siparişsiz hızlı hammadde alışı",
   "Ayar tanımları, rol/kullanıcı profili ve kontrollü silme/düzenleme",
   "Gelişmiş raporlar, CSV dışa aktarım, mobil menü ve responsive PWA hissi",
+  "Sipariş/parti/lot hızlı arama, stok detay sekmeleri ve anlık bakiye uyarıları",
 ];
 
 const pendingRoadmap = [
@@ -1472,8 +1733,8 @@ const pendingRoadmap = [
   },
   {
     priority: "P0",
-    title: "Parti bazlı gelişmiş stok kullanılabilirlik kontrolü",
-    description: "YM/MM için parti zorunluluğunu tüm formlarda daha sert hale getirme, stok seçiminde yalnızca bakiyesi olan depo/parti kombinasyonlarını gösterme.",
+    title: "Stok seçim listelerini yalnızca bakiyesi olan kırılımlara daraltma",
+    description: "Anlık bakiye uyarısı eklendi; sıradaki adım stok, depo, parti ve lot seçimlerini yalnızca pozitif bakiyesi olan kombinasyonlarla filtrelemek.",
   },
   {
     priority: "P1",
@@ -1498,7 +1759,12 @@ const pendingRoadmap = [
   {
     priority: "P2",
     title: "Bildirimler ve işlem merkezi",
-    description: "Kritik stok, geciken sipariş, termin yaklaşan satın alma ve yüksek fire için kullanıcı bildirimleri eklenmeli.",
+    description: "Kritik stok, geciken sipariş, termin yaklaşan satın alma ve yüksek fire bildirimleri hesaplanıyor; okundu/aksiyon akışı ve detay yönlendirmeleri derinleşmeli.",
+  },
+  {
+    priority: "P2",
+    title: "Canlıya alma sonrası smoke test ve veri denetimi",
+    description: "Push/deploy sonrası dashboard, stok, sipariş, üretim, transfer, satış ve ayarlar ekranları canlı ortamda hızlı senaryo ile doğrulanmalı.",
   },
   {
     priority: "P2",
@@ -1508,7 +1774,7 @@ const pendingRoadmap = [
 ];
 
 export function RoadmapPage() {
-  const completion = 72;
+  const completion = 78;
   return (
     <div className="space-y-6">
       <PageHeader
@@ -1522,7 +1788,7 @@ export function RoadmapPage() {
         <StatCard title="Proje ilerleme" value={`%${completion}`} helper="Müşteri demosu için güçlü MVP seviyesinde" icon={CheckCircle2} tone="green" />
         <StatCard title="Tamamlanan başlık" value={String(completedMilestones.length)} helper="Ana ERP modülleri ve altyapı" icon={BookOpen} />
         <StatCard title="Bekleyen öncelik" value={String(pendingRoadmap.length)} helper="Üretimleşme ve derinleşme işleri" icon={SlidersHorizontal} tone="amber" />
-        <StatCard title="Son güncelleme" value="03.05.2026" helper="Gün bazında takip edilir" icon={Settings} tone="blue" />
+        <StatCard title="Son güncelleme" value="04.05.2026" helper="Gün bazında takip edilir" icon={Settings} tone="blue" />
       </div>
 
       <div className="premium-card rounded-2xl p-5">
@@ -1596,7 +1862,7 @@ export function RoadmapPage() {
   );
 }
 
-export function SettingsGuidePage({ section }: { section?: "fabric-types" | "colors" | "yarn-counts" | "process-types" | "warehouses" }) {
+export function SettingsGuidePage({ section }: { section?: "fabric-types" | "colors" | "yarn-counts" | "yarn-types" | "process-types" | "warehouses" }) {
   const { data, refresh, mutateData } = useErpData();
   const [editing, setEditing] = useState<EditableSetting | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<EditableSetting | null>(null);
@@ -1609,6 +1875,7 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
         "fabric-types": { entity: "fabricTypes", rows: data.fabricTypes, extra: undefined },
         colors: { entity: "colors", rows: data.colors, extra: undefined },
         "yarn-counts": { entity: "yarnCounts", rows: data.yarnCounts, extra: undefined },
+        "yarn-types": { entity: "yarnTypes", rows: data.yarnTypes, extra: undefined },
         "process-types": { entity: "processTypes", rows: data.processTypes, extra: undefined },
         warehouses: { entity: "warehouses", rows: data.warehouses, extra: "warehouse" },
       } as const)[section]
@@ -1634,7 +1901,9 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
     try {
       const nextRow = {
         id: editing.id,
+        code: String(form.get("code") ?? editing.code ?? ""),
         name: String(form.get("name") ?? editing.name),
+        isActive: form.get("isActive") === "on",
         kind: (form.get("kind") ?? editing.kind) as WarehouseEntity["kind"] | undefined,
       };
       await apiPatch(`/api/settings/${settingConfig.entity}/${editing.id}`, nextRow);
@@ -1724,6 +1993,7 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
                 <div key={row.id} className="flex items-center justify-between gap-3 py-3">
                   <div>
                     <p className="font-semibold text-slate-950">{row.name}</p>
+                    {"code" in row ? <p className="text-xs text-slate-400">{String(row.code)}</p> : null}
                     {"kind" in row ? <p className="text-xs text-slate-400">{warehouseKindLabels[row.kind as WarehouseEntity["kind"]]}</p> : null}
                     {section === "warehouses" ? (
                       <p className="mt-1 text-xs font-semibold text-emerald-600">Bakiye: {formatKg(data.warehouseBalances.filter(b => b.warehouseId === row.id).reduce((sum, b) => sum + Number(b.quantity || 0), 0))}</p>
@@ -1735,7 +2005,7 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
                     ) : null}
                     <button
                       className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700"
-                      onClick={() => setEditing({ id: row.id, name: row.name, kind: "kind" in row ? row.kind : undefined })}
+                      onClick={() => setEditing({ id: row.id, name: row.name, code: "code" in row ? String(row.code) : undefined, isActive: row.isActive, kind: "kind" in row ? row.kind : undefined })}
                       type="button"
                     >
                       Düzenle
@@ -1754,6 +2024,18 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
                 <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Ad</span>
                 <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="name" defaultValue={editing?.name} required />
               </label>
+              {section === "yarn-types" ? (
+                <>
+                  <label className="space-y-2">
+                    <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Kod</span>
+                    <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm uppercase outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="code" defaultValue={editing?.code} required />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-slate-600">
+                    <input defaultChecked={editing?.isActive !== false} name="isActive" type="checkbox" />
+                    Aktif
+                  </label>
+                </>
+              ) : null}
               {section === "warehouses" ? (
                 <label className="space-y-2">
                   <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Tip</span>

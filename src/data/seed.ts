@@ -1,4 +1,4 @@
-import type { ErpData, NamedEntity, Order, Partner, Party, PurchaseOrder, StockCard, StockMovement, Warehouse } from "@/types/erp";
+import type { ErpData, NamedEntity, Order, Partner, Party, PurchaseOrder, StockCard, StockMovement, Warehouse, YarnType } from "@/types/erp";
 
 const now = "2026-05-02T12:00:00.000Z";
 
@@ -19,6 +19,10 @@ export const yarnCounts: NamedEntity[] = ["20/1", "24/1", "30/1", "36/1", "40/1"
   name,
   isActive: true,
 }));
+
+export const yarnTypes: YarnType[] = [
+  { id: "yt-oe", code: "OE", name: "Open End", isActive: true },
+];
 
 export const processTypes: NamedEntity[] = ["Reaktif boya", "Şardon", "Sanfor", "Apre", "Yıkama"].map((name, index) => ({
   id: `process-${index + 1}`,
@@ -307,6 +311,7 @@ export const erpSeed: ErpData = {
   fabricTypes,
   colors,
   yarnCounts,
+  yarnTypes,
   processTypes,
   warehouses,
   partners,
@@ -321,6 +326,7 @@ export const erpSeed: ErpData = {
   ],
   orders,
   parties,
+  orderPartyAllocations: [],
   productionRaw: [
     { id: "raw-1", date: "2026-04-27", orderId: "ord-1", partyId: "party-1", knitterPartnerId: "p-knit-1", warehouseId: "wh-raw", ymStockId: "st-ym-1", producedRawKg: 3050, consumedItems: [{ stockId: "st-ip-1", warehouseId: "wh-knitter", quantityKg: 3220, lotNo: "LOT-30-1-A" }], wasteKg: 170, wastePercent: 5.28, description: "İlk ham parti üretimi", createdAt: now },
   ],
@@ -336,6 +342,7 @@ export const erpSeed: ErpData = {
     { id: "rec-1", purchaseOrderId: "po-1", receiptNo: "MK-260001", receiptDate: "2026-04-18", warehouseId: "wh-yarn", supplierId: "p-sup-1", items: [{ purchaseOrderItemId: "poi-1", stockId: "st-ip-1", receivedKg: 4000, lotNo: "KAR-2604-1" }, { purchaseOrderItemId: "poi-1", stockId: "st-ip-1", receivedKg: 3000, lotNo: "KAR-2604-2" }], description: "Kısmi mal kabul", createdAt: now, createdBy: "demo" },
   ],
   sales: [],
+  notifications: [],
   roles: [
     { id: "role-admin", name: "Admin", description: "Tum moduller icin tam yetki.", permissions: ["dashboard:read", "orders:write", "stocks:write", "production:write", "purchase:write", "sales:write", "settings:write", "reports:read"], isActive: true, createdAt: now, updatedAt: now },
     { id: "role-production", name: "Uretim", description: "Uretim ve parti sureci.", permissions: ["dashboard:read", "production:write", "stocks:write"], isActive: true, createdAt: now, updatedAt: now },

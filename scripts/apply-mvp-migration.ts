@@ -11,35 +11,25 @@ function loadLocalEnv() {
 
 loadLocalEnv();
 
-const databaseUrl = process.env.DATABASE_URL;
-
-const tables = [
-  "notifications",
-  "sales",
-  "purchase_receipts",
-  "purchase_orders",
-  "transfers",
-  "production_dyehouse",
-  "production_raw",
-  "order_party_allocations",
-  "warehouse_balances",
-  "stock_movements",
-  "parties",
-  "orders",
-  "stock_cards",
-  "counters",
-];
-
 async function main() {
+  const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl || databaseUrl.includes("your-")) {
-    console.log("DATABASE_URL is missing. Set .env.local before resetting data.");
+    console.log("DATABASE_URL bulunamadı. Migration atlandı.");
     return;
   }
 
   const sql = postgres(databaseUrl, { ssl: "require", max: 1, prepare: false });
   try {
-    await sql.unsafe(`truncate table ${tables.map((table) => `"${table}"`).join(", ")} restart identity cascade`);
-    console.log("İşlem verileri temizlendi. Ayarlar, cariler, kullanıcılar ve roller korundu.");
+    const content = readFileSync("drizzle/0002_mvp_tracking.sql", "utf8");
+    const statements = content
+      .split("--> statement-breakpoint")
+      .map((statement) => statement.trim())
+      .filter(Boolean);
+
+    for (const statement of statements) {
+      await sql.unsafe(statement);
+    }
+    console.log("MVP tracking migration uygulandı.");
   } finally {
     await sql.end({ timeout: 1 });
   }

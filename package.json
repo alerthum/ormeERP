@@ -9,6 +9,7 @@
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:mvp": "tsx scripts/apply-mvp-migration.ts",
     "seed": "tsx scripts/seed.ts",
     "reset:data": "tsx scripts/reset-data.ts",
     "realtime:setup": "tsx scripts/setup-realtime.ts"

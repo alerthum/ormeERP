@@ -12,6 +12,10 @@ export interface NamedEntity {
   isActive?: boolean;
 }
 
+export interface YarnType extends NamedEntity {
+  code: string;
+}
+
 export interface Partner extends NamedEntity {
   type: PartnerType;
   riskScore?: number;
@@ -29,6 +33,7 @@ export interface StockCard {
   fabricTypeId?: string;
   colorId?: string;
   yarnCountId?: string;
+  yarnTypeId?: string;
   hasPolyester: boolean;
   hasLycra: boolean;
   rawWidth?: number;
@@ -90,6 +95,10 @@ export interface Party {
   finishedKg: number;
   dyehouseWasteKg: number;
   dyehouseWastePercent: number;
+  rawWidth?: number;
+  rawGsm?: number;
+  finishWidth?: number;
+  finishGsm?: number;
   currentWarehouseId: string;
   timeline: TimelineItem[];
   createdAt: string;
@@ -102,6 +111,7 @@ export interface StockMovement {
   stockId: string;
   warehouseId: string;
   partyId?: string;
+  lotNo?: string;
   orderId?: string;
   movementType: MovementType;
   direction: Direction;
@@ -119,6 +129,7 @@ export interface WarehouseBalance {
   stockId: string;
   warehouseId: string;
   partyId?: string;
+  lotNo?: string;
   quantity: number;
   updatedAt: string;
 }
@@ -143,6 +154,8 @@ export interface RawProduction {
   consumedItems: ConsumedItem[];
   wasteKg: number;
   wastePercent: number;
+  rawWidth?: number;
+  rawGsm?: number;
   description: string;
   createdAt: string;
 }
@@ -185,6 +198,7 @@ export interface PurchaseOrderItem {
   stockName: string;
   stockType: StockType;
   yarnCountId?: string;
+  yarnTypeId?: string;
   colorId?: string;
   orderedKg: number;
   receivedKg: number;
@@ -221,6 +235,31 @@ export interface PurchaseReceipt {
   description: string;
   createdAt: string;
   createdBy: string;
+}
+
+export interface OrderPartyAllocation {
+  id: string;
+  orderId: string;
+  partyId: string;
+  allocatedKg: number;
+  producedRawKg: number;
+  producedFinishedKg: number;
+  shippedKg: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NotificationItem {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  severity: "info" | "warning" | "danger" | "success";
+  relatedType?: string;
+  relatedId?: string;
+  isRead: boolean;
+  createdAt: string;
 }
 
 export interface Sale {
@@ -272,6 +311,7 @@ export interface ErpData {
   fabricTypes: NamedEntity[];
   colors: NamedEntity[];
   yarnCounts: NamedEntity[];
+  yarnTypes: YarnType[];
   processTypes: NamedEntity[];
   warehouses: Warehouse[];
   partners: Partner[];
@@ -280,12 +320,14 @@ export interface ErpData {
   warehouseBalances: WarehouseBalance[];
   orders: Order[];
   parties: Party[];
+  orderPartyAllocations: OrderPartyAllocation[];
   productionRaw: RawProduction[];
   productionDyehouse: DyehouseProduction[];
   transfers: Transfer[];
   purchaseOrders: PurchaseOrder[];
   purchaseReceipts: PurchaseReceipt[];
   sales: Sale[];
+  notifications: NotificationItem[];
   roles: Role[];
   userProfiles: UserProfile[];
   counters: Counter[];

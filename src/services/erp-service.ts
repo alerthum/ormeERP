@@ -23,19 +23,16 @@ export function nextCode(prefix: StockType, cards: StockCard[]): string {
   return `${prefix}-${String(last + 1).padStart(6, "0")}`;
 }
 
-export function findMatchingStock(order: Pick<Order, "fabricTypeId" | "colorId" | "yarnCountId" | "hasPolyester" | "hasLycra" | "rawWidth" | "rawGsm" | "finishWidth" | "finishGsm">, type: "YM" | "MM", cards: StockCard[]) {
+export function findMatchingStock(order: Pick<Order, "fabricTypeId" | "colorId" | "yarnCountId" | "hasPolyester" | "hasLycra">, type: "YM" | "MM", cards: StockCard[]) {
   return cards.find((card) => {
-    const base =
+    return (
       card.type === type &&
       card.fabricTypeId === order.fabricTypeId &&
       card.colorId === order.colorId &&
       card.yarnCountId === order.yarnCountId &&
       card.hasPolyester === order.hasPolyester &&
-      card.hasLycra === order.hasLycra &&
-      card.rawWidth === order.rawWidth &&
-      card.rawGsm === order.rawGsm;
-    if (type === "YM") return base;
-    return base && card.finishWidth === order.finishWidth && card.finishGsm === order.finishGsm;
+      card.hasLycra === order.hasLycra
+    );
   });
 }
 
@@ -49,17 +46,13 @@ export function buildAutoStock(order: Order, type: "YM" | "MM", data: ErpData): 
     type,
     name:
       type === "YM"
-        ? `${fabric} Ham ${yarn} ${color} ${order.rawWidth}cm ${order.rawGsm}gsm`
-        : `${fabric} Mamül ${yarn} ${color} ${order.finishWidth}cm ${order.finishGsm}gsm`,
+        ? `${fabric} Ham ${yarn} ${color}`.trim()
+        : `${fabric} Mamül ${yarn} ${color}`.trim(),
     fabricTypeId: order.fabricTypeId,
     colorId: order.colorId,
     yarnCountId: order.yarnCountId,
     hasPolyester: order.hasPolyester,
     hasLycra: order.hasLycra,
-    rawWidth: order.rawWidth,
-    rawGsm: order.rawGsm,
-    finishWidth: type === "MM" ? order.finishWidth : undefined,
-    finishGsm: type === "MM" ? order.finishGsm : undefined,
     unit: "kg",
     currentStockKg: 0,
     criticalStockKg: 500,
@@ -112,4 +105,98 @@ export function getDashboardMetrics(data: ErpData) {
     partialPurchaseCount: data.purchaseOrders.filter((order) => order.status === "Kısmi Geldi").length,
     delayedPurchaseCount: data.purchaseOrders.filter((order) => new Date(order.dueDate) < new Date("2026-05-02") && order.totalRemainingKg > 0).length,
   };
+}
+
+export function getComputedNotifications(data: ErpData) {
+  const today = new Date();
+  const dayMs = 24 * 60 * 60 * 1000;
+  const notifications = [
+    ...data.stockCards
+      .filter((stock) => stock.criticalStockKg > 0 && stock.currentStockKg <= stock.criticalStockKg)
+      .map((stock) => ({
+        id: `critical-stock-${stock.id}`,
+        type: "critical_stock",
+        title: "Kritik stok",
+        message: `${stock.code} - ${stock.name} kritik seviyenin altında.`,
+        severity: "danger" as const,
+        relatedType: "stock",
+        relatedId: stock.id,
+        isRead: false,
+        createdAt: today.toISOString(),
+      })),
+    ...data.orders
+      .filter((order) => !["Kapandı", "İptal", "Sevk Edildi"].includes(order.status))
+      .filter((order) => {
+        const days = Math.ceil((new Date(order.dueDate).getTime() - today.getTime()) / dayMs);
+        return days <= 5;
+      })
+      .map((order) => {
+        const days = Math.ceil((new Date(order.dueDate).getTime() - today.getTime()) / dayMs);
+        return {
+          id: `due-order-${order.id}`,
+          type: days < 0 ? "late_order" : "near_due_order",
+          title: days < 0 ? "Geciken sipariş" : "Termin yaklaşıyor",
+          message: `${order.orderNo} için termin ${order.dueDate}.`,
+          severity: days < 0 ? ("danger" as const) : ("warning" as const),
+          relatedType: "order",
+          relatedId: order.id,
+          isRead: false,
+          createdAt: today.toISOString(),
+        };
+      }),
+    ...data.purchaseOrders
+      .filter((order) => order.status === "Kısmi Geldi" || (order.status !== "Tamamlandı" && order.totalRemainingKg > 0))
+      .map((order) => ({
+        id: `purchase-${order.id}`,
+        type: order.status === "Kısmi Geldi" ? "partial_purchase" : "pending_purchase",
+        title: order.status === "Kısmi Geldi" ? "Kısmi gelen satıcı siparişi" : "Bekleyen hammadde siparişi",
+        message: `${order.purchaseOrderNo} için ${order.totalRemainingKg.toLocaleString("tr-TR")} kg bekliyor.`,
+        severity: "warning" as const,
+        relatedType: "purchaseOrder",
+        relatedId: order.id,
+        isRead: false,
+        createdAt: today.toISOString(),
+      })),
+    ...data.productionRaw
+      .filter((item) => item.wastePercent >= 8)
+      .map((item) => ({
+        id: `raw-waste-${item.id}`,
+        type: "high_raw_waste",
+        title: "Ham üretim fire oranı yüksek",
+        message: `${item.wastePercent.toLocaleString("tr-TR", { maximumFractionDigits: 1 })}% fire oluştu.`,
+        severity: "danger" as const,
+        relatedType: "productionRaw",
+        relatedId: item.id,
+        isRead: false,
+        createdAt: today.toISOString(),
+      })),
+    ...data.productionDyehouse
+      .filter((item) => item.wastePercent >= 8)
+      .map((item) => ({
+        id: `dye-waste-${item.id}`,
+        type: "high_dyehouse_waste",
+        title: "Boyahane fire oranı yüksek",
+        message: `${item.wastePercent.toLocaleString("tr-TR", { maximumFractionDigits: 1 })}% fire oluştu.`,
+        severity: "danger" as const,
+        relatedType: "productionDyehouse",
+        relatedId: item.id,
+        isRead: false,
+        createdAt: today.toISOString(),
+      })),
+    ...data.parties
+      .filter((party) => party.status === "Mamül Hazır" && party.finishedKg > 0)
+      .map((party) => ({
+        id: `ready-party-${party.id}`,
+        type: "ready_to_ship",
+        title: "Sevkiyata hazır mamül",
+        message: `${party.partyNo} partisi sevkiyata hazır.`,
+        severity: "success" as const,
+        relatedType: "party",
+        relatedId: party.id,
+        isRead: false,
+        createdAt: today.toISOString(),
+      })),
+  ];
+
+  return [...data.notifications, ...notifications].slice(0, 12);
 }

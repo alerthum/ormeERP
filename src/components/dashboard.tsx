@@ -6,7 +6,7 @@ import { useSyncExternalStore } from "react";
 import { StatCard } from "@/components/ui/stat-card";
 import { StatusBadge, statusTone } from "@/components/ui/status-badge";
 import { useErpData } from "@/components/erp-data-provider";
-import { getDashboardMetrics, getName, getPurchaseProgress } from "@/services/erp-service";
+import { getComputedNotifications, getDashboardMetrics, getName, getPurchaseProgress } from "@/services/erp-service";
 import { formatKg, formatPercent, wasteTone } from "@/lib/utils";
 
 export function Dashboard() {
@@ -17,6 +17,7 @@ export function Dashboard() {
   );
   const { data } = useErpData();
   const metrics = getDashboardMetrics(data);
+  const notifications = getComputedNotifications(data);
   const productionByMonth = new Map<string, { month: string; kg: number }>();
   for (const item of data.productionRaw) {
     const month = new Intl.DateTimeFormat("tr-TR", { month: "short" }).format(new Date(item.date));
@@ -104,6 +105,31 @@ export function Dashboard() {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      <div className="premium-card rounded-2xl p-5">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="font-semibold text-slate-950">Bildirim Merkezi</h2>
+            <p className="text-sm text-slate-500">Kritik stok, termin, satın alma, fire ve sevkiyat sinyalleri</p>
+          </div>
+          <StatusBadge tone={notifications.some((item) => item.severity === "danger") ? "red" : notifications.length ? "amber" : "green"}>{notifications.length} bildirim</StatusBadge>
+        </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+          {notifications.length === 0 ? (
+            <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">Şu an kritik bildirim yok.</div>
+          ) : notifications.map((item) => (
+            <div key={item.id} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-slate-950">{item.title}</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">{item.message}</p>
+                </div>
+                <StatusBadge tone={item.severity === "danger" ? "red" : item.severity === "warning" ? "amber" : item.severity === "success" ? "green" : "blue"}>{item.severity}</StatusBadge>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

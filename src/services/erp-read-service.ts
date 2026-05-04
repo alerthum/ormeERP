@@ -33,6 +33,9 @@ const numericKeys = new Set([
   "rawGsm",
   "finishWidth",
   "finishGsm",
+  "allocatedKg",
+  "producedFinishedKg",
+  "shippedKg",
 ]);
 
 function camelKey(key: string) {
@@ -76,6 +79,7 @@ export async function getErpDataFromDb(): Promise<ErpData> {
       coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from settings_fabric_types t), '[]'::jsonb) as fabric_types,
       coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from settings_colors t), '[]'::jsonb) as colors,
       coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from settings_yarn_counts t), '[]'::jsonb) as yarn_counts,
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.code) from settings_yarn_types t), '[]'::jsonb) as yarn_types,
       coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from settings_process_types t), '[]'::jsonb) as process_types,
       coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from warehouses t), '[]'::jsonb) as warehouses,
       coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from partners t), '[]'::jsonb) as partners,
@@ -84,12 +88,14 @@ export async function getErpDataFromDb(): Promise<ErpData> {
       coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from warehouse_balances t), '[]'::jsonb) as warehouse_balances,
       coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from orders t), '[]'::jsonb) as orders,
       coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from parties t), '[]'::jsonb) as parties,
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from order_party_allocations t), '[]'::jsonb) as order_party_allocations,
       coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from production_raw t), '[]'::jsonb) as production_raw,
       coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from production_dyehouse t), '[]'::jsonb) as production_dyehouse,
       coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from transfers t), '[]'::jsonb) as transfers,
       coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from purchase_orders t), '[]'::jsonb) as purchase_orders,
       coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from purchase_receipts t), '[]'::jsonb) as purchase_receipts,
       coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from sales t), '[]'::jsonb) as sales,
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.created_at desc) from notifications t), '[]'::jsonb) as notifications,
       coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from roles t), '[]'::jsonb) as roles,
       coalesce((select jsonb_agg(to_jsonb(t) order by t.id) from user_profiles t), '[]'::jsonb) as user_profiles,
       coalesce((select jsonb_agg(to_jsonb(t) order by t.key) from counters t), '[]'::jsonb) as counters
