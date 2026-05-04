@@ -70,7 +70,8 @@ const navigationGroups = [
   {
     title: "Ayarlar",
     items: [
-      { href: "/settings", label: "Ayarlar", icon: Settings },
+      { href: "/settings", label: "Genel Ayarlar", icon: Settings },
+      { href: "/settings/project", label: "Proje Ayarları", icon: BarChart3 },
     ]
   }
 ];

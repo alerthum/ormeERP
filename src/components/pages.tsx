@@ -2039,7 +2039,19 @@ export function PrefixCountersPage() {
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Link href="/settings/project" className="premium-card group rounded-none p-6 transition-all hover:border-blue-500 hover:shadow-xl">
+          <div className="flex items-center gap-4">
+            <div className="grid size-12 place-items-center rounded-none bg-blue-50 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
+              <BarChart3 className="size-6" />
+            </div>
+            <div>
+              <h2 className="font-bold text-slate-950">Proje Ayarları</h2>
+              <p className="text-sm text-slate-500">Menü modu, modal pozisyonu ve renkleri özelleştirin.</p>
+            </div>
+          </div>
+        </Link>
+        
         <div className="premium-card rounded-none p-5">
           <h2 className="font-semibold text-slate-950">Hammadde girişi nasıl yapılır?</h2>
           <div className="mt-4 space-y-3">
@@ -2054,10 +2066,6 @@ export function PrefixCountersPage() {
                 <p className="text-sm leading-6 text-slate-600">{step}</p>
               </div>
             ))}
-          </div>
-          <div className="mt-5 flex flex-wrap gap-2">
-            <Link className={primaryButton} href="/stocks"><Plus className="size-4" />Stok kartı aç</Link>
-            <Link className={primaryButton} href="/purchases"><PackageCheck className="size-4" />Alış işlemlerine git</Link>
           </div>
         </div>
 
@@ -2087,6 +2095,18 @@ export function PrefixCountersPage() {
 }
 
 const developmentTimeline = [
+  {
+    date: "2026-05-04",
+    title: "Modernizasyon ve Veri Bütünlüğü",
+    summary: "UI modernizasyonu, dinamik menü/modal ayarları, stok isimlendirme standartı ve envanter doğrulaması tamamlandı.",
+    items: [
+      "Tüm formlar 4 sütunlu yüksek yoğunluklu ızgara yapısına geçirildi ve keskin köşeli tasarıma geçildi.",
+      "Proje Ayarları ekranı eklendi: Menü modu (static/collapsible) ve Modal pozisyonu kullanıcı tercihine bağlandı.",
+      "İplik (IP) ve Kumaş (YM/MM) için yeni isimlendirme şablonu (Ne Renk vb.) devreye alındı.",
+      "Üretim fişlerinde depo bakiyesi kontrolü zorunlu hale getirilerek aşım engellendi.",
+      "Mevcut stokların yeni isimlendirme şablonuna toplu geçişi (migration) yapıldı.",
+    ],
+  },
   {
     date: "2026-05-02",
     title: "Premium ERP MVP iskeleti kuruldu",
