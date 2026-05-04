@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { AlertTriangle, Boxes, CheckCircle2, Factory, Layout, PackageCheck, Plus, Search, Users, X, Truck } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { AlertTriangle, Boxes, CheckCircle2, Factory, Layout, PackageCheck, Plus, Search, Users, X, Truck, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { useErpData } from "@/components/erp-data-provider";
 import { calculateDyehouseWaste, calculateRawWaste, getName } from "@/services/erp-service";
@@ -1041,54 +1041,110 @@ export function TransferForm({ initialData }: { initialData?: Transfer }) {
   );
 }
 
+function OrderSelectorModal({ value, onChange, open, onOpenChange }: { value: string; onChange: (id: string) => void; open: boolean; onOpenChange: (open: boolean) => void }) {
+  const { data } = useErpData();
+  const [search, setSearch] = useState("");
+  const filtered = data.orders.filter((item) => 
+    !search || 
+    `${item.orderNo} ${item.customerName} ${getName(data.fabricTypes, item.fabricTypeId)} ${getName(data.colors, item.colorId)}`
+      .toLocaleLowerCase("tr-TR")
+      .includes(search.toLocaleLowerCase("tr-TR"))
+  );
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/30 p-4 backdrop-blur-sm">
+      <div className="flex h-full max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-none bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-100 p-4">
+          <div className="flex items-center gap-3">
+            <div className="grid size-10 place-items-center rounded-none bg-blue-50 text-blue-600">
+              <ShoppingCart className="size-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-slate-950">Müşteri Siparişi Seç</h2>
+              <p className="text-xs text-slate-500">Üretim yapılacak aktif siparişi listeden seçin.</p>
+            </div>
+          </div>
+          <button className="grid size-10 place-items-center rounded-none bg-slate-50 text-slate-500 hover:bg-slate-100" onClick={() => onOpenChange(false)} type="button">
+            <X className="size-5" />
+          </button>
+        </div>
+        <div className="border-b border-slate-100 p-4">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
+            <input 
+              autoFocus 
+              className="w-full rounded-none border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" 
+              placeholder="Sipariş no, cari adı, kumaş veya renk ile ara..." 
+              value={search} 
+              onChange={(e) => setSearch(e.target.value)} 
+            />
+          </div>
+        </div>
+        <div className="flex-1 overflow-auto p-4">
+          <table className="w-full border-collapse text-left text-sm">
+            <thead>
+              <tr className="border-b border-slate-100 text-xs font-bold uppercase tracking-wider text-slate-400">
+                <th className="pb-3 pl-2">Sipariş No</th>
+                <th className="pb-3">Cari</th>
+                <th className="pb-3">Kumaş</th>
+                <th className="pb-3">Renk</th>
+                <th className="pb-3 text-right">Miktar (Kg)</th>
+                <th className="pb-3 text-right pr-2">İşlem</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {filtered.map((item) => (
+                <tr key={item.id} className="group hover:bg-blue-50/50">
+                  <td className="py-4 pl-2 font-bold text-blue-600">{item.orderNo}</td>
+                  <td className="py-4 font-semibold text-slate-900">{item.customerName}</td>
+                  <td className="py-4 text-slate-600">{getName(data.fabricTypes, item.fabricTypeId)}</td>
+                  <td className="py-4 text-slate-600">{getName(data.colors, item.colorId)}</td>
+                  <td className="py-4 text-right font-mono font-bold text-slate-900">{formatKg(item.quantityKg)}</td>
+                  <td className="py-4 text-right pr-2">
+                    <button 
+                      onClick={() => { onChange(item.id); onOpenChange(false); }}
+                      className="rounded-none bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700 active:transform active:scale-95"
+                    >
+                      Seç
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {filtered.length === 0 && <div className="py-20 text-center text-slate-400">Aradığınız kriterlere uygun aktif sipariş bulunamadı.</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function OrderSelect({ value, onChange, required }: { value: string; onChange: (id: string) => void; required?: boolean }) {
   const { data } = useErpData();
   const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
   const selected = data.orders.find((item) => item.id === value);
-  const filtered = data.orders.filter((item) => !search || `${item.orderNo} ${item.customerName}`.toLocaleLowerCase("tr-TR").includes(search.toLocaleLowerCase("tr-TR")));
 
   return (
     <>
-      <button className={inputClass + " flex items-center justify-between"} type="button" onClick={() => setOpen(true)}>
-        <span className={selected ? "text-slate-950" : "text-slate-500"}>{selected ? `${selected.orderNo} - ${selected.customerName}` : "Sipariş seçiniz"}</span>
+      <button 
+        className={cn(inputClass, "flex items-center justify-between text-left h-auto py-3")} 
+        type="button" 
+        onClick={() => setOpen(true)}
+      >
+        {selected ? (
+          <div>
+            <div className="text-sm font-bold text-slate-950">{selected.orderNo} - {selected.customerName}</div>
+            <div className="text-[10px] uppercase font-bold text-slate-500 mt-0.5">
+              {getName(data.fabricTypes, selected.fabricTypeId)} · {getName(data.colors, selected.colorId)}
+            </div>
+          </div>
+        ) : (
+          <span className="text-slate-400 italic">Sipariş seçmek için tıklayın...</span>
+        )}
       </button>
       {required && !value && <input type="hidden" required />}
       {value && <input type="hidden" name="orderId" value={value} />}
-      {open && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/30 p-4 backdrop-blur-sm">
-          <div className="flex h-full max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-none bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 p-4">
-              <h2 className="text-lg font-semibold text-slate-950">Sipariş Seç</h2>
-              <button className="grid size-9 place-items-center rounded-none bg-slate-50 text-slate-500" onClick={() => setOpen(false)} type="button">
-                <X className="size-4" />
-              </button>
-            </div>
-            <div className="border-b border-slate-100 p-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-                <input autoFocus className="w-full rounded-none border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" placeholder="Ara..." value={search} onChange={(e) => setSearch(e.target.value)} />
-              </div>
-            </div>
-            <div className="flex-1 overflow-y-auto p-2">
-              {filtered.length === 0 ? (
-                <div className="p-4 text-center text-sm text-slate-500">Sipariş bulunamadı.</div>
-              ) : (
-                <div className="grid gap-1">
-                  {filtered.map((item, i) => (
-                    <button key={i} className="flex items-center justify-between rounded-none p-3 text-left hover:bg-slate-50" onClick={() => { onChange(item.id); setOpen(false); }} type="button">
-                      <div>
-                        <div className="font-medium text-slate-900">{item.orderNo}</div>
-                        <div className="text-sm text-slate-500">{item.customerName} · {formatKg(item.quantityKg)}</div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {open && <OrderSelectorModal value={value} onChange={onChange} open={open} onOpenChange={setOpen} />}
     </>
   );
 }
@@ -1218,14 +1274,29 @@ export function RawProductionForm({ initialData }: { initialData?: RawProduction
   const { data, refresh } = useErpData();
   const [loading, setLoading] = useState(false);
   const [orderId, setOrderId] = useState(initialData?.orderId || '');
-  const [partyId, setPartyId] = useState(initialData?.partyId || '');
+  const [partyNo, setPartyNo] = useState(initialData?.partyId ? data.parties.find(p => p.id === initialData.partyId)?.partyNo || '' : '');
   const [consumedItems, setConsumedItems] = useState<{ stockId: string, warehouseId: string, quantityKg: number, lotNo?: string }[]>(initialData?.consumedItems || []);
   const [tempConsumed, setTempConsumed] = useState({ stockId: '', warehouseId: '', lotNo: '', partyId: '', quantityKg: '' });
   const [producedRawKg, setProducedRawKg] = useState(initialData?.producedRawKg?.toString() || '');
+  const [rawWidth, setRawWidth] = useState(initialData?.rawWidth?.toString() || '');
+  const [rawGsm, setRawGsm] = useState(initialData?.rawGsm?.toString() || '');
   
   const selectedOrder = data.orders.find(o => o.id === orderId);
-  const orderParties = data.parties.filter(p => p.orderId === orderId);
+
+  // Sync width/gsm with order defaults if not set
+  useEffect(() => {
+    if (selectedOrder && !rawWidth) setRawWidth(selectedOrder.rawWidth.toString());
+    if (selectedOrder && !rawGsm) setRawGsm(selectedOrder.rawGsm.toString());
+  }, [selectedOrder]);
   
+  // Auto-calculate consumption (+5%)
+  useEffect(() => {
+    if (tempConsumed.stockId && producedRawKg && !tempConsumed.quantityKg) {
+      const autoQty = Number(producedRawKg) * 1.05;
+      setTempConsumed(prev => ({ ...prev, quantityKg: autoQty.toFixed(2) }));
+    }
+  }, [tempConsumed.stockId, producedRawKg]);
+
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
@@ -1234,10 +1305,12 @@ export function RawProductionForm({ initialData }: { initialData?: RawProduction
       const payload = {
         date: form.get('date'),
         orderId: orderId,
-        partyId: partyId,
+        partyNo: partyNo,
         knitterPartnerId: form.get('knitterPartnerId'),
         warehouseId: form.get('warehouseId'),
         producedRawKg: Number(producedRawKg),
+        rawWidth: Number(rawWidth),
+        rawGsm: Number(rawGsm),
         consumedItems: consumedItems,
         description: form.get('description'),
       };
@@ -1265,10 +1338,14 @@ export function RawProductionForm({ initialData }: { initialData?: RawProduction
         
         <div className='grid gap-4'>
           <Field label='Tarih'><input className={inputClass} name='date' type='date' defaultValue={initialData?.date || new Date().toISOString().slice(0, 10)} required /></Field>
-          <Field label='Sipariş'><select className={inputClass} value={orderId} onChange={e => setOrderId(e.target.value)} required><option value=''>Seçiniz</option>{data.orders.map(o => <option key={o.id} value={o.id}>{o.orderNo} - {o.customerName}</option>)}</select></Field>
-          <Field label='Parti'><select className={inputClass} value={partyId} onChange={e => setPartyId(e.target.value)} required><option value=''>Seçiniz</option>{orderParties.map(p => <option key={p.id} value={p.id}>{p.partyNo}</option>)}</select></Field>
+          <Field label='Sipariş'><OrderSelect value={orderId} onChange={setOrderId} required /></Field>
+          <Field label='Parti No (Manuel)'><input className={inputClass} value={partyNo} onChange={e => setPartyNo(e.target.value)} placeholder="Parti No yazınız..." required /></Field>
           <Field label='Fasoncu (Örmeci)'><select className={inputClass} name='knitterPartnerId' defaultValue={initialData?.knitterPartnerId} required>{data.partners.filter(p => p.type === 'KNITTER').map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></Field>
           <Field label='Ham Giriş Deposu'><select className={inputClass} name='warehouseId' defaultValue={initialData?.warehouseId} required>{data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></Field>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label='Ham En'><input className={inputClass} type='number' value={rawWidth} onChange={e => setRawWidth(e.target.value)} required /></Field>
+            <Field label='Ham Gr.'><input className={inputClass} type='number' value={rawGsm} onChange={e => setRawGsm(e.target.value)} required /></Field>
+          </div>
           <Field label='Üretilen Ham (Kg)'><input className={inputClass} type='number' value={producedRawKg} onChange={e => setProducedRawKg(e.target.value)} required /></Field>
         </div>
       </div>
@@ -1384,7 +1461,6 @@ export function RawProductionForm({ initialData }: { initialData?: RawProduction
       </div>
     </form>
   );
-
 }
 
 export function DyehouseProductionForm({ initialData }: { initialData?: DyehouseProduction }) {

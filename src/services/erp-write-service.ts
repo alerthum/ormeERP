@@ -933,21 +933,42 @@ export async function createRawProduction(payload: Record<string, unknown>) {
     const orderId = requireString(payload.orderId, "Sipariş");
     const orderRows = await tx`select ym_stock_id, mm_stock_id from orders where id = ${orderId} limit 1`;
     if (!orderRows[0]) throw new Error("Sipariş bulunamadı.");
-    const partyId = optionalString(payload.partyId) ?? id("party");
+    let partyId = optionalString(payload.partyId) ?? id("party");
     let partyNo = optionalString(payload.partyNo);
+    
+    // Check if we need to create or link a party
     if (!optionalString(payload.partyId)) {
-      const rawWidth = numberValue(payload.rawWidth, "Ham en");
-      const rawGsm = numberValue(payload.rawGsm, "Ham gramaj");
-      partyNo = await nextPartyNo(tx);
-      await tx`
-        insert into parties (id, party_no, order_id, ym_stock_id, mm_stock_id, status, current_warehouse_id, raw_width, raw_gsm, timeline, created_at, updated_at)
-        values (
-          ${partyId}, ${partyNo}, ${orderId}, ${String(orderRows[0].ym_stock_id)}, ${String(orderRows[0].mm_stock_id)},
-          'Örmede', ${requireString(payload.warehouseId, "Ham depo")}, ${rawWidth}, ${rawGsm},
-          ${JSON.stringify([{ date, title: "Parti oluşturuldu", description: "Ham üretim kaydı ile otomatik açıldı.", tone: "blue" }])},
-          now(), now()
-        )
-      `;
+      // If partyNo is provided, check if it already exists for this order
+      if (partyNo) {
+        const existingParty = await tx`select id from parties where party_no = ${partyNo} and order_id = ${orderId} limit 1`;
+        if (existingParty[0]) {
+          // Use existing party ID if found
+          partyId = existingParty[0].id;
+        } else {
+          // Create new party with provided partyNo
+          await tx`
+            insert into parties (id, party_no, order_id, ym_stock_id, mm_stock_id, status, current_warehouse_id, timeline, created_at, updated_at)
+            values (
+              ${partyId}, ${partyNo}, ${orderId}, ${String(orderRows[0].ym_stock_id)}, ${String(orderRows[0].mm_stock_id)},
+              'Örmede', ${requireString(payload.warehouseId, "Ham depo")},
+              ${JSON.stringify([{ date, title: "Parti oluşturuldu", description: "Manuel parti numarası ile ham üretim başlatıldı.", tone: "blue" }])},
+              now(), now()
+            )
+          `;
+        }
+      } else {
+        // Fallback to automatic if neither ID nor No provided (though UI should provide No)
+        partyNo = await nextPartyNo(tx);
+        await tx`
+          insert into parties (id, party_no, order_id, ym_stock_id, mm_stock_id, status, current_warehouse_id, timeline, created_at, updated_at)
+          values (
+            ${partyId}, ${partyNo}, ${orderId}, ${String(orderRows[0].ym_stock_id)}, ${String(orderRows[0].mm_stock_id)},
+            'Örmede', ${requireString(payload.warehouseId, "Ham depo")},
+            ${JSON.stringify([{ date, title: "Parti oluşturuldu", description: "Ham üretim kaydı ile otomatik açıldı.", tone: "blue" }])},
+            now(), now()
+          )
+        `;
+      }
     }
     const consumedItems = (payload.consumedItems as Array<Record<string, unknown>> | undefined) ?? [];
     const consumedKg = consumedItems.reduce((sum, item) => sum + numberValue(item.quantityKg, "Tüketim kg"), 0);
