@@ -23,7 +23,11 @@ export async function POST(req: Request) {
          await sql.begin(tx => assertNoOrphanOperationalData(tx));
          return ok({ success: true, message: "Veri bütünlüğü tam. Herhangi bir tutarsızlık bulunamadı." });
        } catch (err: any) {
-         return ok({ success: false, error: err.message });
+         return ok({ 
+           success: false, 
+           error: err.message,
+           details: err.details || []
+         });
        }
     }
 

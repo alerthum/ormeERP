@@ -2114,33 +2114,39 @@ export async function assertTransactionIntegrity(tx: Tx, referenceType: string, 
  * Global check for orphan operational data.
  */
 export async function assertNoOrphanOperationalData(tx: Tx) {
-  const orphans: string[] = [];
+  const orphans: { label: string; count: number; items: { id: string; date?: string; info?: string }[] }[] = [];
 
   // Check headers without movements
   const modules = [
-    { type: 'production_raw', table: 'production_raw', label: 'Ham Üretim' },
-    { type: 'production_dyehouse', table: 'production_dyehouse', label: 'Boyahane Üretimi' },
-    { type: 'transfer', table: 'transfers', label: 'Stok Transferi' },
-    { type: 'sale', table: 'sales', label: 'Satış' },
-    { type: 'direct_purchase_receipt', table: 'purchase_receipts', label: 'Alış / Mal Kabul' }
+    { type: 'production_raw', table: 'production_raw', label: 'Ham Üretim', dateCol: 'date', descCol: 'description' },
+    { type: 'production_dyehouse', table: 'production_dyehouse', label: 'Boyahane Üretimi', dateCol: 'date', descCol: 'description' },
+    { type: 'transfer', table: 'transfers', label: 'Stok Transferi', dateCol: 'date', descCol: 'description' },
+    { type: 'sale', table: 'sales', label: 'Satış', dateCol: 'date', descCol: 'description' },
+    { type: 'direct_purchase_receipt', table: 'purchase_receipts', label: 'Alış / Mal Kabul', dateCol: 'receipt_date', descCol: 'description' }
   ];
 
   for (const mod of modules) {
     const rows = await tx`
-      select h.id 
+      select h.id, h.${tx(mod.dateCol)} as date, h.${tx(mod.descCol)} as info
       from ${tx(mod.table)} h
-      left join stock_movements m on (m.source_transaction_type = ${mod.type} and m.source_transaction_id = h.id)
-                                  or (m.reference_type = ${mod.type} and m.reference_id = h.id)
-      where m.id is null
+      where not exists (
+        select 1 from stock_movements m 
+        where (m.source_transaction_type = ${mod.type} and m.source_transaction_id = h.id)
+           or (m.reference_type = ${mod.type} and m.reference_id = h.id)
+      )
     `;
     if (rows.length > 0) {
-      orphans.push(`${mod.label} başlık kaydı var ama stok hareketi yok (${rows.length} adet)`);
+      orphans.push({ 
+        label: `${mod.label} başlık kaydı var ama stok hareketi yok`, 
+        count: rows.length, 
+        items: rows.map(r => ({ id: r.id, date: r.date, info: r.info })) 
+      });
     }
   }
 
   // Check movements without headers
   const orphanMovements = await tx`
-    select distinct source_transaction_type, source_transaction_id
+    select m.id, m.source_transaction_type as type, m.source_transaction_id as ref_id, m.date, m.description as info
     from stock_movements m
     where m.source_transaction_type in ('production_raw', 'production_dyehouse', 'transfer', 'sale', 'direct_purchase_receipt')
       and not exists (
@@ -2159,11 +2165,18 @@ export async function assertNoOrphanOperationalData(tx: Tx) {
   `;
   
   if (orphanMovements.length > 0) {
-    orphans.push(`Stok hareketi var ama başlık kaydı yok (${orphanMovements.length} farklı işlem)`);
+    orphans.push({ 
+      label: `Stok hareketi var ama başlık kaydı yok`, 
+      count: orphanMovements.length, 
+      items: orphanMovements.map(r => ({ id: r.id, date: r.date, info: `[${r.type}] ${r.info} (Ref: ${r.ref_id})` })) 
+    });
   }
 
   if (orphans.length > 0) {
-    throw new Error(`Kritik Veri Bütünlüğü Hatası:\n- ${orphans.join('\n- ')}`);
+    const message = orphans.map(o => `- ${o.label} (${o.count} adet)`).join('\n');
+    const error = new Error(`Kritik Veri Bütünlüğü Hatası:\n${message}`);
+    (error as any).details = orphans;
+    throw error;
   }
 }
 
@@ -2174,20 +2187,32 @@ export async function rebuildBalancesFromMovements() {
   return sql.begin(async (tx) => {
     // 1. Reset balances
     await tx`truncate table warehouse_balances`;
-    await tx`update stock_cards set current_stock_kg = 0`;
-
-    // 2. Re-apply all movements to balances
-    const movements = await tx`
-      select stock_id, warehouse_id, party_id, lot_no, direction, quantity 
-      from stock_movements 
-      order by created_at asc
+    
+    // 2. Re-apply all movements to balances using set-based SQL (FAST)
+    await tx`
+      insert into warehouse_balances (id, stock_id, warehouse_id, party_id, lot_no, quantity, updated_at)
+      select 
+        'bal-' || encode(gen_random_bytes(16), 'hex'),
+        stock_id,
+        warehouse_id,
+        party_id,
+        lot_no,
+        sum(case when direction = 'IN' then quantity else -quantity end),
+        now()
+      from stock_movements
+      group by stock_id, warehouse_id, party_id, lot_no
+      having sum(case when direction = 'IN' then quantity else -quantity end) != 0
     `;
 
-    for (const m of movements) {
-      const delta = m.direction === 'IN' ? Number(m.quantity) : -Number(m.quantity);
-      await addBalance(tx, m.stock_id, m.warehouse_id, m.party_id, m.lot_no, delta);
-      await tx`update stock_cards set current_stock_kg = current_stock_kg + ${delta}::numeric where id = ${m.stock_id}`;
-    }
+    await tx`
+      update stock_cards sc
+      set current_stock_kg = coalesce((
+        select sum(case when direction = 'IN' then quantity else -quantity end)
+        from stock_movements
+        where stock_id = sc.id
+      ), 0),
+      updated_at = now()
+    `;
 
     // 3. Rebuild Party Summaries
     await tx`
@@ -2298,26 +2323,16 @@ export async function cleanOrphanData() {
       `;
     }
 
-    // 2. Delete movements without headers
-    await tx`
-      delete from stock_movements m
-      where m.source_transaction_type in ('production_raw', 'production_dyehouse', 'transfer', 'sale', 'direct_purchase_receipt')
-        and not exists (
-          select 1 from (
-            select id, 'production_raw' as type from production_raw
-            union all
-            select id, 'production_dyehouse' from production_dyehouse
-            union all
-            select id, 'transfer' from transfers
-            union all
-            select id, 'sale' from sales
-            union all
-            select id, 'direct_purchase_receipt' from purchase_receipts
-          ) h where h.id = m.source_transaction_id and h.type = m.source_transaction_type
-        )
-    `;
+    // 2. Delete movements without headers (Split into individual queries for performance)
+    for (const mod of modules) {
+      await tx`
+        delete from stock_movements m
+        where m.source_transaction_type = ${mod.type}
+          and not exists (select 1 from ${tx(mod.table)} h where h.id = m.source_transaction_id)
+      `;
+    }
 
-    // 3. Clean up empty parties (no movements)
+    // 3. Clean up empty parties (no movements and no production records)
     await tx`
       delete from parties p
       where not exists (select 1 from stock_movements where party_id = p.id)

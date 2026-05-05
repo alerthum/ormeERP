@@ -2863,7 +2863,7 @@ export function ProjectSettingsPage() {
 
 export function DataControlPage() {
   const [loading, setLoading] = useState<string | null>(null);
-  const [checkResult, setCheckResult] = useState<{ success: boolean; message?: string; error?: string } | null>(null);
+  const [checkResult, setCheckResult] = useState<{ success: boolean; message?: string; error?: string; details?: any[] } | null>(null);
 
   async function runAction(action: "rebuild" | "clean" | "check") {
     setLoading(action);
@@ -2979,9 +2979,40 @@ export function DataControlPage() {
               <h3 className={cn("font-bold", checkResult.success ? "text-emerald-900" : "text-rose-900")}>
                 {checkResult.success ? "Sorun Bulunmadı" : "Tutarsızlık Tespit Edildi"}
               </h3>
-              <p className={cn("mt-2 text-sm leading-6 whitespace-pre-wrap", checkResult.success ? "text-emerald-700" : "text-rose-700")}>
-                {checkResult.message || checkResult.error}
-              </p>
+              {!checkResult.success && checkResult.details && checkResult.details.length > 0 && (
+                <div className="mt-4 space-y-4">
+                  {checkResult.details.map((d, idx) => (
+                    <div key={idx} className="space-y-2">
+                      <p className="text-xs font-bold text-rose-900 uppercase tracking-wider">{d.label} ({d.count} adet):</p>
+                      <div className="overflow-hidden border border-rose-200 bg-white shadow-sm">
+                        <table className="w-full text-left text-[10px] border-collapse">
+                          <thead className="bg-rose-100 text-rose-900 font-bold">
+                            <tr>
+                              <th className="p-2 border-b border-rose-200">Tarih</th>
+                              <th className="p-2 border-b border-rose-200">ID / Referans</th>
+                              <th className="p-2 border-b border-rose-200">Açıklama</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-rose-50">
+                            {d.items.slice(0, 10).map((item: any, i: number) => (
+                              <tr key={i} className="hover:bg-rose-50 transition-colors text-rose-800">
+                                <td className="p-2 whitespace-nowrap">{item.date ? new Date(item.date).toLocaleDateString('tr-TR') : '-'}</td>
+                                <td className="p-2 font-mono font-bold">{item.id}</td>
+                                <td className="p-2 italic">{item.info || '-'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        {d.items.length > 10 && (
+                          <div className="p-2 text-center bg-rose-50 text-[10px] text-rose-600 font-bold border-t border-rose-200">
+                            ...ve {d.items.length - 10} kayıt daha
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
               {!checkResult.success && (
                 <button
                   onClick={() => runAction("clean")}
