@@ -2219,33 +2219,25 @@ export function PrefixCountersPage() {
             ))}
           </div>
         </div>
-
-        <div className="premium-card rounded-none p-5">
-          <h2 className="font-semibold text-slate-950">Mevcut hammadde stok kartları</h2>
-          <div className="mt-4 divide-y divide-slate-100">
-            {rawMaterialStocks.length === 0 ? (
-              <div className="rounded-none bg-amber-50 p-4 text-sm leading-6 text-amber-800">
-                Henüz IP/LYC/POLY stok kartı yok. Hammadde alışı yapabilmek için önce stok kartı açılmalı.
-              </div>
-            ) : (
-              rawMaterialStocks.map((stock) => (
-                <div key={stock.id} className="flex items-center justify-between gap-3 py-3">
-                  <div>
-                    <p className="font-semibold text-slate-950">{stock.code}</p>
-                    <p className="text-sm text-slate-500">{stock.name}</p>
-                  </div>
-                  <StatusBadge tone="blue">{stock.type}</StatusBadge>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
       </div>
     </div>
   );
 }
 
 const developmentTimeline = [
+  {
+    date: "2026-05-05",
+    title: "Hareket Bazlı ERP Mimarisi ve Tam İzlenebilirlik",
+    summary: "Stok takibi sabit işlem sırası mantığından çıkarılarak hareket bazlı ilişki (parent/source movement) modeline taşındı.",
+    items: [
+      "Lot ve Parti takibi için stock_movements tablosuna ilişkisel alanlar (parent_movement_id, source_movement_id) eklendi.",
+      "Bağımlılık kontrolü tarih/parti eşleşmesinden, gerçek tüketim (movement linking) kontrolüne geçirildi.",
+      "Silme işlemlerinde hatalı 'yetersiz stok' uyarısı veren akış, 'Ters Hareket' mantığıyla düzeltildi.",
+      "Satın alma -> Transfer -> Ham Üretim -> Boyahane -> Satış akışı boyunca Lot/Parti bazında geriye dönük tam izlenebilirlik sağlandı.",
+      "Kullanıcı mesajları teknik SQL hatalarından arındırılarak anlaşılır Türkçe ve dd.MM.yyyy formatına çekildi.",
+      "Operasyonel veriler temizlenerek sistem bu yeni sağlam mimari üzerinden sıfırlandı.",
+    ],
+  },
   {
     date: "2026-05-04",
     title: "Modernizasyon ve Veri Bütünlüğü",
@@ -2282,75 +2274,20 @@ const developmentTimeline = [
       "Satın alma tarafında hızlı IP/LYC/POLY alışı, siparişe bağlı mal kabul ve ayrı Alış İşlemleri menüsü oluşturuldu.",
     ],
   },
-  {
-    date: "2026-05-04",
-    title: "Kullanıcı Deneyimi, Filtreleme ve Esneklik Geliştirmeleri",
-    summary: "Sistem geneline gelişmiş filtre mekanizmaları dahil edildi, stok durum yönetimleri iyileştirildi ve alış formlarına esneklik kazandırıldı.",
-    items: [
-      "Alış İşlemleri, Satıcı Siparişleri, Stok Kartları, Üretim ve Transfer sayfalarına detaylı filtreleme (durum, depo, tip bazlı) kartları eklendi.",
-      "Stok kartları için 'Tamamen Sil' ve 'Pasife Çek' işlemleri ayrıldı; hareket gören kartların silinmesi UI ve servis katmanında engellendi.",
-      "Mal kabul düzenleme ekranında, Hızlı Alış (Siparişsiz) kayıtları için tedarikçi, stok kartı ve birim fiyat düzenleme yeteneği açıldı.",
-      "Ayarlar altındaki Depo Yönetimi sekmesine Depo Bakiye izleme sütunu ve Detaylı Stok Görüntüleme modalı entegre edildi.",
-    ],
-  },
-  {
-    date: "2026-05-04",
-    title: "Stok ve Üretim Mantığı Revizyonu",
-    summary: "En/Gramaj değerleri stok kartlarından arındırılarak sipariş ve üretim bazlı hale getirildi. İkili stok (YM/MM) açma süreci otomatize edildi.",
-    items: [
-      "Stok kartlarından En/Gramaj alanları kaldırılarak master data sadeleştirildi.",
-      "Kumaş stoğu açılırken sistemin otomatik olarak Ham (YM) ve Mamül (MM) kartlarını oluşturması sağlandı.",
-      "Üretim (Ham ve Boyahane) süreçlerine En/Gramaj takibi eklendi, bu değerlerin Parti (Lot) bazında saklanması sağlandı.",
-      "Sistem genelindeki Türkçe karakter bozulmaları için kalıcı düzeltme scripti uygulandı ve AGENTS.md kuralları güncellendi.",
-    ],
-  },
-  {
-    date: "2026-05-04",
-    title: "İzlenebilir MVP omurgası derinleştirildi",
-    summary: "Sipariş, parti, lot, depo ve stok hareketi ilişkileri kullanıcı ekranlarında daha görünür hale getirildi; hızlı arama ve otomatik doldurma deneyimi güçlendirildi.",
-    items: [
-      "Transfer, ham üretim, boyahane ve satış formlarında sipariş/parti/lot hızlı arama ile otomatik stok, depo ve parti doldurma akışı genişletildi.",
-      "Partide YM ve MM birlikte bulunduğunda kullanıcıya ham kumaş veya mamül kumaş seçeneği sunan seçim davranışı eklendi.",
-      "Transfer, üretim ve sevkiyat formlarında seçilen depo + lot + parti kırılımı için anlık kullanılabilir bakiye ve negatif stok uyarısı gösterildi.",
-      "Stok detay ekranı Genel, Toplam Bakiye, Depo Bakiyesi, Lot / Parti Bakiyesi, Hareketler, Sipariş Bağlantıları ve Üretim Kullanımı sekmelerine ayrıldı.",
-      "Hammadde isimlendirme kuralı kumaş stoklarına da taşındı; YM/MM adları Ne + kumaş cinsi + renk + YM/MM + HAM/MAMÜL + LYC/POLY formatında otomatik oluşur.",
-      "Müşteri siparişi ve satış/sevkiyat formlarında müşteri alanı elle yazım yerine Cari/Fasoncu tanımlarındaki müşteri carilerinden seçilecek hale getirildi.",
-      "Parti Kaydırma ayrı menü olmaktan çıkarıldı; Partiler ekranındaki butondan açılan modal akışına taşındı.",
-      "Mobil müşteri siparişlerinde filtre kartı modal/drawer akışına taşındı; sayfada aktif filtreler chip olarak gösterildi.",
-      "Mobil dashboard KPI kartları kompakt iki kolon düzene alındı; sayfayı aşağı iten tek kolon kart yoğunluğu azaltıldı.",
-      "Kaynak dosyalardaki kalan mojibake Türkçe karakterler temizlendi; PowerShell kaynaklı encoding riskine karşı Unicode escape tabanlı kontrollü düzeltme uygulandı.",
-      "Satıcı siparişi ve mal kabul seçimlerinde sipariş numarası yanında satıcı, stok adı, renk ve kalan kg bilgisi gösterildi.",
-      "Satıcı siparişi düzeltme formuna stok seçimi eklendi; stok adı zaten renk/Ne bilgisini taşıdığı için liste ve mal kabul seçimleri stok adına sadeleştirildi.",
-      "Satıcı sipariş kalemlerindeki JSONB/string tutarsızlığı giderildi; düzenleme ve mal kabul aynı stok kalemini güvenilir şekilde okuyacak hale getirildi.",
-      "Canlı API ve veritabanı encoding kaynağı ayrıştırıldı; DB'deki bozuk text/json kayıtları temizlendi ve tekrar çalıştırılabilir fix:encoding komutu eklendi.",
-    ],
-  },
-  {
-    date: "2026-05-04",
-    title: "Üst Düzey Raporlama ve Operasyonel Derinlik",
-    summary: "Patron özeti dashboard, gelişmiş sipariş takibi ve boyahane süreç otomasyonu ile sistemin karar destek ve operasyonel takip gücü artırıldı.",
-    items: [
-      "Sipariş No, Müşteri, Stok Adı (YM/MM), Sipariş/Üretilen/Sevk/Kalan kg bilgileriyle donatılmış gelişmiş sipariş tablosu devreye alındı.",
-      "Kısmi Sevk Edildi durumu, % bazlı tamamlanma barları ve mobil uyumlu kart görünümleri ile sipariş yönetimi modernleştirildi.",
-      "Müşteri siparişlerine Boyahane İşlem Türleri çoklu seçimi eklendi; bu veriler boyahane üretiminde otomatik olarak forma yansıtılır hale getirildi.",
-      "Dashboard2 (Patron Özeti) sayfası oluşturuldu: Müşteri performansı ve tedarikçi gerçekleşme oranları tek ekranda analitik olarak sunuldu.",
-      "Ana dashboard KPI'ları Ham Üretim ve Mamül Üretim olarak ikiye ayrıldı; satın alma listesi daha anlamlı stok ve tedarikçi bilgileriyle zenginleştirildi.",
-    ],
-  },
 ];
 
 const completedMilestones = [
+  "Hareket bazlı (parent/source movement) stok ilişkilendirme altyapısı",
+  "Lot bazlı hammadde ve Parti bazlı kumaş tam izlenebilirliği",
+  "Geriye dönük bağımlılık doğrulama ve engelleme sistemi",
+  "Transaction-safe operasyonel veri temizliği ve sıfırlama",
+  "Anlaşılır Türkçe hata mesajları ve dd.MM.yyyy tarih formatı",
   "Çalışan Next.js + TypeScript + Tailwind proje iskeleti",
   "Supabase PostgreSQL, Supabase Auth ve Realtime altyapısı",
-  "Drizzle migration ve ilişkisel ERP tablo modeli",
   "Dashboard KPI, grafik, satın alma ve fire özetleri",
   "Müşteri siparişi, otomatik YM/MM stok açma ve sipariş detayları",
-  "Stok kartları, depo tanımları, stok hareketleri ve warehouse balance mantığı",
   "Ham üretim, boyahane üretimi, transfer ve sevkiyat kayıtları",
   "Satıcı siparişleri, kısmi mal kabul ve siparişsiz hızlı hammadde alışı",
-  "Ayar tanımları, rol/kullanıcı profili ve kontrollü silme/düzenleme",
-  "Gelişmiş raporlar, CSV dışa aktarım, mobil menü ve responsive PWA hissi",
-  "Sipariş/parti/lot hızlı arama, stok detay sekmeleri ve anlık bakiye uyarıları",
 ];
 
 const pendingRoadmap = [
@@ -2360,54 +2297,19 @@ const pendingRoadmap = [
     description: "Ham üretimde birden fazla IP/LYC/POLY kalemini oran bazlı tüketme, kalan ipleri üretimlere dağıtma ve fasoncu depo kapanış mutabakatını detaylandırma.",
   },
   {
-    priority: "P0",
-    title: "Stok seçim listelerini yalnızca bakiyesi olan kırılımlara daraltma",
-    description: "Anlık bakiye uyarısı eklendi; sıradaki adım stok, depo, parti ve lot seçimlerini yalnızca pozitif bakiyesi olan kombinasyonlarla filtrelemek.",
-  },
-  {
-    priority: "P1",
-    title: "Alış, üretim, transfer ve satış kayıtlarında düzenleme/iptal ekranlarının derinleştirilmesi",
-    description: "Bugün iptal ters hareketle güvenli çalışıyor; düzenleme tarafında audit, revizyon geçmişi ve kullanıcı açıklaması eklenmeli.",
-  },
-  {
     priority: "P1",
     title: "Gelişmiş rapor ve pivot ekranları",
     description: "Stok, parti, fasoncu, boyahane, satış ve satın alma listelerine grup bazlı toplamlar, dönem filtreleri ve kaydedilebilir rapor görünümleri eklenmeli.",
-  },
-  {
-    priority: "P1",
-    title: "Supabase Auth girişinin üretim seviyesine taşınması",
-    description: "Kullanıcı daveti, rol atama, RLS politikaları ve ekran bazlı yetki görünürlüğü tamamlanmalı.",
-  },
-  {
-    priority: "P2",
-    title: "Dosya, fotoğraf ve doküman yükleme",
-    description: "Supabase Storage ile sipariş, parti, stok kartı ve sevkiyat belgeleri bağlanmalı.",
-  },
-  {
-    priority: "P2",
-    title: "Bildirimler ve işlem merkezi",
-    description: "Kritik stok, geciken sipariş, termin yaklaşan satın alma ve yüksek fire bildirimleri hesaplanıyor; okundu/aksiyon akışı ve detay yönlendirmeleri derinleşmeli.",
-  },
-  {
-    priority: "P2",
-    title: "Canlıya alma sonrası smoke test ve veri denetimi",
-    description: "Push/deploy sonrası dashboard, stok, sipariş, üretim, transfer, satış ve ayarlar ekranları canlı ortamda hızlı senaryo ile doğrulanmalı.",
   },
   {
     priority: "P2",
     title: "Tamir Üretimi (Uzun Vadeli)",
     description: "Hatalı çıkan veya boyadan dönen ürünlerin tamir süreçlerinin, fire ve maliyet etkileriyle beraber sistemde takip edilmesi.",
   },
-  {
-    priority: "P2",
-    title: "Mobil form deneyimini stepper yapıya taşıma",
-    description: "Sipariş, transfer, ham üretim, boyahane ve alış formları mobilde adım adım girişe dönüştürülmeli.",
-  },
 ];
 
 export function RoadmapPage() {
-  const completion = 78;
+  const completion = 85;
   return (
     <div className="space-y-6">
       <PageHeader

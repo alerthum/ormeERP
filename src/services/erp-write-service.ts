@@ -12,72 +12,68 @@ const asJson = (value: unknown) => value as Parameters<typeof sql.json>[0];
  * Checks for subsequent transactions that depend on the given reference.
  * Returns a list of dependent records that must be handled first.
  */
+/**
+ * Checks for subsequent transactions that depend on the given transaction.
+ * Returns a list of dependent records that must be handled first.
+ * Now uses movement-based relationship tracking (parent/source links).
+ */
 async function checkSubsequentTransactions(tx: Tx, referenceType: string, referenceId: string) {
-  let baseDate: string | null = null;
-  let partyId: string | null = null;
-  let stockId: string | null = null;
-  let lotNo: string | null = null;
+  // 1. Find all movements created by this transaction
+  const movements = await tx`
+    select id from stock_movements 
+    where source_transaction_type = ${referenceType} 
+      and source_transaction_id = ${referenceId}
+  `;
 
-  if (referenceType === "production_raw") {
-    const rows = await tx`select date, party_id, ym_stock_id from production_raw where id = ${referenceId}`;
-    if (rows[0]) {
-      baseDate = rows[0].date;
-      partyId = rows[0].party_id;
-      stockId = rows[0].ym_stock_id;
-    }
-  } else if (referenceType === "production_dyehouse") {
-    const rows = await tx`select date, party_id, mm_stock_id from production_dyehouse where id = ${referenceId}`;
-    if (rows[0]) {
-      baseDate = rows[0].date;
-      partyId = rows[0].party_id;
-      stockId = rows[0].mm_stock_id;
-    }
-  } else if (referenceType === "transfer") {
-    const rows = await tx`select date from transfers where id = ${referenceId}`;
-    if (rows[0]) baseDate = rows[0].date;
-  } else if (referenceType === "sale") {
-    const rows = await tx`select date from sales where id = ${referenceId}`;
-    if (rows[0]) baseDate = rows[0].date;
-  } else if (referenceType === "direct_purchase_receipt") {
-    const rows = await tx`select receipt_date from purchase_receipts where id = ${referenceId}`;
-    if (rows[0]) {
-      baseDate = rows[0].receipt_date;
-      const movs = await tx`select stock_id, lot_no from stock_movements where reference_type = ${referenceType} and reference_id = ${referenceId} limit 1`;
-      if (movs[0]) {
-        stockId = movs[0].stock_id;
-        lotNo = movs[0].lot_no;
-      }
-    }
+  if (movements.length === 0) {
+    // If no movements found with new schema, try the legacy reference fields
+    const legacyMovements = await tx`
+      select id from stock_movements 
+      where reference_type = ${referenceType} 
+        and reference_id = ${referenceId}
+    `;
+    movements.push(...legacyMovements);
   }
 
-  const dependents = [];
+  if (movements.length === 0) return;
+
+  const movementIds = movements.map(m => m.id);
+
+  // 2. Check if any other movement points to these movements as parent or source
   const subsequentRows = await tx`
-    select m.date, m.movement_type, m.reference_type, m.reference_id, m.description,
+    select distinct 
+           m.date, 
+           m.source_transaction_type, 
+           m.source_transaction_id, 
+           m.description,
            case 
-             when m.reference_type = 'production_dyehouse' then 'Boyahane Üretimi'
-             when m.reference_type = 'production_raw' then 'Ham Üretim'
-             when m.reference_type = 'transfer' then 'Stok Transferi'
-             when m.reference_type = 'sale' then 'Satış'
-             else m.movement_type
+             when m.source_transaction_type = 'production_dyehouse' then 'Boyahane Üretimi'
+             when m.source_transaction_type = 'production_raw' then 'Ham Üretim'
+             when m.source_transaction_type = 'transfer' then 'Stok Transferi'
+             when m.source_transaction_type = 'sale' then 'Satış'
+             when m.source_transaction_type = 'direct_purchase_receipt' then 'Alış / Mal Kabul'
+             else m.source_transaction_type
            end as type_label
     from stock_movements m
-    where m.reference_id != ${referenceId}
-      and (
-        (m.party_id is not null and m.party_id = ${partyId})
-        or 
-        (m.stock_id = ${stockId} and m.lot_no is not null and m.lot_no = ${lotNo})
-      )
-      and (m.date > ${baseDate} or (m.date = ${baseDate} and m.created_at > (select created_at from stock_movements where reference_id = ${referenceId} order by created_at desc limit 1)))
-    order by m.date desc, m.created_at desc
+    where (m.parent_movement_id = any(${movementIds}) or m.source_movement_id = any(${movementIds}))
+      and m.source_transaction_id != ${referenceId}
+    order by m.date desc
   `;
-  
-  for (const row of subsequentRows) {
-    dependents.push(`${row.date} tarihli ${row.type_label} (${row.description || 'Açıklama yok'})`);
-  }
+
+  const dependents = subsequentRows.map(row => 
+    `${formatDate(row.date)} tarihli ${row.type_label} (${row.description || 'Açıklama yok'})`
+  );
 
   if (dependents.length > 0) {
-    throw new Error(`Bu kayıt üzerinde işlem yapamazsınız. Önce şu bağımlı kayıtları silmelisiniz:\n- ${dependents.join('\n- ')}`);
+    throw new Error(`İşlem yapılamıyor.\n\nBu kayıt silinemez veya güncellenemez. Çünkü bu işlemden sonra aşağıdaki işlemler yapılmış:\n- ${dependents.join('\n- ')}\n\nLütfen önce sonraki işlemleri silin veya düzeltin.`);
   }
+}
+
+function formatDate(date: string | Date | null) {
+  if (!date) return "";
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return String(date);
+  return d.toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
 async function getUsageReport(tx: Tx, stockId: string, warehouseId: string, partyId: string | null, lotNo: string | null) {
@@ -259,7 +255,9 @@ async function findOrCreateFabricStock(
 }
 
 async function addBalance(tx: Tx, stockId: string, warehouseId: string, partyId: string | null, lotNo: string | null, delta: number) {
+  // Use "none" for nulls to create a unique balance ID
   const balanceId = `bal-${stockId}-${warehouseId}-${partyId ?? "none"}-${lotNo ?? "none"}`;
+  
   await tx`
     insert into warehouse_balances (id, stock_id, warehouse_id, party_id, lot_no, quantity, updated_at)
     values (${balanceId}, ${stockId}, ${warehouseId}, ${partyId}::text, ${lotNo}::text, ${delta}::numeric, now())
@@ -277,7 +275,7 @@ async function removeMovementEffects(
   const rows = await tx`
     select id, stock_id, warehouse_id, party_id, lot_no, direction, quantity
     from stock_movements
-    where ${references.map((ref) => tx`(reference_type = ${ref.referenceType} and reference_id = ${ref.referenceId})`).reduce((prev, curr) => tx`${prev} or ${curr}`)}
+    where ${references.map((ref) => tx`((source_transaction_type = ${ref.referenceType} and source_transaction_id = ${ref.referenceId}) or (reference_type = ${ref.referenceType} and reference_id = ${ref.referenceId}))`).reduce((prev, curr) => tx`${prev} or ${curr}`)}
     order by case when direction = 'OUT' then 0 else 1 end, created_at desc
   `;
 
@@ -287,11 +285,16 @@ async function removeMovementEffects(
     const partyId = movement.party_id ? String(movement.party_id) : null;
     const lotNo = movement.lot_no ? String(movement.lot_no) : null;
     const quantity = Number(movement.quantity);
+    
+    // Reverse logic: IN becomes OUT, OUT becomes IN
+    // When reversing, we DON'T check for available balance in a way that blocks deletion 
+    // because this is a reverse operation, not a new consumption.
     if (String(movement.direction) === "IN") {
-      await assertAvailableBalance(tx, stockId, warehouseId, partyId, lotNo, quantity, true);
+      // Reversing an IN movement means removing stock.
       await addBalance(tx, stockId, warehouseId, partyId, lotNo, -quantity);
       await tx`update stock_cards set current_stock_kg = current_stock_kg - ${quantity}::numeric, updated_at = now() where id = ${stockId}`;
     } else {
+      // Reversing an OUT movement means bringing stock back.
       await addBalance(tx, stockId, warehouseId, partyId, lotNo, quantity);
       await tx`update stock_cards set current_stock_kg = current_stock_kg + ${quantity}::numeric, updated_at = now() where id = ${stockId}`;
     }
@@ -299,19 +302,16 @@ async function removeMovementEffects(
 
   await tx`
     delete from stock_movements
-    where ${references.map((ref) => tx`(reference_type = ${ref.referenceType} and reference_id = ${ref.referenceId})`).reduce((prev, curr) => tx`${prev} or ${curr}`)}
+    where ${references.map((ref) => tx`((source_transaction_type = ${ref.referenceType} and source_transaction_id = ${ref.referenceId}) or (reference_type = ${ref.referenceType} and reference_id = ${ref.referenceId}))`).reduce((prev, curr) => tx`${prev} or ${curr}`)}
   `;
 }
 
-async function assertAvailableBalance(tx: Tx, stockId: string, warehouseId: string, partyId: string | null, lotNo: string | null, quantity: number, isReverse = false) {
+async function assertAvailableBalance(tx: Tx, stockId: string, warehouseId: string, partyId: string | null, lotNo: string | null, quantity: number) {
   const balanceId = `bal-${stockId}-${warehouseId}-${partyId ?? "none"}-${lotNo ?? "none"}`;
   const rows = await tx`select quantity from warehouse_balances where id = ${balanceId} limit 1`;
   const available = Number(rows[0]?.quantity ?? 0);
+  
   if (available < quantity) {
-    if (isReverse) {
-      const report = await getUsageReport(tx, stockId, warehouseId, partyId, lotNo);
-      if (report) throw new Error(report);
-    }
     throw new Error(`Yetersiz stok. Mevcut bakiye ${available.toFixed(3)} kg, istenen ${quantity.toFixed(3)} kg.`);
   }
 }
@@ -336,39 +336,54 @@ async function addMovement(
     stockId: string;
     warehouseId: string;
     partyId?: string | null;
+    partyNo?: string | null;
     lotNo?: string | null;
     orderId?: string | null;
+    supplierOrderId?: string | null;
     movementType: string;
     direction: "IN" | "OUT";
     quantity: number;
     description: string;
-    referenceType: string;
-    referenceId: string;
+    sourceTransactionId: string;
+    sourceTransactionType: string;
+    parentMovementId?: string | null;
+    sourceMovementId?: string | null;
     skipBalanceCheck?: boolean;
   },
 ) {
   const movementId = id("mov");
   const signedQuantity = input.direction === "IN" ? input.quantity : -input.quantity;
+
   if (input.direction === "OUT" && !input.skipBalanceCheck) {
     await assertAvailableBalance(tx, input.stockId, input.warehouseId, input.partyId ?? null, input.lotNo ?? null, input.quantity);
   }
+
   await tx`
     insert into stock_movements (
-      id, date, stock_id, warehouse_id, party_id, lot_no, order_id, movement_type, direction,
-      quantity, unit, description, reference_type, reference_id, created_at, created_by
+      id, date, stock_id, warehouse_id, party_id, party_no, lot_no, order_id, supplier_order_id,
+      movement_type, direction, quantity, unit, description, 
+      source_transaction_id, source_transaction_type, parent_movement_id, source_movement_id,
+      reference_id, reference_type, created_at, created_by
     )
     values (
-      ${movementId}, ${input.date}, ${input.stockId}, ${input.warehouseId}, ${input.partyId ?? null}::text, ${input.lotNo ?? null}::text, ${input.orderId ?? null}::text,
+      ${movementId}, ${input.date}, ${input.stockId}, ${input.warehouseId}, 
+      ${input.partyId ?? null}::text, ${input.partyNo ?? null}::text, ${input.lotNo ?? null}::text, 
+      ${input.orderId ?? null}::text, ${input.supplierOrderId ?? null}::text,
       ${input.movementType}, ${input.direction}, ${input.quantity}::numeric, 'kg', ${input.description},
-      ${input.referenceType}, ${input.referenceId}, now(), 'system'
+      ${input.sourceTransactionId}, ${input.sourceTransactionType}, ${input.parentMovementId ?? null}::text, ${input.sourceMovementId ?? null}::text,
+      ${input.sourceTransactionId}, ${input.sourceTransactionType}, now(), 'system'
     )
   `;
+
   await addBalance(tx, input.stockId, input.warehouseId, input.partyId ?? null, input.lotNo ?? null, signedQuantity);
+  
   await tx`
     update stock_cards
     set current_stock_kg = current_stock_kg + ${signedQuantity}, updated_at = now()
     where id = ${input.stockId}
   `;
+
+  return movementId;
 }
 
 export async function createSetting(entity: SettingEntity, payload: Record<string, unknown>) {
@@ -810,12 +825,13 @@ export async function createPurchaseReceipt(payload: Record<string, unknown>) {
       stockId,
       warehouseId,
       lotNo: optionalString(payload.lotNo),
-      movementType: "Giriş",
+      movementType: "Satın Alma",
       direction: "IN",
       quantity: receivedKg,
       description: "Satıcı siparişi mal kabul",
-      referenceType: "purchase_receipt",
-      referenceId: receiptId,
+      sourceTransactionId: receiptId,
+      sourceTransactionType: "direct_purchase_receipt",
+      supplierOrderId: purchaseOrderId,
     });
     return { id: receiptId, receiptNo, status };
   });
@@ -884,12 +900,13 @@ export async function createDirectRawMaterialPurchase(payload: Record<string, un
       stockId,
       warehouseId,
       lotNo: optionalString(payload.lotNo),
-      movementType: "Giriş",
+      movementType: "Satın Alma",
       direction: "IN",
       quantity: quantityKg,
       description: "Siparişsiz hammadde alışı",
-      referenceType: "direct_purchase_receipt",
-      referenceId: receiptId,
+      sourceTransactionId: receiptId,
+      sourceTransactionType: "direct_purchase_receipt",
+      supplierOrderId: purchaseOrderId,
     });
     return { id: receiptId, receiptNo, purchaseOrderId, purchaseOrderNo };
   });
@@ -914,8 +931,37 @@ export async function createTransfer(payload: Record<string, unknown>) {
       const partyId = partyRows[0]?.id ? trackingId : null;
       const lotNo = partyId ? optionalString(item.lotNo) : trackingId ?? optionalString(item.lotNo);
       const quantity = numberValue(item.quantity, "Miktar");
-      await addMovement(tx, { date, stockId, warehouseId: fromWarehouseId, partyId, lotNo, movementType: "Transfer", direction: "OUT", quantity, description: "Depolar arası transfer çıkışı", referenceType: "transfer", referenceId: transferId });
-      await addMovement(tx, { date, stockId, warehouseId: toWarehouseId, partyId, lotNo, movementType: "Transfer", direction: "IN", quantity, description: "Depolar arası transfer girişi", referenceType: "transfer", referenceId: transferId });
+
+      // 1. OUT movement from source warehouse
+      const outMovId = await addMovement(tx, {
+        date,
+        stockId,
+        warehouseId: fromWarehouseId,
+        partyId,
+        lotNo,
+        movementType: "Transfer",
+        direction: "OUT",
+        quantity,
+        description: "Depolar arası transfer çıkışı",
+        sourceTransactionId: transferId,
+        sourceTransactionType: "transfer"
+      });
+
+      // 2. IN movement to target warehouse, referencing the OUT movement
+      await addMovement(tx, {
+        date,
+        stockId,
+        warehouseId: toWarehouseId,
+        partyId,
+        lotNo,
+        movementType: "Transfer",
+        direction: "IN",
+        quantity,
+        description: "Depolar arası transfer girişi",
+        sourceTransactionId: transferId,
+        sourceTransactionType: "transfer",
+        sourceMovementId: outMovId // Linking IN to OUT
+      });
     }
     return { id: transferId };
   });
@@ -964,8 +1010,34 @@ export async function updateTransfer(recordId: string, payload: Record<string, u
       const lotNo = optionalString(item.lotNo);
       const quantity = numberValue(item.quantity, "Miktar");
       
-      await addMovement(tx, { date, stockId, warehouseId: fromWarehouseId, partyId, lotNo, movementType: "Transfer", direction: "OUT", quantity, description: "Güncellenmiş transfer çıkışı", referenceType: "transfer", referenceId: transferId });
-      await addMovement(tx, { date, stockId, warehouseId: toWarehouseId, partyId, lotNo, movementType: "Transfer", direction: "IN", quantity, description: "Güncellenmiş transfer girişi", referenceType: "transfer", referenceId: transferId });
+      const outMovId = await addMovement(tx, {
+        date,
+        stockId,
+        warehouseId: fromWarehouseId,
+        partyId,
+        lotNo,
+        movementType: "Transfer",
+        direction: "OUT",
+        quantity,
+        description: "Güncellenmiş transfer çıkışı",
+        sourceTransactionId: transferId,
+        sourceTransactionType: "transfer"
+      });
+
+      await addMovement(tx, {
+        date,
+        stockId,
+        warehouseId: toWarehouseId,
+        partyId,
+        lotNo,
+        movementType: "Transfer",
+        direction: "IN",
+        quantity,
+        description: "Güncellenmiş transfer girişi",
+        sourceTransactionId: transferId,
+        sourceTransactionType: "transfer",
+        sourceMovementId: outMovId
+      });
     }
     
     return { id: transferId };
@@ -1033,33 +1105,50 @@ export async function createRawProduction(payload: Record<string, unknown>) {
         ${rawWidth}, ${rawGsm}, ${JSON.stringify(consumedItems)}::jsonb, ${waste.wasteKg}, ${waste.wastePercent}, ${optionalString(payload.description) ?? ""}, now()
       )
     `;
+    const consumedMovIds: string[] = [];
     for (const item of consumedItems) {
-      await addMovement(tx, {
+      const sId = requireString(item.stockId, "Tüketilen stok");
+      const wId = requireString(item.warehouseId, "Tüketim deposu");
+      const lNo = optionalString(item.lotNo);
+      
+      // Find source movement for this consumption (latest IN movement for this lot/warehouse)
+      const sourceMovRows = await tx`
+        select id from stock_movements 
+        where stock_id = ${sId} and warehouse_id = ${wId} and lot_no = ${lNo}::text and direction = 'IN'
+        order by created_at desc limit 1
+      `;
+      const sourceMovementId = sourceMovRows[0]?.id;
+
+      const movId = await addMovement(tx, {
         date,
-        stockId: requireString(item.stockId, "Tüketilen stok"),
-        warehouseId: requireString(item.warehouseId, "Tüketim deposu"),
-        lotNo: optionalString(item.lotNo),
+        stockId: sId,
+        warehouseId: wId,
+        lotNo: lNo,
         orderId,
         movementType: "Üretim tüketim",
         direction: "OUT",
         quantity: numberValue(item.quantityKg, "Tüketim kg"),
         description: "Ham üretimde iplik tüketimi",
-        referenceType: "production_raw",
-        referenceId: productionId,
+        sourceTransactionId: productionId,
+        sourceTransactionType: "production_raw",
+        sourceMovementId: sourceMovementId,
       });
+      consumedMovIds.push(movId);
     }
     await addMovement(tx, {
       date,
       stockId: String(orderRows[0].ym_stock_id),
       warehouseId: requireString(payload.warehouseId, "Ham depo"),
       partyId,
+      partyNo,
       orderId,
       movementType: "Üretim giriş",
       direction: "IN",
       quantity: producedRawKg,
       description: "Ham kumaş üretim girişi",
-      referenceType: "production_raw",
-      referenceId: productionId,
+      sourceTransactionId: productionId,
+      sourceTransactionType: "production_raw",
+      parentMovementId: consumedMovIds[0]
     });
     await tx`
       update parties
@@ -1190,20 +1279,34 @@ export async function updateRawProduction(recordId: string, payload: Record<stri
       )
     `;
 
+    const consumedMovIds: string[] = [];
     for (const item of consumedItems) {
-      await addMovement(tx, {
+      const sId = requireString(item.stockId, "Tüketilen stok");
+      const wId = requireString(item.warehouseId, "Tüketim deposu");
+      const lNo = optionalString(item.lotNo);
+      
+      const sourceMovRows = await tx`
+        select id from stock_movements 
+        where stock_id = ${sId} and warehouse_id = ${wId} and lot_no = ${lNo}::text and direction = 'IN'
+        order by created_at desc limit 1
+      `;
+      const sourceMovementId = sourceMovRows[0]?.id;
+
+      const movId = await addMovement(tx, {
         date,
-        stockId: requireString(item.stockId, "Tüketilen stok"),
-        warehouseId: requireString(item.warehouseId, "Tüketim deposu"),
-        lotNo: optionalString(item.lotNo),
+        stockId: sId,
+        warehouseId: wId,
+        lotNo: lNo,
         orderId,
         movementType: "Üretim tüketim",
         direction: "OUT",
         quantity: numberValue(item.quantityKg, "Tüketim kg"),
         description: "Ham üretim güncelleme tüketimi",
-        referenceType: "production_raw",
-        referenceId: productionId,
+        sourceTransactionId: productionId,
+        sourceTransactionType: "production_raw",
+        sourceMovementId: sourceMovementId,
       });
+      consumedMovIds.push(movId);
     }
 
     await addMovement(tx, {
@@ -1211,13 +1314,15 @@ export async function updateRawProduction(recordId: string, payload: Record<stri
       stockId: String(orderRows[0].ym_stock_id),
       warehouseId: requireString(payload.warehouseId, "Ham depo"),
       partyId,
+      partyNo: await tx`select party_no from parties where id = ${partyId}`.then(r => r[0]?.party_no),
       orderId,
       movementType: "Üretim giriş",
       direction: "IN",
       quantity: producedRawKg,
       description: "Ham kumaş üretim güncelleme girişi",
-      referenceType: "production_raw",
-      referenceId: productionId,
+      sourceTransactionId: productionId,
+      sourceTransactionType: "production_raw",
+      parentMovementId: consumedMovIds[0],
     });
 
     await tx`
@@ -1258,8 +1363,53 @@ export async function createDyehouseProduction(payload: Record<string, unknown>)
         ${optionalString(payload.description) ?? ""}, now()
       )
     `;
-    await addMovement(tx, { date, stockId: String(partyRows[0].ym_stock_id), warehouseId: requireString(payload.inputWarehouseId, "Giriş deposu"), partyId, orderId: String(partyRows[0].order_id), movementType: "Üretim tüketim", direction: "OUT", quantity: inputRawKg, description: "Boyahanede ham kumaş tüketimi", referenceType: "production_dyehouse", referenceId: productionId });
-    await addMovement(tx, { date, stockId: String(partyRows[0].mm_stock_id), warehouseId: requireString(payload.outputWarehouseId, "Çıkış deposu"), partyId, orderId: String(partyRows[0].order_id), movementType: "Üretim giriş", direction: "IN", quantity: finishedKg, description: "Boyahaneden mamül kumaş girişi", referenceType: "production_dyehouse", referenceId: productionId });
+    const ymStockId = String(partyRows[0].ym_stock_id);
+    const mmStockId = String(partyRows[0].mm_stock_id);
+    const inputWarehouseId = requireString(payload.inputWarehouseId, "Giriş deposu");
+    const outputWarehouseId = requireString(payload.outputWarehouseId, "Çıkış deposu");
+    const partyNo = await tx`select party_no from parties where id = ${partyId}`.then(r => r[0]?.party_no);
+
+    // Find source movement for YM consumption
+    const sourceYmRows = await tx`
+      select id from stock_movements 
+      where stock_id = ${ymStockId} and warehouse_id = ${inputWarehouseId} and party_id = ${partyId} and direction = 'IN'
+      order by created_at desc limit 1
+    `;
+    const sourceYmMovementId = sourceYmRows[0]?.id;
+
+    // 1. OUT movement (YM)
+    const ymOutMovId = await addMovement(tx, {
+      date,
+      stockId: ymStockId,
+      warehouseId: inputWarehouseId,
+      partyId,
+      partyNo,
+      orderId: String(partyRows[0].order_id),
+      movementType: "Boyahane çıkış",
+      direction: "OUT",
+      quantity: inputRawKg,
+      description: "Boyahaneye ham kumaş tüketimi",
+      sourceTransactionId: productionId,
+      sourceTransactionType: "production_dyehouse",
+      sourceMovementId: sourceYmMovementId
+    });
+
+    // 2. IN movement (MM)
+    await addMovement(tx, {
+      date,
+      stockId: mmStockId,
+      warehouseId: outputWarehouseId,
+      partyId,
+      partyNo,
+      orderId: String(partyRows[0].order_id),
+      movementType: "Boyahane giriş",
+      direction: "IN",
+      quantity: finishedKg,
+      description: "Boyahaneden mamül kumaş girişi",
+      sourceTransactionId: productionId,
+      sourceTransactionType: "production_dyehouse",
+      parentMovementId: ymOutMovId
+    });
     const finishWidth = numberValue(payload.finishWidth, "Finish en");
     const finishGsm = numberValue(payload.finishGsm, "Finish gramaj");
     await tx`
@@ -1360,8 +1510,48 @@ export async function updateDyehouseProduction(recordId: string, payload: Record
       )
     `;
 
-    await addMovement(tx, { date, stockId: String(partyRows[0].ym_stock_id), warehouseId: requireString(payload.inputWarehouseId, "Giriş deposu"), partyId, orderId: String(partyRows[0].order_id), movementType: "Üretim tüketim", direction: "OUT", quantity: inputRawKg, description: "Boyahane güncelleme tüketimi", referenceType: "production_dyehouse", referenceId: productionId });
-    await addMovement(tx, { date, stockId: String(partyRows[0].mm_stock_id), warehouseId: requireString(payload.outputWarehouseId, "Çıkış deposu"), partyId, orderId: String(partyRows[0].order_id), movementType: "Üretim giriş", direction: "IN", quantity: finishedKg, description: "Boyahane güncelleme girişi", referenceType: "production_dyehouse", referenceId: productionId });
+    const partyNo = await tx`select party_no from parties where id = ${partyId}`.then(r => r[0]?.party_no);
+    const ymStockId = String(partyRows[0].ym_stock_id);
+    const mmStockId = String(partyRows[0].mm_stock_id);
+    const inputWarehouseId = requireString(payload.inputWarehouseId, "Giriş deposu");
+    const outputWarehouseId = requireString(payload.outputWarehouseId, "Çıkış deposu");
+    const orderId = String(partyRows[0].order_id);
+
+    const sourceYmRows = await tx`
+      select id from stock_movements 
+      where stock_id = ${ymStockId} and warehouse_id = ${inputWarehouseId} and party_id = ${partyId} and direction = 'IN'
+      order by created_at desc limit 1
+    `;
+    const ymOutMovId = await addMovement(tx, {
+      date,
+      stockId: ymStockId,
+      warehouseId: inputWarehouseId,
+      partyId,
+      partyNo,
+      orderId,
+      movementType: "Boyahane çıkış",
+      direction: "OUT",
+      quantity: inputRawKg,
+      description: "Boyahane güncelleme tüketimi",
+      sourceTransactionId: productionId,
+      sourceTransactionType: "production_dyehouse",
+      sourceMovementId: sourceYmRows[0]?.id
+    });
+    await addMovement(tx, {
+      date,
+      stockId: mmStockId,
+      warehouseId: outputWarehouseId,
+      partyId,
+      partyNo,
+      orderId,
+      movementType: "Boyahane giriş",
+      direction: "IN",
+      quantity: finishedKg,
+      description: "Boyahane güncelleme girişi",
+      sourceTransactionId: productionId,
+      sourceTransactionType: "production_dyehouse",
+      parentMovementId: ymOutMovId
+    });
 
     await tx`
       update parties
@@ -1389,8 +1579,9 @@ export async function createSale(payload: Record<string, unknown>) {
     const warehouseId = requireString(payload.warehouseId, "Depo");
     const quantityKg = numberValue(payload.quantityKg, "Satış kg");
     const customerName = requireString(payload.customerName, "Müşteri");
-    const partyRows = await tx`select order_id from parties where id = ${partyId} limit 1`;
+    const partyRows = await tx`select order_id, party_no from parties where id = ${partyId} limit 1`;
     const orderId = optionalString(payload.orderId) ?? (partyRows[0]?.order_id ? String(partyRows[0].order_id) : null);
+    const partyNo = partyRows[0]?.party_no;
 
     await tx`
       insert into sales (
@@ -1404,18 +1595,26 @@ export async function createSale(payload: Record<string, unknown>) {
       )
     `;
 
+    const sourceMmRows = await tx`
+      select id from stock_movements 
+      where stock_id = ${stockId} and warehouse_id = ${warehouseId} and party_id = ${partyId} and direction = 'IN'
+      order by created_at desc limit 1
+    `;
+
     await addMovement(tx, {
       date,
       stockId,
       warehouseId,
       partyId,
+      partyNo,
       orderId,
       movementType: "Çıkış",
       direction: "OUT",
       quantity: quantityKg,
-      description: "Satış / sevkiyat çıkışı",
-      referenceType: "sale",
-      referenceId: saleId,
+      description: optionalString(payload.description) ?? "Satış / sevkiyat çıkışı",
+      sourceTransactionId: saleId,
+      sourceTransactionType: "sale",
+      sourceMovementId: sourceMmRows[0]?.id
     });
 
     await tx`
@@ -1469,8 +1668,9 @@ export async function updateSale(recordId: string, payload: Record<string, unkno
     const warehouseId = requireString(payload.warehouseId, "Depo");
     const quantityKg = numberValue(payload.quantityKg, "Satış kg");
     const customerName = requireString(payload.customerName, "Müşteri");
-    const partyRows = await tx`select order_id from parties where id = ${partyId} limit 1`;
+    const partyRows = await tx`select order_id, party_no from parties where id = ${partyId} limit 1`;
     const orderId = optionalString(payload.orderId) ?? (partyRows[0]?.order_id ? String(partyRows[0].order_id) : null);
+    const partyNo = partyRows[0]?.party_no;
 
     await tx`
       insert into sales (
@@ -1484,18 +1684,26 @@ export async function updateSale(recordId: string, payload: Record<string, unkno
       )
     `;
 
+    const sourceMmRows = await tx`
+      select id from stock_movements 
+      where stock_id = ${stockId} and warehouse_id = ${warehouseId} and party_id = ${partyId} and direction = 'IN'
+      order by created_at desc limit 1
+    `;
+
     await addMovement(tx, {
       date,
       stockId,
       warehouseId,
       partyId,
+      partyNo,
       orderId,
       movementType: "Çıkış",
       direction: "OUT",
       quantity: quantityKg,
-      description: "Güncellenmiş satış / sevkiyat çıkışı",
-      referenceType: "sale",
-      referenceId: saleId,
+      description: optionalString(payload.description) ?? "Güncellenmiş satış / sevkiyat çıkışı",
+      sourceTransactionId: saleId,
+      sourceTransactionType: "sale",
+      sourceMovementId: sourceMmRows[0]?.id
     });
 
     return { id: saleId, saleNo };
@@ -1637,8 +1845,8 @@ export async function cancelPurchaseReceipt(recordId: string) {
         direction: "OUT",
         quantity,
         description: "Mal kabul iptal çıkışı",
-        referenceType: "purchase_receipt_cancel",
-        referenceId: recordId,
+        sourceTransactionType: "purchase_receipt_cancel",
+        sourceTransactionId: recordId,
       });
     }
 
@@ -1679,6 +1887,9 @@ export async function cancelPurchaseReceipt(recordId: string) {
 
 export async function deletePurchaseReceipt(recordId: string) {
   return sql.begin(async (tx) => {
+    // 0. Check for subsequent transactions
+    await checkSubsequentTransactions(tx, "direct_purchase_receipt", recordId);
+
     const rows = await tx`
       select id, purchase_order_id, items
       from purchase_receipts
@@ -1741,6 +1952,9 @@ export async function deletePurchaseReceipt(recordId: string) {
 
 export async function updatePurchaseReceipt(recordId: string, payload: Record<string, unknown>) {
   return sql.begin(async (tx) => {
+    // 0. Check for subsequent transactions
+    await checkSubsequentTransactions(tx, "direct_purchase_receipt", recordId);
+
     const rows = await tx`select id, purchase_order_id, warehouse_id, supplier_id, items, description from purchase_receipts where id = ${recordId} limit 1`;
     const receipt = rows[0];
     if (!receipt) throw new Error("Mal kabul kaydı bulunamadı.");
@@ -1775,8 +1989,8 @@ export async function updatePurchaseReceipt(recordId: string, payload: Record<st
       direction: "IN",
       quantity: newReceivedKg,
       description: newDescription || "Mal kabul girişi",
-      referenceType: "purchase_receipt",
-      referenceId: recordId,
+      sourceTransactionId: recordId,
+      sourceTransactionType: "direct_purchase_receipt",
     });
 
     // 3. Update the receipt record
