@@ -23,6 +23,7 @@ import {
   ChevronRight,
   Plus,
   Minus,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ErpDataProvider, useErpData } from "@/components/erp-data-provider";
@@ -32,7 +33,8 @@ const navigationGroups = [
   {
     title: "Dashboard",
     items: [
-      { href: "/dashboard", label: "Dashboard", icon: Home },
+      { href: "/dashboard", label: "Operasyon Paneli", icon: Home },
+      { href: "/dashboard2", label: "Patron Özeti", icon: TrendingUp },
     ]
   },
   {

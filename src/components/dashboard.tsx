@@ -7,7 +7,7 @@ import { StatCard } from "@/components/ui/stat-card";
 import { StatusBadge, statusTone } from "@/components/ui/status-badge";
 import { useErpData } from "@/components/erp-data-provider";
 import { getComputedNotifications, getDashboardMetrics, getName, getPurchaseProgress } from "@/services/erp-service";
-import { formatKg, formatPercent, wasteTone } from "@/lib/utils";
+import { formatKg, formatPercent, formatDate, wasteTone } from "@/lib/utils";
 
 export function Dashboard() {
   const mounted = useSyncExternalStore(
@@ -39,8 +39,8 @@ export function Dashboard() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
-        <StatCard title="Aktif siparişler" value={String(metrics.activeOrders)} helper="Müşteri üretim talepleri" icon={ShoppingCart} compact />
-        <StatCard title="Bu ay üretim" value={formatKg(metrics.monthlyProductionKg)} helper="Ham + mamül üretim toplamı" icon={Factory} tone="green" compact />
+        <StatCard title="Bu Ay Ham Üretim" value={formatKg(metrics.monthlyRawKg)} helper="Örülen ham kumaş toplamı" icon={Factory} tone="blue" compact />
+        <StatCard title="Bu Ay Mamül Üretim" value={formatKg(metrics.monthlyFinishedKg)} helper="Boyadan dönen mamül toplamı" icon={PackageCheck} tone="green" compact />
         <StatCard title="Toplam fire" value={formatKg(metrics.wasteKg)} helper={`Ham ${formatPercent(metrics.avgRawWaste)} / Boya ${formatPercent(metrics.avgDyeWaste)}`} icon={TrendingDown} tone="red" compact />
         <StatCard title="Bekleyen hammadde" value={formatKg(metrics.pendingRawMaterialKg)} helper={`${metrics.openPurchaseCount} açık satıcı siparişi`} icon={PackageCheck} tone="amber" compact />
       </div>
@@ -144,21 +144,46 @@ export function Dashboard() {
       <div className="grid gap-5 xl:grid-cols-2">
         <div className="premium-card rounded-none p-5">
           <h2 className="font-semibold text-slate-950">Termin yaklaşan satın alma siparişleri</h2>
-          <div className="mt-5 space-y-3">
-            {data.purchaseOrders.map((order) => (
-              <div key={order.id} className="rounded-none border border-slate-100 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="font-semibold text-slate-950">{order.purchaseOrderNo} · {getName(data.partners, order.supplierId)}</p>
-                    <p className="text-sm text-slate-500">{formatKg(order.totalReceivedKg)} geldi, {formatKg(order.totalRemainingKg)} bekliyor</p>
-                  </div>
-                  <StatusBadge tone={statusTone(order.status)}>{order.status}</StatusBadge>
-                </div>
-                <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
-                  <div className="h-full rounded-full bg-blue-600" style={{ width: `${getPurchaseProgress(order)}%` }} />
-                </div>
-              </div>
-            ))}
+          <div className="mt-5 overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider">
+                  <th className="pb-3 pl-2">Satıcı / No</th>
+                  <th className="pb-3">Stok Adı / Özellik</th>
+                  <th className="pb-3">Sipariş</th>
+                  <th className="pb-3">Gelen</th>
+                  <th className="pb-3">Kalan</th>
+                  <th className="pb-3">Termin</th>
+                  <th className="pb-3 pr-2 text-right">Durum</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {data.purchaseOrders.slice(0, 8).map((order) => {
+                  const item = order.items[0]; // Genelde tek kalem bazlı çalışıyor
+                  return (
+                    <tr key={order.id} className="group hover:bg-slate-50 transition-colors">
+                      <td className="py-3 pl-2">
+                        <p className="font-bold text-slate-900">{getName(data.partners, order.supplierId)}</p>
+                        <p className="text-[10px] text-slate-400">{order.purchaseOrderNo}</p>
+                      </td>
+                      <td className="py-3">
+                        <p className="font-medium text-slate-700">{item?.stockName || '-'}</p>
+                        <p className="text-[10px] text-slate-400">
+                          {getName(data.yarnCounts, item?.yarnCountId)} · {getName(data.colors, item?.colorId)}
+                        </p>
+                      </td>
+                      <td className="py-3 font-semibold text-slate-600">{formatKg(order.totalOrderedKg)}</td>
+                      <td className="py-3 font-semibold text-emerald-600">{formatKg(order.totalReceivedKg)}</td>
+                      <td className="py-3 font-semibold text-rose-600">{formatKg(order.totalRemainingKg)}</td>
+                      <td className="py-3 text-slate-500">{formatDate(order.dueDate)}</td>
+                      <td className="py-3 pr-2 text-right">
+                        <StatusBadge tone={statusTone(order.status)}>{order.status}</StatusBadge>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
         <div className="premium-card rounded-none p-5">

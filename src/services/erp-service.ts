@@ -84,7 +84,9 @@ export function getPurchaseProgress(order: PurchaseOrder) {
 
 export function getDashboardMetrics(data: ErpData) {
   const activeOrders = data.orders.filter((order) => order.status !== "Kapandı").length;
-  const monthlyProductionKg = data.parties.reduce((sum, party) => sum + party.rawProducedKg + party.finishedKg, 0);
+  const monthlyRawKg = data.parties.reduce((sum, party) => sum + (party.rawProducedKg || 0), 0);
+  const monthlyFinishedKg = data.parties.reduce((sum, party) => sum + (party.finishedKg || 0), 0);
+  const monthlyProductionKg = monthlyRawKg + monthlyFinishedKg;
   const rawWasteKg = data.parties.reduce((sum, party) => sum + party.rawWasteKg, 0);
   const dyeWasteKg = data.parties.reduce((sum, party) => sum + party.dyehouseWasteKg, 0);
   const avgRawWaste = data.parties.length > 0 ? data.parties.reduce((sum, party) => sum + party.rawWastePercent, 0) / data.parties.length : 0;
@@ -95,6 +97,8 @@ export function getDashboardMetrics(data: ErpData) {
     knittingOrders: data.orders.filter((order) => order.status === "Örmede").length,
     dyehouseOrders: data.orders.filter((order) => order.status === "Boyahanede").length,
     readyOrders: data.orders.filter((order) => order.status === "Mamül Hazır").length,
+    monthlyRawKg,
+    monthlyFinishedKg,
     monthlyProductionKg,
     wasteKg: rawWasteKg + dyeWasteKg,
     avgRawWaste,

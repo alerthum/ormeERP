@@ -191,22 +191,33 @@ export function OrdersPage() {
   const customerNames = [...new Set(data.orders.map((order) => order.customerName).filter(Boolean))].sort((a, b) => a.localeCompare(b, "tr"));
   const filteredOrders = useMemo(
     () =>
-      data.orders.filter((order) => {
-        if (filters.status !== "ALL" && order.status !== filters.status) return false;
-        if (filters.customer && order.customerName !== filters.customer) return false;
-        if (filters.fabricTypeId !== "ALL" && order.fabricTypeId !== filters.fabricTypeId) return false;
-        if (filters.colorId !== "ALL" && order.colorId !== filters.colorId) return false;
-        if (filters.yarnCountId !== "ALL" && order.yarnCountId !== filters.yarnCountId) return false;
-        if (filters.ymStockId !== "ALL" && order.ymStockId !== filters.ymStockId) return false;
-        if (filters.mmStockId !== "ALL" && order.mmStockId !== filters.mmStockId) return false;
-        if (filters.dateFrom && order.orderDate < filters.dateFrom) return false;
-        if (filters.dateTo && order.orderDate > filters.dateTo) return false;
-        if (filters.dueFrom && order.dueDate < filters.dueFrom) return false;
-        if (filters.dueTo && order.dueDate > filters.dueTo) return false;
-        return applySmartOrderFilter(order, data, filters.smart);
-      }),
-    [data, filters],
-  );
+    data.orders.map(order => {
+      const parties = data.parties.filter(p => p.orderId === order.id);
+      const sales = data.sales.filter(s => s.orderId === order.id && s.status !== 'İptal');
+      const sevkKg = sales.reduce((sum, s) => sum + s.quantityKg, 0);
+      const siparisKg = order.quantityKg;
+      
+      let computedStatus = order.status;
+      if (sevkKg > 0) {
+        computedStatus = sevkKg >= siparisKg ? 'Sevk Edildi' : 'Kısmi Sevk Edildi';
+      }
+      
+      return { ...order, sevkKg, computedStatus, parties };
+    }).filter((order) => {
+      if (filters.status !== "ALL" && order.computedStatus !== filters.status) return false;
+      if (filters.customer && order.customerName !== filters.customer) return false;
+      if (filters.fabricTypeId !== "ALL" && order.fabricTypeId !== filters.fabricTypeId) return false;
+      if (filters.colorId !== "ALL" && order.colorId !== filters.colorId) return false;
+      if (filters.yarnCountId !== "ALL" && order.yarnCountId !== filters.yarnCountId) return false;
+      if (filters.ymStockId !== "ALL" && order.ymStockId !== filters.ymStockId) return false;
+      if (filters.mmStockId !== "ALL" && order.mmStockId !== filters.mmStockId) return false;
+      if (filters.dateFrom && order.orderDate < filters.dateFrom) return false;
+      if (filters.dateTo && order.orderDate > filters.dateTo) return false;
+      if (filters.dueFrom && order.dueDate < filters.dueFrom) return false;
+      if (filters.dueTo && order.dueDate > filters.dueTo) return false;
+      return applySmartOrderFilter(order, data, filters.smart);
+    }),
+  [data, filters]);
   const setOrderFilter = (key: keyof OrderFilters, value: string) => setFilters((current) => ({ ...current, [key]: value }));
   const groupLabels: Record<OrderGroupMode, string> = {
     none: "Gruplama yok",
@@ -268,14 +279,33 @@ export function OrdersPage() {
     }
   }
 
-  const columns: Column<Order>[] = [
-    { header: "Sipariş", cell: (row) => <Link className="font-semibold text-blue-700" href={`/orders/${row.id}`}>{row.orderNo}</Link> },
-    { header: "Müşteri", cell: (row) => row.customerName },
-    { header: "Kumaş", cell: (row) => getName(data.fabricTypes, row.fabricTypeId) },
-    { header: "Renk", cell: (row) => getName(data.colors, row.colorId) },
-    { header: "Kg", cell: (row) => formatKg(row.quantityKg) },
-    { header: "Durum", cell: (row) => <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge> },
-    { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end gap-2"><button className="rounded-none border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditing(row)} type="button">Düzenle</button><button className={dangerButton} onClick={() => setDeleteTarget(row)} type="button">Sil</button></div> },
+  const columns: Column<any>[] = [
+    { header: "Sipariş No", cell: (row) => <Link className="font-semibold text-blue-700" href={`/orders/${row.id}`}>{row.orderNo}</Link> },
+    { header: "Müşteri", cell: (row) => <span className="font-medium text-slate-900">{row.customerName}</span> },
+    { header: "Stok Adı", cell: (row) => {
+      const mmStock = data.stockCards.find(s => s.id === row.mmStockId);
+      const ymStock = data.stockCards.find(s => s.id === row.ymStockId);
+      return (
+        <div className="max-w-[200px]">
+          <p className="truncate font-medium text-slate-700">{mmStock?.name || ymStock?.name || '-'}</p>
+          <p className="text-[10px] text-slate-400">{getName(data.yarnCounts, row.yarnCountId)} · {getName(data.fabricTypes, row.fabricTypeId)}</p>
+        </div>
+      );
+    }},
+    { header: "Sipariş Kg", className: "text-right", cell: (row) => <span className="font-bold text-slate-900">{formatKg(row.quantityKg)}</span> },
+    { header: "Örülen YM", className: "text-right", cell: (row) => {
+      const val = row.parties.reduce((sum: number, p: any) => sum + (p.rawProducedKg || 0), 0);
+      return <span className="text-blue-600 font-medium">{formatKg(val)}</span>;
+    }},
+    { header: "Üretilen MM", className: "text-right", cell: (row) => {
+      const val = row.parties.reduce((sum: number, p: any) => sum + (p.finishedKg || 0), 0);
+      return <span className="text-emerald-600 font-medium">{formatKg(val)}</span>;
+    }},
+    { header: "Sevk MM", className: "text-right", cell: (row) => <span className="text-amber-600 font-medium">{formatKg(row.sevkKg)}</span> },
+    { header: "Kalan Kg", className: "text-right", cell: (row) => <span className="text-rose-600 font-bold">{formatKg(Math.max(row.quantityKg - row.sevkKg, 0))}</span> },
+    { header: "Durum", cell: (row) => <StatusBadge tone={statusTone(row.computedStatus)}>{row.computedStatus}</StatusBadge> },
+    { header: "Termin", cell: (row) => <span className="text-slate-500">{formatDate(row.dueDate)}</span> },
+    { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end gap-2"><button className="rounded-none border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditing(row)} type="button">Düzenle</button></div> },
   ];
   const filterControls = (
     <div className="grid gap-3 md:grid-cols-2">
@@ -365,7 +395,59 @@ export function OrdersPage() {
           ))}
         </div>
       </div>
-      <DataTable rows={filteredOrders} columns={columns} groupBy={orderGroupBy} searchPlaceholder="Liste içinde hızlı ara" getSearchText={(row) => [row.orderNo, row.customerName, row.status, getName(data.fabricTypes, row.fabricTypeId), getName(data.colors, row.colorId), getName(data.yarnCounts, row.yarnCountId), getName(data.stockCards, row.ymStockId), getName(data.stockCards, row.mmStockId), row.quantityKg].join(" ")} />
+      <div className="hidden md:block">
+        <DataTable rows={filteredOrders} columns={columns} groupBy={orderGroupBy} searchPlaceholder="Liste içinde hızlı ara" getSearchText={(row) => [row.orderNo, row.customerName, row.computedStatus, getName(data.fabricTypes, row.fabricTypeId), getName(data.colors, row.colorId), getName(data.yarnCounts, row.yarnCountId), getName(data.stockCards, row.ymStockId), getName(data.stockCards, row.mmStockId), row.quantityKg].join(" ")} />
+      </div>
+
+      <div className="grid gap-4 md:hidden">
+        {filteredOrders.map(order => {
+          const progress = Math.min(100, (order.sevkKg / order.quantityKg) * 100);
+          const mmVal = order.parties.reduce((sum: number, p: any) => sum + (p.finishedKg || 0), 0);
+          const mmStock = data.stockCards.find(s => s.id === order.mmStockId);
+          return (
+            <div key={order.id} className="premium-card rounded-none p-4 space-y-4">
+              <div className="flex justify-between items-start">
+                <div>
+                  <Link href={`/orders/${order.id}`} className="text-blue-700 font-bold">{order.orderNo}</Link>
+                  <p className="text-sm font-semibold text-slate-900 mt-1">{order.customerName}</p>
+                </div>
+                <StatusBadge tone={statusTone(order.computedStatus)}>{order.computedStatus}</StatusBadge>
+              </div>
+              <div>
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Stok Adı</p>
+                <p className="text-sm text-slate-700 font-medium">{mmStock?.name || '-'}</p>
+              </div>
+              <div className="grid grid-cols-3 gap-2 py-2 border-y border-slate-50">
+                <div className="text-center">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Sipariş</p>
+                  <p className="text-xs font-bold text-slate-900">{formatKg(order.quantityKg)}</p>
+                </div>
+                <div className="text-center border-x border-slate-50">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Üretilen</p>
+                  <p className="text-xs font-bold text-emerald-600">{formatKg(mmVal)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Sevk</p>
+                  <p className="text-xs font-bold text-amber-600">{formatKg(order.sevkKg)}</p>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-[10px] font-bold uppercase text-slate-400">
+                  <span>Tamamlanma</span>
+                  <span>{formatPercent(progress)}</span>
+                </div>
+                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-600 rounded-full" style={{ width: `${progress}%` }} />
+                </div>
+              </div>
+              <div className="flex justify-between items-center pt-2">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Termin: {formatDate(order.dueDate)}</span>
+                <button className="text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1.5" onClick={() => setEditing(order)}>Düzenle</button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
       <FormDrawer open={filtersOpen} title="Sipariş filtreleri" onClose={() => setFiltersOpen(false)}>
         <div className="space-y-4">
           <p className="text-sm leading-6 text-slate-500">Durum, tarih, müşteri, stok ve akıllı ifade ile listeyi daraltın. Seçimler sayfada chip olarak görünür.</p>
@@ -402,8 +484,71 @@ export function OrderDetailPage({ id }: { id: string }) {
   const readyKg = Math.max(finishedKg - shippedKg, 0);
   const progressPercent = (order?.quantityKg ?? 0) > 0 ? (shippedKg / order!.quantityKg) * 100 : 0;
 
-  const allTimelineItems = orderParties.flatMap(p => (p.timeline || []).map(t => ({ ...t, partyNo: p.partyNo })))
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const allTimelineItems = useMemo(() => {
+    if (!order) return [];
+    const events: any[] = [];
+    
+    orderParties.forEach(party => {
+      const pId = party.id;
+      const pNo = party.partyNo;
+      
+      // Statik timeline verileri
+      (party.timeline || []).forEach((t: any) => events.push({ ...t, partyNo: pNo }));
+      
+      // Dinamik: Ham Üretim
+      data.productionRaw.filter(p => p.partyId === pId).forEach(p => {
+        events.push({
+          date: p.date,
+          title: 'Ham Üretim',
+          description: `${formatKg(p.producedRawKg)} ham kumaş üretildi. ( %${p.wastePercent} fire)`,
+          tone: 'blue',
+          partyNo: pNo
+        });
+      });
+
+      // Dinamik: Transferler
+      data.transfers.forEach(t => {
+        const partyItem = normalizeItems(t.items).find((it: any) => it.partyId === pId);
+        if (partyItem) {
+          events.push({
+            date: t.date,
+            title: 'Depo Transferi',
+            description: `${getName(data.warehouses, t.fromWarehouseId)} -> ${getName(data.warehouses, t.toWarehouseId)} (${formatKg(partyItem.quantity)})`,
+            tone: 'amber',
+            partyNo: pNo
+          });
+        }
+      });
+
+      // Dinamik: Boyahane
+      data.productionDyehouse.filter(p => p.partyId === pId).forEach(p => {
+        events.push({
+          date: p.date,
+          title: 'Boyahane Üretimi',
+          description: `${formatKg(p.finishedKg)} mamül kumaş girişi yapıldı. ( %${p.wastePercent} fire)`,
+          tone: 'green',
+          partyNo: pNo
+        });
+      });
+
+      // Dinamik: Sevkiyat
+      data.sales.filter(s => s.partyId === pId && s.status !== 'İptal').forEach(s => {
+        events.push({
+          date: s.date,
+          title: 'Sevkiyat / Satış',
+          description: `${s.customerName} müşterisine ${formatKg(s.quantityKg)} sevk edildi.`,
+          tone: 'amber',
+          partyNo: pNo
+        });
+      });
+    });
+
+    return events.sort((a, b) => {
+      const da = new Date(a.date).getTime();
+      const db = new Date(b.date).getTime();
+      return (isNaN(db) ? 0 : db) - (isNaN(da) ? 0 : da);
+    });
+  }, [order, orderParties, data]);
 
   const orderBalances = data.warehouseBalances.filter(b => 
     order && (b.stockId === order.ymStockId || b.stockId === order.mmStockId) && b.quantity > 0
@@ -495,7 +640,7 @@ export function OrderDetailPage({ id }: { id: string }) {
               {allTimelineItems.length === 0 ? (
                 <p className="py-8 text-center text-sm text-slate-500 italic">Henüz bir hareket kaydı bulunmuyor.</p>
               ) : allTimelineItems.map((item, idx) => (
-                <div key={idx} className="relative flex gap-4">
+                <div key={`${item.date}-${item.title}-${idx}`} className="relative flex gap-4">
                   {idx < allTimelineItems.length - 1 && <div className="absolute left-[11px] top-7 h-full w-px bg-slate-100" />}
                   <div className={cn("relative z-10 mt-1 size-6 rounded-full ring-8 shadow-sm", tones[item.tone as keyof typeof tones || "blue"])} />
                   <div className="flex-1">
@@ -1163,10 +1308,10 @@ export function PartiesPage() {
 export function PartyDetailPage({ id }: { id: string }) {
   const { data } = useErpData();
   const party = data.parties.find((item) => item.id === id);
-  if (!party) return <DataTable rows={[]} columns={[]} />;
-  const order = data.orders.find((item) => item.id === party.orderId);
+  const order = useMemo(() => party ? data.orders.find((item) => item.id === party.orderId) : undefined, [party, data.orders]);
 
   const timeline = useMemo(() => {
+    if (!party) return [];
     const events: Array<{ date: string; title: string; description: string; tone: 'blue' | 'green' | 'amber' | 'red' }> = [
       ...(party.timeline || [])
     ];
@@ -1210,8 +1355,14 @@ export function PartyDetailPage({ id }: { id: string }) {
       });
     });
 
-    return events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [data, id, party.timeline]);
+    return events.sort((a, b) => {
+      const da = new Date(a.date).getTime();
+      const db = new Date(b.date).getTime();
+      return (isNaN(db) ? 0 : db) - (isNaN(da) ? 0 : da);
+    });
+  }, [data, id, party]);
+
+  if (!party) return <div className="p-8 text-center text-slate-500 italic">Parti bulunamadı.</div>;
 
   return (
     <div className='space-y-6'>
@@ -2174,6 +2325,18 @@ const developmentTimeline = [
       "Canlı API ve veritabanı encoding kaynağı ayrıştırıldı; DB'deki bozuk text/json kayıtları temizlendi ve tekrar çalıştırılabilir fix:encoding komutu eklendi.",
     ],
   },
+  {
+    date: "2026-05-04",
+    title: "Üst Düzey Raporlama ve Operasyonel Derinlik",
+    summary: "Patron özeti dashboard, gelişmiş sipariş takibi ve boyahane süreç otomasyonu ile sistemin karar destek ve operasyonel takip gücü artırıldı.",
+    items: [
+      "Sipariş No, Müşteri, Stok Adı (YM/MM), Sipariş/Üretilen/Sevk/Kalan kg bilgileriyle donatılmış gelişmiş sipariş tablosu devreye alındı.",
+      "Kısmi Sevk Edildi durumu, % bazlı tamamlanma barları ve mobil uyumlu kart görünümleri ile sipariş yönetimi modernleştirildi.",
+      "Müşteri siparişlerine Boyahane İşlem Türleri çoklu seçimi eklendi; bu veriler boyahane üretiminde otomatik olarak forma yansıtılır hale getirildi.",
+      "Dashboard2 (Patron Özeti) sayfası oluşturuldu: Müşteri performansı ve tedarikçi gerçekleşme oranları tek ekranda analitik olarak sunuldu.",
+      "Ana dashboard KPI'ları Ham Üretim ve Mamül Üretim olarak ikiye ayrıldı; satın alma listesi daha anlamlı stok ve tedarikçi bilgileriyle zenginleştirildi.",
+    ],
+  },
 ];
 
 const completedMilestones = [
@@ -2230,6 +2393,11 @@ const pendingRoadmap = [
     priority: "P2",
     title: "Canlıya alma sonrası smoke test ve veri denetimi",
     description: "Push/deploy sonrası dashboard, stok, sipariş, üretim, transfer, satış ve ayarlar ekranları canlı ortamda hızlı senaryo ile doğrulanmalı.",
+  },
+  {
+    priority: "P2",
+    title: "Tamir Üretimi (Uzun Vadeli)",
+    description: "Hatalı çıkan veya boyadan dönen ürünlerin tamir süreçlerinin, fire ve maliyet etkileriyle beraber sistemde takip edilmesi.",
   },
   {
     priority: "P2",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { AlertTriangle, Boxes, CheckCircle2, Factory, Layout, PackageCheck, Plus, Search, Users, X, Truck, ShoppingCart } from "lucide-react";
+import { AlertTriangle, Boxes, CheckCircle2, Factory, Layout, PackageCheck, Plus, Search, Users, X, Truck, ShoppingCart, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { useErpData } from "@/components/erp-data-provider";
 import { calculateDyehouseWaste, calculateRawWaste, getName } from "@/services/erp-service";
@@ -556,6 +556,7 @@ export function OrderForm() {
         finishGsm: form.get("finishGsm"),
         quantityKg: form.get("quantityKg"),
         description: form.get("description"),
+        dyehouseProcessTypeIds: Array.from(formElement.querySelectorAll('input[name="dyehouseProcessTypeIds"]:checked')).map((el: any) => el.value),
       });
       formElement.reset();
       refreshInBackground(refresh);
@@ -617,10 +618,18 @@ export function OrderForm() {
 
       <div className="space-y-6">
         <div className="flex items-center gap-3 border-b border-slate-50 pb-3">
-          <div className="grid size-8 place-items-center rounded-none bg-emerald-50 text-emerald-600">
-            <Plus className="size-4" />
+          <div className="grid size-8 place-items-center rounded-none bg-indigo-50 text-indigo-600">
+            <SlidersHorizontal className="size-4" />
           </div>
-          <h3 className="text-sm font-bold text-slate-900">Notlar & Onay</h3>
+          <h3 className="text-sm font-bold text-slate-900">Boyahane İşlemleri</h3>
+        </div>
+        <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 border border-slate-100 rounded-none max-h-[160px] overflow-y-auto">
+          {data.processTypes.map(pt => (
+            <label key={pt.id} className="flex items-center gap-2 cursor-pointer p-1 hover:bg-white transition-colors">
+              <input name="dyehouseProcessTypeIds" type="checkbox" value={pt.id} className="size-4 rounded border-slate-300" />
+              <span className="text-[11px] font-semibold text-slate-700">{pt.name}</span>
+            </label>
+          ))}
         </div>
         <div className="flex gap-4 p-3 bg-slate-50 rounded-none border border-slate-100 text-[11px] font-bold">
           <label className="flex items-center gap-2 cursor-pointer"><input name="hasPolyester" type="checkbox" className="size-4 rounded border-slate-300" /> POLY</label>
@@ -662,6 +671,7 @@ export function OrderEditForm({ order, onDone }: { order: Order; onDone: () => v
         quantityKg: form.get("quantityKg"),
         status: form.get("status"),
         description: form.get("description"),
+        dyehouseProcessTypeIds: Array.from(formElement.querySelectorAll('input[name="dyehouseProcessTypeIds"]:checked')).map((el: any) => el.value),
       });
       refreshInBackground(refresh);
       onDone();
@@ -722,12 +732,20 @@ export function OrderEditForm({ order, onDone }: { order: Order; onDone: () => v
         </div>
       </div>
 
-      <div className="space-y-6 min-w-0 overflow-hidden">
+      <div className="space-y-6">
         <div className="flex items-center gap-3 border-b border-slate-50 pb-3">
-          <div className="grid size-8 place-items-center rounded-none bg-emerald-50 text-emerald-600">
-            <Plus className="size-4" />
+          <div className="grid size-8 place-items-center rounded-none bg-indigo-50 text-indigo-600">
+            <SlidersHorizontal className="size-4" />
           </div>
-          <h3 className="text-sm font-bold text-slate-900">Notlar & Onay</h3>
+          <h3 className="text-sm font-bold text-slate-900">Boyahane İşlemleri</h3>
+        </div>
+        <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 border border-slate-100 rounded-none max-h-[160px] overflow-y-auto">
+          {data.processTypes.map(pt => (
+            <label key={pt.id} className="flex items-center gap-2 cursor-pointer p-1 hover:bg-white transition-colors">
+              <input name="dyehouseProcessTypeIds" type="checkbox" value={pt.id} defaultChecked={order.dyehouseProcessTypeIds?.includes(pt.id)} className="size-4 rounded border-slate-300" />
+              <span className="text-[11px] font-semibold text-slate-700">{pt.name}</span>
+            </label>
+          ))}
         </div>
         <div className="flex gap-4 p-3 bg-slate-50 rounded-none border border-slate-100 text-[11px] font-bold">
           <label className="flex items-center gap-2 cursor-pointer"><input name="hasPolyester" type="checkbox" defaultChecked={order.hasPolyester} className="size-4 rounded border-slate-300" /> POLY</label>
@@ -1469,8 +1487,16 @@ export function DyehouseProductionForm({ initialData }: { initialData?: Dyehouse
   const [partyId, setPartyId] = useState(initialData?.partyId || '');
   const [inputWarehouseId, setInputWarehouseId] = useState(initialData?.inputWarehouseId || '');
   const [inputRawKg, setInputRawKg] = useState(initialData?.inputRawKg?.toString() || '');
+  const [selectedProcessIds, setSelectedProcessIds] = useState<string[]>(initialData?.processTypeIds || []);
   
   const selectedParty = data.parties.find(p => p.id === partyId);
+  const selectedOrder = data.orders.find(o => o.id === selectedParty?.orderId);
+
+  useEffect(() => {
+    if (!initialData && selectedOrder?.dyehouseProcessTypeIds) {
+      setSelectedProcessIds(selectedOrder.dyehouseProcessTypeIds);
+    }
+  }, [selectedOrder, initialData]);
   
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -1488,7 +1514,8 @@ export function DyehouseProductionForm({ initialData }: { initialData?: Dyehouse
         finishWidth: Number(form.get('finishWidth')),
         finishGsm: Number(form.get('finishGsm')),
         description: form.get('description'),
-        orderId: selectedParty?.orderId
+        orderId: selectedParty?.orderId,
+        processTypeIds: selectedProcessIds
       };
       if (initialData) await patchJson('/api/production/dyehouse/' + initialData.id, payload);
       else await postJson('/api/production/dyehouse', payload);
@@ -1544,6 +1571,25 @@ export function DyehouseProductionForm({ initialData }: { initialData?: Dyehouse
           <Field label='Dönen Mamül (Kg)'><input className={inputClass} name='finishedKg' type='number' defaultValue={initialData?.finishedKg} required /></Field>
           <Field label='Finish En'><input className={inputClass} name='finishWidth' type='number' defaultValue={initialData?.finishWidth} required /></Field>
           <Field label='Finish Gramaj'><input className={inputClass} name='finishGsm' type='number' defaultValue={initialData?.finishGsm} required /></Field>
+        </div>
+        <div className='space-y-3'>
+          <h4 className='text-xs font-bold text-slate-400 uppercase tracking-widest'>Uygulanan İşlemler</h4>
+          <div className='grid grid-cols-2 gap-2 p-3 bg-slate-50 border border-slate-100 rounded-none max-h-[120px] overflow-y-auto'>
+            {data.processTypes.map(pt => (
+              <label key={pt.id} className='flex items-center gap-2 cursor-pointer p-1 hover:bg-white transition-colors'>
+                <input 
+                  type='checkbox' 
+                  checked={selectedProcessIds.includes(pt.id)}
+                  onChange={e => {
+                    if (e.target.checked) setSelectedProcessIds([...selectedProcessIds, pt.id]);
+                    else setSelectedProcessIds(selectedProcessIds.filter(id => id !== pt.id));
+                  }} 
+                  className='size-4 rounded border-slate-300' 
+                />
+                <span className='text-[11px] font-semibold text-slate-700'>{pt.name}</span>
+              </label>
+            ))}
+          </div>
         </div>
         <Field label='Açıklama'><textarea className={cn(inputClass, "h-24 resize-none")} name='description' defaultValue={initialData?.description} placeholder='Boyahane notları...' /></Field>
         <div className='pt-2'>

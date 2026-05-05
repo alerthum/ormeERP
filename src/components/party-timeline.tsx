@@ -14,7 +14,7 @@ export function PartyTimeline({ items }: { items: TimelineItem[] }) {
       <h3 className="text-base font-semibold text-slate-950">Parti timeline</h3>
       <div className="mt-5 space-y-5">
         {items.map((item, index) => (
-          <div key={`${item.date}-${item.title}`} className="relative flex gap-4">
+          <div key={`${item.date}-${item.title}-${index}`} className="relative flex gap-4">
             {index < items.length - 1 ? <div className="absolute left-[11px] top-7 h-full w-px bg-slate-200" /> : null}
             <div className={cn("relative z-10 mt-1 size-6 rounded-full ring-8", tones[item.tone])} />
             <div>

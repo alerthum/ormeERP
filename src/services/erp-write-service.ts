@@ -612,7 +612,7 @@ export async function createCustomerOrder(payload: Record<string, unknown>) {
       insert into orders (
         id, order_no, customer_name, order_date, due_date, fabric_type_id, color_id, yarn_count_id,
         has_polyester, has_lycra, raw_width, raw_gsm, finish_width, finish_gsm, quantity_kg,
-        ym_stock_id, mm_stock_id, status, process_type_ids, description, created_at, updated_at
+        ym_stock_id, mm_stock_id, status, process_type_ids, dyehouse_process_type_ids, description, created_at, updated_at
       )
       values (
         ${recordId}, ${orderNo}, ${requireString(payload.customerName, "Müşteri")},
@@ -621,7 +621,7 @@ export async function createCustomerOrder(payload: Record<string, unknown>) {
         ${orderInput.fabricTypeId}, ${orderInput.colorId}, ${orderInput.yarnCountId},
         ${orderInput.hasPolyester}, ${orderInput.hasLycra}, ${numberValue(payload.rawWidth, "Ham en")}, ${numberValue(payload.rawGsm, "Ham gramaj")},
         ${numberValue(payload.finishWidth, "Finish en")}, ${numberValue(payload.finishGsm, "Finish gramaj")}, ${numberValue(payload.quantityKg, "Sipariş kg")},
-        ${ymStockId}, ${mmStockId}, 'Taslak', ${JSON.stringify(payload.processTypeIds ?? [])},
+        ${ymStockId}, ${mmStockId}, 'Taslak', ${JSON.stringify(payload.processTypeIds ?? [])}, ${JSON.stringify(payload.dyehouseProcessTypeIds ?? [])},
         ${optionalString(payload.description) ?? ""}, now(), now()
       )
     `;
@@ -641,6 +641,8 @@ export async function updateCustomerOrder(recordId: string, payload: Record<stri
         finish_gsm = ${numberValue(payload.finishGsm, "Finish gramaj")},
         quantity_kg = ${numberValue(payload.quantityKg, "Sipariş kg")},
         status = ${requireString(payload.status ?? "Taslak", "Durum")},
+        process_type_ids = ${JSON.stringify(payload.processTypeIds ?? [])},
+        dyehouse_process_type_ids = ${JSON.stringify(payload.dyehouseProcessTypeIds ?? [])},
         description = ${optionalString(payload.description) ?? ""},
         updated_at = now()
     where id = ${recordId}

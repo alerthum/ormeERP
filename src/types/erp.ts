@@ -67,7 +67,8 @@ export interface Order {
   ymStockId: string;
   mmStockId: string;
   status: OrderStatus;
-  processTypeIds: string[];
+  processTypeIds?: string[];
+  dyehouseProcessTypeIds?: string[];
   description: string;
   createdAt: string;
   updatedAt: string;
