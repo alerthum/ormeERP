@@ -226,9 +226,9 @@ async function addBalance(tx: Tx, stockId: string, warehouseId: string, partyId:
   const balanceId = `bal-${stockId}-${warehouseId}-${partyId ?? "none"}-${lotNo ?? "none"}`;
   await tx`
     insert into warehouse_balances (id, stock_id, warehouse_id, party_id, lot_no, quantity, updated_at)
-    values (${balanceId}, ${stockId}, ${warehouseId}, ${partyId}, ${lotNo}, ${delta}, now())
+    values (${balanceId}, ${stockId}, ${warehouseId}, ${partyId}::text, ${lotNo}::text, ${delta}::numeric, now())
     on conflict (id) do update
-      set quantity = warehouse_balances.quantity + ${delta},
+      set quantity = warehouse_balances.quantity + ${delta}::numeric,
           updated_at = now()
   `;
 }
@@ -254,10 +254,10 @@ async function removeMovementEffects(
     if (String(movement.direction) === "IN") {
       await assertAvailableBalance(tx, stockId, warehouseId, partyId, lotNo, quantity, true);
       await addBalance(tx, stockId, warehouseId, partyId, lotNo, -quantity);
-      await tx`update stock_cards set current_stock_kg = current_stock_kg - ${quantity}, updated_at = now() where id = ${stockId}`;
+      await tx`update stock_cards set current_stock_kg = current_stock_kg - ${quantity}::numeric, updated_at = now() where id = ${stockId}`;
     } else {
       await addBalance(tx, stockId, warehouseId, partyId, lotNo, quantity);
-      await tx`update stock_cards set current_stock_kg = current_stock_kg + ${quantity}, updated_at = now() where id = ${stockId}`;
+      await tx`update stock_cards set current_stock_kg = current_stock_kg + ${quantity}::numeric, updated_at = now() where id = ${stockId}`;
     }
   }
 
@@ -322,8 +322,8 @@ async function addMovement(
       quantity, unit, description, reference_type, reference_id, created_at, created_by
     )
     values (
-      ${movementId}, ${input.date}, ${input.stockId}, ${input.warehouseId}, ${input.partyId ?? null}, ${input.lotNo ?? null}, ${input.orderId ?? null},
-      ${input.movementType}, ${input.direction}, ${input.quantity}, 'kg', ${input.description},
+      ${movementId}, ${input.date}, ${input.stockId}, ${input.warehouseId}, ${input.partyId ?? null}::text, ${input.lotNo ?? null}::text, ${input.orderId ?? null}::text,
+      ${input.movementType}, ${input.direction}, ${input.quantity}::numeric, 'kg', ${input.description},
       ${input.referenceType}, ${input.referenceId}, now(), 'system'
     )
   `;
@@ -407,7 +407,7 @@ async function getSettingUsageCount(entity: SettingEntity, recordId: string) {
         (select count(*) from warehouse_balances where warehouse_id = ${recordId}) +
         (select count(*) from transfers where from_warehouse_id = ${recordId} or to_warehouse_id = ${recordId}) +
         (select count(*) from production_raw where warehouse_id = ${recordId}) +
-        (select count(*) from production_raw where consumed_items @> ${JSON.stringify([{ warehouseId: recordId }])}::jsonb) +
+        (select count(*) from production_raw where consumed_items @> ${JSON.stringify([{ warehouseId: recordId }])}::jsonb::jsonb) +
         (select count(*) from production_dyehouse where input_warehouse_id = ${recordId} or output_warehouse_id = ${recordId}) +
         (select count(*) from purchase_receipts where warehouse_id = ${recordId}) +
         (select count(*) from sales where warehouse_id = ${recordId}) +
@@ -463,9 +463,9 @@ async function getSettingUsageCount(entity: SettingEntity, recordId: string) {
 
   const rows = await sql`
     select
-      (select count(*) from orders where process_type_ids @> ${JSON.stringify([recordId])}::jsonb) +
-      (select count(*) from orders where dyehouse_process_type_ids @> ${JSON.stringify([recordId])}::jsonb) +
-      (select count(*) from production_dyehouse where process_type_ids @> ${JSON.stringify([recordId])}::jsonb) as count
+      (select count(*) from orders where process_type_ids @> ${JSON.stringify([recordId])}::jsonb::jsonb) +
+      (select count(*) from orders where dyehouse_process_type_ids @> ${JSON.stringify([recordId])}::jsonb::jsonb) +
+      (select count(*) from production_dyehouse where process_type_ids @> ${JSON.stringify([recordId])}::jsonb::jsonb) as count
   `;
   return Number(rows[0]?.count ?? 0);
 }
@@ -475,7 +475,7 @@ export async function createRole(payload: Record<string, unknown>) {
   const permissions = Array.isArray(payload.permissions) ? payload.permissions.map(String) : [];
   await sql`
     insert into roles (id, name, description, permissions, is_active, created_at, updated_at)
-    values (${recordId}, ${requireString(payload.name, "Rol adı")}, ${optionalString(payload.description) ?? ""}, ${JSON.stringify(permissions)}, true, now(), now())
+    values (${recordId}, ${requireString(payload.name, "Rol adı")}, ${optionalString(payload.description) ?? ""}, ${JSON.stringify(permissions)}::jsonb, true, now(), now())
   `;
   return { id: recordId };
 }
@@ -486,7 +486,7 @@ export async function updateRole(recordId: string, payload: Record<string, unkno
     update roles
     set name = ${requireString(payload.name, "Rol adı")},
         description = ${optionalString(payload.description) ?? ""},
-        permissions = ${JSON.stringify(permissions)},
+        permissions = ${JSON.stringify(permissions)}::jsonb,
         is_active = ${payload.isActive === undefined ? true : boolValue(payload.isActive)},
         updated_at = now()
     where id = ${recordId}
@@ -622,7 +622,7 @@ export async function createCustomerOrder(payload: Record<string, unknown>) {
         ${orderInput.fabricTypeId}, ${orderInput.colorId}, ${orderInput.yarnCountId},
         ${orderInput.hasPolyester}, ${orderInput.hasLycra}, ${numberValue(payload.rawWidth, "Ham en")}, ${numberValue(payload.rawGsm, "Ham gramaj")},
         ${numberValue(payload.finishWidth, "Finish en")}, ${numberValue(payload.finishGsm, "Finish gramaj")}, ${numberValue(payload.quantityKg, "Sipariş kg")},
-        ${ymStockId}, ${mmStockId}, 'Taslak', ${JSON.stringify(payload.processTypeIds ?? [])}, ${JSON.stringify(payload.dyehouseProcessTypeIds ?? [])},
+        ${ymStockId}, ${mmStockId}, 'Taslak', ${JSON.stringify(payload.processTypeIds ?? [])}::jsonb, ${JSON.stringify(payload.dyehouseProcessTypeIds ?? [])}::jsonb,
         ${optionalString(payload.description) ?? ""}, now(), now()
       )
     `;
@@ -642,8 +642,8 @@ export async function updateCustomerOrder(recordId: string, payload: Record<stri
         finish_gsm = ${numberValue(payload.finishGsm, "Finish gramaj")},
         quantity_kg = ${numberValue(payload.quantityKg, "Sipariş kg")},
         status = ${requireString(payload.status ?? "Taslak", "Durum")},
-        process_type_ids = ${JSON.stringify(payload.processTypeIds ?? [])},
-        dyehouse_process_type_ids = ${JSON.stringify(payload.dyehouseProcessTypeIds ?? [])},
+        process_type_ids = ${JSON.stringify(payload.processTypeIds ?? [])}::jsonb,
+        dyehouse_process_type_ids = ${JSON.stringify(payload.dyehouseProcessTypeIds ?? [])}::jsonb,
         description = ${optionalString(payload.description) ?? ""},
         updated_at = now()
     where id = ${recordId}
@@ -869,7 +869,7 @@ export async function createTransfer(payload: Record<string, unknown>) {
     if (items.length === 0) throw new Error("Transfer kalemi zorunlu.");
     await tx`
       insert into transfers (id, date, from_warehouse_id, to_warehouse_id, items, description, created_at)
-      values (${transferId}, ${date}, ${fromWarehouseId}, ${toWarehouseId}, ${JSON.stringify(items)}, ${optionalString(payload.description) ?? ""}, now())
+      values (${transferId}, ${date}, ${fromWarehouseId}, ${toWarehouseId}, ${JSON.stringify(items)}::jsonb, ${optionalString(payload.description) ?? ""}, now())
     `;
     for (const item of items) {
       const stockId = requireString(item.stockId, "Stok");
@@ -885,8 +885,8 @@ export async function createTransfer(payload: Record<string, unknown>) {
   });
 }
 
-export async function deleteTransfer(recordId: string) {
-  return sql.begin(async (tx) => {
+export async function deleteTransfer(recordId: string, outerTx?: Tx) {
+  const run = async (tx: Tx) => {
     // 1. Remove all movements and reverse balances
     await removeMovementEffects(tx, [{ referenceType: "transfer", referenceId: recordId }]);
 
@@ -894,13 +894,14 @@ export async function deleteTransfer(recordId: string) {
     await tx`delete from transfers where id = ${recordId}`;
 
     return { id: recordId };
-  });
+    };
+  return outerTx ? run(outerTx) : sql.begin(run);
 }
 
 export async function updateTransfer(recordId: string, payload: Record<string, unknown>) {
   return sql.begin(async (tx) => {
     // 1. Undo old state
-    await deleteTransfer(recordId);
+    await deleteTransfer(recordId, tx);
 
     // 2. Create new state
     const transferId = recordId;
@@ -912,7 +913,7 @@ export async function updateTransfer(recordId: string, payload: Record<string, u
     
     await tx`
       insert into transfers (id, date, from_warehouse_id, to_warehouse_id, items, description, created_at)
-      values (${transferId}, ${date}, ${fromWarehouseId}, ${toWarehouseId}, ${JSON.stringify(items)}, ${optionalString(payload.description) ?? ""}, now())
+      values (${transferId}, ${date}, ${fromWarehouseId}, ${toWarehouseId}, ${JSON.stringify(items)}::jsonb, ${optionalString(payload.description) ?? ""}, now())
     `;
 
     for (const item of items) {
@@ -954,7 +955,7 @@ export async function createRawProduction(payload: Record<string, unknown>) {
             values (
               ${partyId}, ${partyNo}, ${orderId}, ${String(orderRows[0].ym_stock_id)}, ${String(orderRows[0].mm_stock_id)},
               'Örmede', ${requireString(payload.warehouseId, "Ham depo")},
-              ${JSON.stringify([{ date, title: "Parti oluşturuldu", description: "Manuel parti numarası ile ham üretim başlatıldı.", tone: "blue" }])},
+              ${JSON.stringify([{ date, title: "Parti oluşturuldu", description: "Manuel parti numarası ile ham üretim başlatıldı.", tone: "blue" }])}::jsonb,
               now(), now()
             )
           `;
@@ -967,7 +968,7 @@ export async function createRawProduction(payload: Record<string, unknown>) {
           values (
             ${partyId}, ${partyNo}, ${orderId}, ${String(orderRows[0].ym_stock_id)}, ${String(orderRows[0].mm_stock_id)},
             'Örmede', ${requireString(payload.warehouseId, "Ham depo")},
-            ${JSON.stringify([{ date, title: "Parti oluşturuldu", description: "Ham üretim kaydı ile otomatik açıldı.", tone: "blue" }])},
+            ${JSON.stringify([{ date, title: "Parti oluşturuldu", description: "Ham üretim kaydı ile otomatik açıldı.", tone: "blue" }])}::jsonb,
             now(), now()
           )
         `;
@@ -987,7 +988,7 @@ export async function createRawProduction(payload: Record<string, unknown>) {
       values (
         ${productionId}, ${date}, ${orderId}, ${partyId}, ${requireString(payload.knitterPartnerId, "Fason örmeci")},
         ${requireString(payload.warehouseId, "Ham depo")}, ${String(orderRows[0].ym_stock_id)}, ${producedRawKg},
-        ${rawWidth}, ${rawGsm}, ${JSON.stringify(consumedItems)}, ${waste.wasteKg}, ${waste.wastePercent}, ${optionalString(payload.description) ?? ""}, now()
+        ${rawWidth}, ${rawGsm}, ${JSON.stringify(consumedItems)}::jsonb, ${waste.wasteKg}, ${waste.wastePercent}, ${optionalString(payload.description) ?? ""}, now()
       )
     `;
     for (const item of consumedItems) {
@@ -1023,7 +1024,7 @@ export async function createRawProduction(payload: Record<string, unknown>) {
       set raw_produced_kg = raw_produced_kg + ${producedRawKg},
           raw_consumed_kg = raw_consumed_kg + ${consumedKg},
           raw_waste_kg = raw_waste_kg + ${waste.wasteKg},
-          raw_waste_percent = case when raw_consumed_kg + ${consumedKg} > 0 then ((raw_waste_kg + ${waste.wasteKg}) / (raw_consumed_kg + ${consumedKg})) * 100 else 0 end,
+          raw_waste_percent = case when (raw_consumed_kg + ${consumedKg}::numeric) > 0 then ((raw_waste_kg + ${waste.wasteKg}::numeric) / (raw_consumed_kg + ${consumedKg}::numeric)) * 100 else 0 end,
           status = 'Ham Geldi',
           updated_at = now()
       where id = ${partyId}
@@ -1039,8 +1040,8 @@ export async function createRawProduction(payload: Record<string, unknown>) {
   });
 }
 
-export async function deleteRawProduction(recordId: string) {
-  return sql.begin(async (tx) => {
+export async function deleteRawProduction(recordId: string, outerTx?: Tx) {
+  const run = async (tx: Tx) => {
     const rows = await tx`
       select id, order_id, party_id, produced_raw_kg, consumed_items, waste_kg
       from production_raw
@@ -1075,13 +1076,14 @@ export async function deleteRawProduction(recordId: string) {
     `;
     
     return { id: recordId };
-  });
+    };
+  return outerTx ? run(outerTx) : sql.begin(run);
 }
 
 export async function updateRawProduction(recordId: string, payload: Record<string, unknown>) {
   return sql.begin(async (tx) => {
     // 1. Undo old state
-    await deleteRawProduction(recordId);
+    await deleteRawProduction(recordId, tx);
     // 2. Create new state (with the same ID)
     const productionId = recordId; 
     const date = requireString(payload.date ?? new Date().toISOString().slice(0, 10), "Üretim tarihi");
@@ -1103,7 +1105,7 @@ export async function updateRawProduction(recordId: string, payload: Record<stri
       values (
         ${productionId}, ${date}, ${orderId}, ${partyId}, ${requireString(payload.knitterPartnerId, "Fason örmeci")},
         ${requireString(payload.warehouseId, "Ham depo")}, ${String(orderRows[0].ym_stock_id)}, ${producedRawKg},
-        ${numberValue(payload.rawWidth, "Ham en")}, ${numberValue(payload.rawGsm, "Ham gramaj")}, ${JSON.stringify(consumedItems)}, 
+        ${numberValue(payload.rawWidth, "Ham en")}, ${numberValue(payload.rawGsm, "Ham gramaj")}, ${JSON.stringify(consumedItems)}::jsonb, 
         ${waste.wasteKg}, ${waste.wastePercent}, ${optionalString(payload.description) ?? ""}, now()
       )
     `;
@@ -1143,7 +1145,7 @@ export async function updateRawProduction(recordId: string, payload: Record<stri
       set raw_produced_kg = raw_produced_kg + ${producedRawKg},
           raw_consumed_kg = raw_consumed_kg + ${consumedKg},
           raw_waste_kg = raw_waste_kg + ${waste.wasteKg},
-          raw_waste_percent = case when raw_consumed_kg + ${consumedKg} > 0 then ((raw_waste_kg + ${waste.wasteKg}) / (raw_consumed_kg + ${consumedKg})) * 100 else 0 end,
+          raw_waste_percent = case when (raw_consumed_kg + ${consumedKg}::numeric) > 0 then ((raw_waste_kg + ${waste.wasteKg}::numeric) / (raw_consumed_kg + ${consumedKg}::numeric)) * 100 else 0 end,
           updated_at = now()
       where id = ${partyId}
     `;
@@ -1172,7 +1174,7 @@ export async function createDyehouseProduction(payload: Record<string, unknown>)
         ${productionId}, ${date}, ${String(partyRows[0].order_id)}, ${partyId}, ${requireString(payload.dyehousePartnerId, "Boyahane")},
         ${requireString(payload.inputWarehouseId, "Giriş deposu")}, ${requireString(payload.outputWarehouseId, "Çıkış deposu")},
         ${String(partyRows[0].ym_stock_id)}, ${String(partyRows[0].mm_stock_id)}, ${inputRawKg}, ${finishedKg}, ${waste.wasteKg}, ${waste.wastePercent},
-        ${JSON.stringify(payload.processTypeIds ?? [])}, ${numberValue(payload.finishWidth, "Finish en")}, ${numberValue(payload.finishGsm, "Finish gramaj")},
+        ${JSON.stringify(payload.processTypeIds ?? [])}::jsonb, ${numberValue(payload.finishWidth, "Finish en")}, ${numberValue(payload.finishGsm, "Finish gramaj")},
         ${optionalString(payload.description) ?? ""}, now()
       )
     `;
@@ -1185,7 +1187,7 @@ export async function createDyehouseProduction(payload: Record<string, unknown>)
       set dyehouse_input_kg = dyehouse_input_kg + ${inputRawKg},
           finished_kg = finished_kg + ${finishedKg},
           dyehouse_waste_kg = dyehouse_waste_kg + ${waste.wasteKg},
-          dyehouse_waste_percent = case when dyehouse_input_kg + ${inputRawKg} > 0 then ((dyehouse_waste_kg + ${waste.wasteKg}) / (dyehouse_input_kg + ${inputRawKg})) * 100 else 0 end,
+          dyehouse_waste_percent = case when (dyehouse_input_kg + ${inputRawKg}::numeric) > 0 then ((dyehouse_waste_kg + ${waste.wasteKg}::numeric) / (dyehouse_input_kg + ${inputRawKg}::numeric)) * 100 else 0 end,
           finish_width = ${finishWidth},
           finish_gsm = ${finishGsm},
           status = 'Mamül Hazır',
@@ -1203,8 +1205,8 @@ export async function createDyehouseProduction(payload: Record<string, unknown>)
   });
 }
 
-export async function deleteDyehouseProduction(recordId: string) {
-  return sql.begin(async (tx) => {
+export async function deleteDyehouseProduction(recordId: string, outerTx?: Tx) {
+  const run = async (tx: Tx) => {
     const rows = await tx`
       select id, order_id, party_id, input_raw_kg, finished_kg, waste_kg
       from production_dyehouse
@@ -1238,13 +1240,14 @@ export async function deleteDyehouseProduction(recordId: string) {
     `;
 
     return { id: recordId };
-  });
+    };
+  return outerTx ? run(outerTx) : sql.begin(run);
 }
 
 export async function updateDyehouseProduction(recordId: string, payload: Record<string, unknown>) {
   return sql.begin(async (tx) => {
     // 1. Undo old state
-    await deleteDyehouseProduction(recordId);
+    await deleteDyehouseProduction(recordId, tx);
 
     // 2. Create new state
     const productionId = recordId;
@@ -1266,7 +1269,7 @@ export async function updateDyehouseProduction(recordId: string, payload: Record
         ${productionId}, ${date}, ${String(partyRows[0].order_id)}, ${partyId}, ${requireString(payload.dyehousePartnerId, "Boyahane")},
         ${requireString(payload.inputWarehouseId, "Giriş deposu")}, ${requireString(payload.outputWarehouseId, "Çıkış deposu")},
         ${String(partyRows[0].ym_stock_id)}, ${String(partyRows[0].mm_stock_id)}, ${inputRawKg}, ${finishedKg}, ${waste.wasteKg}, ${waste.wastePercent},
-        ${JSON.stringify(payload.processTypeIds ?? [])}, ${numberValue(payload.finishWidth, "Finish en")}, ${numberValue(payload.finishGsm, "Finish gramaj")},
+        ${JSON.stringify(payload.processTypeIds ?? [])}::jsonb, ${numberValue(payload.finishWidth, "Finish en")}, ${numberValue(payload.finishGsm, "Finish gramaj")},
         ${optionalString(payload.description) ?? ""}, now()
       )
     `;
@@ -1279,7 +1282,7 @@ export async function updateDyehouseProduction(recordId: string, payload: Record
       set dyehouse_input_kg = dyehouse_input_kg + ${inputRawKg},
           finished_kg = finished_kg + ${finishedKg},
           dyehouse_waste_kg = dyehouse_waste_kg + ${waste.wasteKg},
-          dyehouse_waste_percent = case when dyehouse_input_kg + ${inputRawKg} > 0 then ((dyehouse_waste_kg + ${waste.wasteKg}) / (dyehouse_input_kg + ${inputRawKg})) * 100 else 0 end,
+          dyehouse_waste_percent = case when (dyehouse_input_kg + ${inputRawKg}::numeric) > 0 then ((dyehouse_waste_kg + ${waste.wasteKg}::numeric) / (dyehouse_input_kg + ${inputRawKg}::numeric)) * 100 else 0 end,
           finish_width = ${numberValue(payload.finishWidth, "Finish en")},
           finish_gsm = ${numberValue(payload.finishGsm, "Finish gramaj")},
           updated_at = now()
@@ -1332,7 +1335,7 @@ export async function createSale(payload: Record<string, unknown>) {
     await tx`
       update parties
       set status = 'Sevk Edildi',
-          timeline = timeline || ${JSON.stringify([{ date, title: "Sevkiyat", description: `${saleNo} ile ${quantityKg} kg çıkış yapıldı.`, tone: "green" }])}::jsonb,
+          timeline = timeline || ${JSON.stringify([{ date, title: "Sevkiyat", description: `${saleNo} ile ${quantityKg} kg çıkış yapıldı.`, tone: "green" }])}::jsonb::jsonb,
           updated_at = now()
       where id = ${partyId}
     `;
@@ -1343,8 +1346,8 @@ export async function createSale(payload: Record<string, unknown>) {
   });
 }
 
-export async function deleteSale(recordId: string) {
-  return sql.begin(async (tx) => {
+export async function deleteSale(recordId: string, outerTx?: Tx) {
+  const run = async (tx: Tx) => {
     const rows = await tx`select id, party_id, order_id from sales where id = ${recordId} limit 1`;
     const sale = rows[0];
     if (!sale) throw new Error("Sevkiyat kaydı bulunamadı.");
@@ -1356,13 +1359,14 @@ export async function deleteSale(recordId: string) {
     await tx`delete from sales where id = ${recordId}`;
 
     return { id: recordId };
-  });
+    };
+  return outerTx ? run(outerTx) : sql.begin(run);
 }
 
 export async function updateSale(recordId: string, payload: Record<string, unknown>) {
   return sql.begin(async (tx) => {
     // 1. Undo old state
-    await deleteSale(recordId);
+    await deleteSale(recordId, tx);
 
     // 2. Create new state (with same ID)
     const saleId = recordId;
@@ -1454,7 +1458,7 @@ export async function shiftPartyAllocation(payload: Record<string, unknown>) {
 
     await tx`
       update parties
-      set timeline = timeline || ${JSON.stringify([{ date, title: "Parti kaydırma", description: `${shiftKg} kg kaynak siparişten hedef siparişe bağlandı.`, tone: "amber" }])}::jsonb,
+      set timeline = timeline || ${JSON.stringify([{ date, title: "Parti kaydırma", description: `${shiftKg} kg kaynak siparişten hedef siparişe bağlandı.`, tone: "amber" }])}::jsonb::jsonb,
           updated_at = now()
       where id = ${partyId}
     `;
@@ -1507,7 +1511,7 @@ export async function deactivateStockCard(recordId: string) {
       (select count(*) from orders where ym_stock_id = ${recordId} or mm_stock_id = ${recordId}) +
       (select count(*) from parties where ym_stock_id = ${recordId} or mm_stock_id = ${recordId}) +
       (select count(*) from production_raw where ym_stock_id = ${recordId}) +
-      (select count(*) from production_raw where consumed_items @> ${JSON.stringify([{ stockId: recordId }])}::jsonb) +
+      (select count(*) from production_raw where consumed_items @> ${JSON.stringify([{ stockId: recordId }])}::jsonb::jsonb) +
       (select count(*) from production_dyehouse where ym_stock_id = ${recordId} or mm_stock_id = ${recordId}) +
       (select count(*) from sales where stock_id = ${recordId}) as count
   `;
