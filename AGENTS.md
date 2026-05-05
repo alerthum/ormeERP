@@ -578,3 +578,24 @@ Long-term correct model:
 - stockMovement relationship tracking
 - parentMovementId/sourceMovementId where needed
 - dependency validation based on actual movement usage, not generic same stock/party/lot matching
+
+
+# Zero Orphan Data Rule
+
+Operational orphan data is not acceptable.
+
+The system must never leave a transaction header without its stock_movements, balances, summaries and timeline records.
+
+The system must never leave balances or summaries that do not match stock_movements.
+
+All stock-impacting create/update/delete operations must run inside one database transaction.
+
+If any part of the operation fails, the whole operation must rollback.
+
+Do not hide inconsistent data in reports. Prevent inconsistency at write time.
+
+If inconsistency is detected, show an admin-level critical integrity warning and provide diagnostics/rebuild tools.
+
+# Data Consistency Rule
+
+Veri tutarsızlığını raporda saklama. Tutarsız veri oluşmasını engelle. Her stok etkileyen işlem transaction içinde header + movements + balances + summaries + timeline kayıtlarını birlikte oluşturmalı veya birlikte rollback etmelidir.

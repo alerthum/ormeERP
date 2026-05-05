@@ -833,6 +833,8 @@ export async function createPurchaseReceipt(payload: Record<string, unknown>) {
       sourceTransactionType: "direct_purchase_receipt",
       supplierOrderId: purchaseOrderId,
     });
+
+    await assertTransactionIntegrity(tx, "direct_purchase_receipt", receiptId);
     return { id: receiptId, receiptNo, status };
   });
 }
@@ -908,6 +910,8 @@ export async function createDirectRawMaterialPurchase(payload: Record<string, un
       sourceTransactionType: "direct_purchase_receipt",
       supplierOrderId: purchaseOrderId,
     });
+
+    await assertTransactionIntegrity(tx, "direct_purchase_receipt", receiptId);
     return { id: receiptId, receiptNo, purchaseOrderId, purchaseOrderNo };
   });
 }
@@ -963,6 +967,8 @@ export async function createTransfer(payload: Record<string, unknown>) {
         sourceMovementId: outMovId // Linking IN to OUT
       });
     }
+
+    await assertTransactionIntegrity(tx, "transfer", transferId);
     return { id: transferId };
   });
 }
@@ -978,6 +984,7 @@ export async function deleteTransfer(recordId: string, outerTx?: Tx) {
     // 2. Delete the record
     await tx`delete from transfers where id = ${recordId}`;
 
+    await assertNoOrphanOperationalData(tx);
     return { id: recordId };
     };
   return outerTx ? run(outerTx) : sql.begin(run);
@@ -1040,6 +1047,7 @@ export async function updateTransfer(recordId: string, payload: Record<string, u
       });
     }
     
+    await assertTransactionIntegrity(tx, "transfer", transferId);
     return { id: transferId };
   });
 }
@@ -1167,6 +1175,8 @@ export async function createRawProduction(payload: Record<string, unknown>) {
       values (${id("opa")}, ${orderId}, ${partyId}, ${producedRawKg}, ${producedRawKg}, 0, 0, 'Aktif', now(), now())
     `;
     await tx`update orders set status = 'Ham Geldi', updated_at = now() where id = ${orderId}`;
+
+    await assertTransactionIntegrity(tx, "production_raw", productionId);
     return { id: productionId, partyId, partyNo, waste };
   });
 }
@@ -1209,6 +1219,7 @@ export async function deleteRawProduction(recordId: string, outerTx?: Tx) {
       where id = ${partyId}
     `;
     
+    await assertNoOrphanOperationalData(tx);
     return { id: recordId };
     };
   return outerTx ? run(outerTx) : sql.begin(run);
@@ -1335,6 +1346,7 @@ export async function updateRawProduction(recordId: string, payload: Record<stri
       where id = ${partyId}
     `;
 
+    await assertTransactionIntegrity(tx, "production_raw", productionId);
     return { id: productionId };
   });
 }
@@ -1431,6 +1443,8 @@ export async function createDyehouseProduction(payload: Record<string, unknown>)
       where order_id = ${String(partyRows[0].order_id)} and party_id = ${partyId}
     `;
     await tx`update orders set status = 'Mamül Hazır', updated_at = now() where id = ${String(partyRows[0].order_id)}`;
+
+    await assertTransactionIntegrity(tx, "production_dyehouse", productionId);
     return { id: productionId, waste };
   });
 }
@@ -1472,6 +1486,7 @@ export async function deleteDyehouseProduction(recordId: string, outerTx?: Tx) {
       where id = ${partyId}
     `;
 
+    await assertNoOrphanOperationalData(tx);
     return { id: recordId };
     };
   return outerTx ? run(outerTx) : sql.begin(run);
@@ -1565,6 +1580,7 @@ export async function updateDyehouseProduction(recordId: string, payload: Record
       where id = ${partyId}
     `;
 
+    await assertTransactionIntegrity(tx, "production_dyehouse", productionId);
     return { id: productionId };
   });
 }
@@ -1627,6 +1643,8 @@ export async function createSale(payload: Record<string, unknown>) {
     if (orderId) {
       await tx`update orders set status = 'Sevk Edildi', updated_at = now() where id = ${orderId}`;
     }
+
+    await assertTransactionIntegrity(tx, "sale", saleId);
     return { id: saleId, saleNo };
   });
 }
@@ -1646,6 +1664,7 @@ export async function deleteSale(recordId: string, outerTx?: Tx) {
     // 2. Delete the record
     await tx`delete from sales where id = ${recordId}`;
 
+    await assertNoOrphanOperationalData(tx);
     return { id: recordId };
     };
   return outerTx ? run(outerTx) : sql.begin(run);
@@ -1706,6 +1725,7 @@ export async function updateSale(recordId: string, payload: Record<string, unkno
       sourceMovementId: sourceMmRows[0]?.id
     });
 
+    await assertTransactionIntegrity(tx, "sale", saleId);
     return { id: saleId, saleNo };
   });
 }
@@ -1946,6 +1966,8 @@ export async function deletePurchaseReceipt(recordId: string) {
     if (isDirectPurchase && Number(remainingReceipts[0]?.count ?? 0) === 0) {
       await tx`delete from purchase_orders where id = ${purchaseOrderId}`;
     }
+
+    await assertNoOrphanOperationalData(tx);
     return { id: recordId, deleted: true };
   });
 }
@@ -2028,6 +2050,7 @@ export async function updatePurchaseReceipt(recordId: string, payload: Record<st
       `;
     }
 
+    await assertTransactionIntegrity(tx, "direct_purchase_receipt", recordId);
     return { id: recordId };
   });
 }
@@ -2038,4 +2061,273 @@ export async function updateUISettings(payload: Record<string, unknown>) {
     on conflict (id) do update set data = ${sql.json(asJson(payload))}
   `;
   return { success: true };
+}
+
+/**
+ * Assert that a transaction has all its required stock movements.
+ * This is called at the end of create/update operations.
+ */
+export async function assertTransactionIntegrity(tx: Tx, referenceType: string, referenceId: string) {
+  // 1. Check if header exists
+  const headerTables: Record<string, string> = {
+    production_raw: "production_raw",
+    production_dyehouse: "production_dyehouse",
+    transfer: "transfers",
+    sale: "sales",
+    direct_purchase_receipt: "purchase_receipts",
+  };
+
+  const tableName = headerTables[referenceType];
+  if (tableName) {
+    const header = await tx`select id from ${tx(tableName)} where id = ${referenceId} limit 1`;
+    if (header.length === 0) {
+      throw new Error(`Veri bütünlüğü hatası: ${referenceType} başlık kaydı (${referenceId}) bulunamadı.`);
+    }
+  }
+
+  // 2. Check if stock movements exist for this transaction
+  const movements = await tx`
+    select id, quantity, direction, stock_id, lot_no, party_id 
+    from stock_movements 
+    where (source_transaction_type = ${referenceType} and source_transaction_id = ${referenceId})
+       or (reference_type = ${referenceType} and reference_id = ${referenceId})
+  `;
+
+  if (movements.length === 0) {
+    throw new Error(`Veri bütünlüğü hatası: ${referenceType} işlemi için stok hareketi oluşmamış.`);
+  }
+
+  // 3. Basic lot/party rule check
+  for (const m of movements) {
+    const stockRows = await tx`select type from stock_cards where id = ${m.stock_id} limit 1`;
+    const stockType = stockRows[0]?.type;
+    
+    if (["IP", "LYC", "POLY"].includes(stockType)) {
+      if (!m.lot_no) throw new Error(`Veri bütünlüğü hatası: Hammadde hareketi (${m.id}) için LotNo zorunludur.`);
+    } else if (["YM", "MM"].includes(stockType)) {
+      if (!m.party_id) throw new Error(`Veri bütünlüğü hatası: Kumaş hareketi (${m.id}) için PartiNo zorunludur.`);
+    }
+  }
+}
+
+/**
+ * Global check for orphan operational data.
+ */
+export async function assertNoOrphanOperationalData(tx: Tx) {
+  const orphans: string[] = [];
+
+  // Check headers without movements
+  const modules = [
+    { type: 'production_raw', table: 'production_raw', label: 'Ham Üretim' },
+    { type: 'production_dyehouse', table: 'production_dyehouse', label: 'Boyahane Üretimi' },
+    { type: 'transfer', table: 'transfers', label: 'Stok Transferi' },
+    { type: 'sale', table: 'sales', label: 'Satış' },
+    { type: 'direct_purchase_receipt', table: 'purchase_receipts', label: 'Alış / Mal Kabul' }
+  ];
+
+  for (const mod of modules) {
+    const rows = await tx`
+      select h.id 
+      from ${tx(mod.table)} h
+      left join stock_movements m on (m.source_transaction_type = ${mod.type} and m.source_transaction_id = h.id)
+                                  or (m.reference_type = ${mod.type} and m.reference_id = h.id)
+      where m.id is null
+    `;
+    if (rows.length > 0) {
+      orphans.push(`${mod.label} başlık kaydı var ama stok hareketi yok (${rows.length} adet)`);
+    }
+  }
+
+  // Check movements without headers
+  const orphanMovements = await tx`
+    select distinct source_transaction_type, source_transaction_id
+    from stock_movements m
+    where m.source_transaction_type in ('production_raw', 'production_dyehouse', 'transfer', 'sale', 'direct_purchase_receipt')
+      and not exists (
+        select 1 from (
+          select id, 'production_raw' as type from production_raw
+          union all
+          select id, 'production_dyehouse' from production_dyehouse
+          union all
+          select id, 'transfer' from transfers
+          union all
+          select id, 'sale' from sales
+          union all
+          select id, 'direct_purchase_receipt' from purchase_receipts
+        ) h where h.id = m.source_transaction_id and h.type = m.source_transaction_type
+      )
+  `;
+  
+  if (orphanMovements.length > 0) {
+    orphans.push(`Stok hareketi var ama başlık kaydı yok (${orphanMovements.length} farklı işlem)`);
+  }
+
+  if (orphans.length > 0) {
+    throw new Error(`Kritik Veri Bütünlüğü Hatası:\n- ${orphans.join('\n- ')}`);
+  }
+}
+
+/**
+ * Rebuild all balances and summaries from scratch using stock_movements.
+ */
+export async function rebuildBalancesFromMovements() {
+  return sql.begin(async (tx) => {
+    // 1. Reset balances
+    await tx`truncate table warehouse_balances`;
+    await tx`update stock_cards set current_stock_kg = 0`;
+
+    // 2. Re-apply all movements to balances
+    const movements = await tx`
+      select stock_id, warehouse_id, party_id, lot_no, direction, quantity 
+      from stock_movements 
+      order by created_at asc
+    `;
+
+    for (const m of movements) {
+      const delta = m.direction === 'IN' ? Number(m.quantity) : -Number(m.quantity);
+      await addBalance(tx, m.stock_id, m.warehouse_id, m.party_id, m.lot_no, delta);
+      await tx`update stock_cards set current_stock_kg = current_stock_kg + ${delta}::numeric where id = ${m.stock_id}`;
+    }
+
+    // 3. Rebuild Party Summaries
+    await tx`
+      update parties p
+      set raw_produced_kg = coalesce((
+            select sum(quantity) from stock_movements 
+            where stock_id = p.ym_stock_id and party_id = p.id and movement_type = 'Üretim giriş' and direction = 'IN'
+          ), 0),
+          raw_consumed_kg = coalesce((
+            select sum(quantity) from stock_movements 
+            where source_transaction_id in (select id from production_raw where party_id = p.id) 
+              and movement_type = 'Üretim tüketim' and direction = 'OUT'
+          ), 0),
+          dyehouse_input_kg = coalesce((
+            select sum(quantity) from stock_movements 
+            where stock_id = p.ym_stock_id and party_id = p.id and movement_type = 'Boyahane çıkış' and direction = 'OUT'
+          ), 0),
+          finished_kg = coalesce((
+            select sum(quantity) from stock_movements 
+            where stock_id = p.mm_stock_id and party_id = p.id and movement_type = 'Boyahane giriş' and direction = 'IN'
+          ), 0)
+    `;
+    
+    await tx`
+      update parties
+      set raw_waste_kg = greatest(raw_consumed_kg - raw_produced_kg, 0),
+          raw_waste_percent = case when raw_consumed_kg > 0 then (greatest(raw_consumed_kg - raw_produced_kg, 0) / raw_consumed_kg) * 100 else 0 end,
+          dyehouse_waste_kg = greatest(dyehouse_input_kg - finished_kg, 0),
+          dyehouse_waste_percent = case when dyehouse_input_kg > 0 then (greatest(dyehouse_input_kg - finished_kg, 0) / dyehouse_input_kg) * 100 else 0 end
+    `;
+
+    // 4. Rebuild Purchase Order Summaries
+    const poRows = await tx`select id from purchase_orders`;
+    for (const po of poRows) {
+      const receipts = await tx`select items from purchase_receipts where purchase_order_id = ${po.id}`;
+      const poData = await tx`select items, total_ordered_kg from purchase_orders where id = ${po.id} limit 1`;
+      const poItems = jsonArray(poData[0].items);
+      
+      let totalReceived = 0;
+      const nextItems = poItems.map(item => {
+        let itemReceived = 0;
+        for (const r of receipts) {
+          const rItems = jsonArray(r.items);
+          const rItem = rItems.find(ri => ri.purchaseOrderItemId === item.id);
+          if (rItem) itemReceived += Number(rItem.receivedKg);
+        }
+        totalReceived += itemReceived;
+        return { ...item, receivedKg: itemReceived, remainingKg: Math.max(Number(item.orderedKg) - itemReceived, 0) };
+      });
+
+      const totalOrdered = Number(poData[0].total_ordered_kg);
+      const remaining = Math.max(totalOrdered - totalReceived, 0);
+      const status = totalReceived === 0 ? "Açık" : remaining === 0 ? "Tamamlandı" : "Kısmi Geldi";
+
+      await tx`
+        update purchase_orders 
+        set items = ${tx.json(asJson(nextItems))}, 
+            total_received_kg = ${totalReceived}, 
+            total_remaining_kg = ${remaining}, 
+            status = ${status}
+        where id = ${po.id}
+      `;
+    }
+
+    // 5. Rebuild Order Party Allocations (Sipariş Özetleri)
+    await tx`
+      update order_party_allocations opa
+      set produced_raw_kg = coalesce((
+            select sum(quantity) from stock_movements 
+            where order_id = opa.order_id and party_id = opa.party_id and movement_type = 'Üretim giriş' and direction = 'IN'
+          ), 0),
+          produced_finished_kg = coalesce((
+            select sum(quantity) from stock_movements 
+            where order_id = opa.order_id and party_id = opa.party_id and movement_type = 'Boyahane giriş' and direction = 'IN'
+          ), 0),
+          shipped_kg = coalesce((
+            select sum(quantity) from stock_movements 
+            where order_id = opa.order_id and party_id = opa.party_id and source_transaction_type = 'sale' and direction = 'OUT'
+          ), 0)
+    `;
+
+    return { success: true };
+  });
+}
+
+/**
+ * Clean all orphan operational data.
+ */
+export async function cleanOrphanData() {
+  return sql.begin(async (tx) => {
+    // 1. Delete headers without movements
+    const modules = [
+      { type: 'production_raw', table: 'production_raw' },
+      { type: 'production_dyehouse', table: 'production_dyehouse' },
+      { type: 'transfer', table: 'transfers' },
+      { type: 'sale', table: 'sales' },
+      { type: 'direct_purchase_receipt', table: 'purchase_receipts' }
+    ];
+
+    for (const mod of modules) {
+      await tx`
+        delete from ${tx(mod.table)} h
+        where not exists (
+          select 1 from stock_movements m 
+          where (m.source_transaction_type = ${mod.type} and m.source_transaction_id = h.id)
+             or (m.reference_type = ${mod.type} and m.reference_id = h.id)
+        )
+      `;
+    }
+
+    // 2. Delete movements without headers
+    await tx`
+      delete from stock_movements m
+      where m.source_transaction_type in ('production_raw', 'production_dyehouse', 'transfer', 'sale', 'direct_purchase_receipt')
+        and not exists (
+          select 1 from (
+            select id, 'production_raw' as type from production_raw
+            union all
+            select id, 'production_dyehouse' from production_dyehouse
+            union all
+            select id, 'transfer' from transfers
+            union all
+            select id, 'sale' from sales
+            union all
+            select id, 'direct_purchase_receipt' from purchase_receipts
+          ) h where h.id = m.source_transaction_id and h.type = m.source_transaction_type
+        )
+    `;
+
+    // 3. Clean up empty parties (no movements)
+    await tx`
+      delete from parties p
+      where not exists (select 1 from stock_movements where party_id = p.id)
+        and not exists (select 1 from production_raw where party_id = p.id)
+        and not exists (select 1 from production_dyehouse where party_id = p.id)
+    `;
+
+    // 4. Final step: Rebuild balances to ensure consistency
+    await rebuildBalancesFromMovements();
+
+    return { success: true };
+  });
 }

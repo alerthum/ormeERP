@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, BarChart3, Bell, BookOpen, Boxes, CheckCircle2, Download, Factory, KeyRound, Layout, Maximize2, PackageCheck, PackagePlus, Plus, Settings, ShoppingCart, SlidersHorizontal, Truck, Users, Warehouse, X } from "lucide-react";
+import { AlertTriangle, BarChart3, Bell, BookOpen, Boxes, CheckCircle2, Download, Factory, KeyRound, Layout, Maximize2, PackageCheck, PackagePlus, Plus, RefreshCcw, Search, Settings, ShieldCheck, ShoppingCart, SlidersHorizontal, Trash2, Truck, Users, Warehouse, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DataTable, type Column } from "@/components/ui/data-table";
@@ -2114,6 +2114,12 @@ const settingGroups = [
     items: ["Admin", "Üretim", "Depo", "Satın alma"],
   },
   {
+    href: "/settings/data-control",
+    title: "Veri Kontrol",
+    description: "Veri bütünlüğü kontrolü, yetim kayıt temizliği ve bakiyeleri yeniden oluşturma araçları.",
+    items: ["Bütünlük", "Temizlik", "Rebuild"],
+  },
+  {
     href: "/settings/roadmap",
     title: "Gelişim günlüğü",
     description: "Tamamlanan geliştirmeler, bekleyen işler, önem sırası ve proje ilerleme özeti.",
@@ -2854,3 +2860,204 @@ export function ProjectSettingsPage() {
     </div>
   );
 }
+
+export function DataControlPage() {
+  const [loading, setLoading] = useState<string | null>(null);
+  const [checkResult, setCheckResult] = useState<{ success: boolean; message?: string; error?: string } | null>(null);
+
+  async function runAction(action: "rebuild" | "clean" | "check") {
+    setLoading(action);
+    setCheckResult(null);
+    try {
+      const res = await fetch("/api/integrity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const result = await res.json();
+      if (action === "check") {
+        setCheckResult(result.data);
+      } else {
+        if (result.success) {
+          toast.success(result.data.message);
+        } else {
+          toast.error(result.error || "İşlem başarısız.");
+        }
+      }
+    } catch (error) {
+      toast.error("Sunucu hatası oluştu.");
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Sistem"
+        title="Veri Kontrol ve Bütünlük"
+        description="Veritabanı tutarsızlıklarını tespit edin, yetim kayıtları temizleyin ve hareketlerden bakiyeleri yeniden oluşturun."
+        icon={ShieldCheck}
+      />
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="premium-card rounded-none p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="grid size-10 place-items-center rounded-none bg-blue-50 text-blue-600">
+              <Search className="size-5" />
+            </div>
+            <h2 className="font-bold text-slate-950">Bütünlük Kontrolü</h2>
+          </div>
+          <p className="text-sm leading-6 text-slate-500">
+            Tüm operasyonel tabloları tarayarak başlığı olmayan hareketleri veya hareketi olmayan başlık kayıtlarını bulur.
+          </p>
+          <button
+            onClick={() => runAction("check")}
+            disabled={!!loading}
+            className="w-full rounded-none border border-blue-200 bg-white py-3 text-sm font-bold text-blue-600 hover:bg-blue-50 transition-colors"
+          >
+            {loading === "check" ? "Kontrol ediliyor..." : "Hemen Kontrol Et"}
+          </button>
+        </div>
+
+        <div className="premium-card rounded-none p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="grid size-10 place-items-center rounded-none bg-amber-50 text-amber-600">
+              <RefreshCcw className="size-5" />
+            </div>
+            <h2 className="font-bold text-slate-950">Bakiyeleri Yenile</h2>
+          </div>
+          <p className="text-sm leading-6 text-slate-500">
+            Tüm depo ve stok bakiyelerini, gerçek stok hareketleri (stock_movements) üzerinden sıfırdan hesaplayarak günceller.
+          </p>
+          <button
+            onClick={() => {
+              if (confirm("Tüm bakiyeler hareketlerden yeniden hesaplanacak. Emin misiniz?")) {
+                runAction("rebuild");
+              }
+            }}
+            disabled={!!loading}
+            className="w-full rounded-none border border-amber-200 bg-white py-3 text-sm font-bold text-amber-600 hover:bg-amber-50 transition-colors"
+          >
+            {loading === "rebuild" ? "Yenileniyor..." : "Bakiyeleri Yeniden Oluştur"}
+          </button>
+        </div>
+
+        <div className="premium-card rounded-none p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="grid size-10 place-items-center rounded-none bg-rose-50 text-rose-600">
+              <Trash2 className="size-5" />
+            </div>
+            <h2 className="font-bold text-slate-950">Yetim Veri Temizliği</h2>
+          </div>
+          <p className="text-sm leading-6 text-slate-500">
+            Hareketi olmayan siparişsiz üretimleri, sevkiyatları ve mal kabulleri kalıcı olarak siler. Bu işlem geri alınamaz.
+          </p>
+          <button
+            onClick={() => {
+              if (confirm("Tüm yetim kayıtlar ve bunlara bağlı hatalı özetler temizlenecek. Emin misiniz?")) {
+                runAction("clean");
+              }
+            }}
+            disabled={!!loading}
+            className="w-full rounded-none border border-rose-200 bg-white py-3 text-sm font-bold text-rose-600 hover:bg-rose-50 transition-colors"
+          >
+            {loading === "clean" ? "Temizleniyor..." : "Sistemi Temizle"}
+          </button>
+        </div>
+      </div>
+
+      {checkResult && (
+        <div className={cn("premium-card rounded-none p-6", checkResult.success ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-200")}>
+          <div className="flex items-start gap-4">
+            {checkResult.success ? (
+              <CheckCircle2 className="size-6 text-emerald-600 shrink-0" />
+            ) : (
+              <AlertTriangle className="size-6 text-rose-600 shrink-0" />
+            )}
+            <div>
+              <h3 className={cn("font-bold", checkResult.success ? "text-emerald-900" : "text-rose-900")}>
+                {checkResult.success ? "Sorun Bulunmadı" : "Tutarsızlık Tespit Edildi"}
+              </h3>
+              <p className={cn("mt-2 text-sm leading-6 whitespace-pre-wrap", checkResult.success ? "text-emerald-700" : "text-rose-700")}>
+                {checkResult.message || checkResult.error}
+              </p>
+              {!checkResult.success && (
+                <button
+                  onClick={() => runAction("clean")}
+                  className="mt-4 rounded-none bg-rose-600 px-6 py-2 text-sm font-bold text-white hover:bg-rose-700"
+                >
+                  Otomatik Onar
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="premium-card rounded-none p-6">
+        <h2 className="font-bold text-slate-950">Neden Veri Kontrolü?</h2>
+        <div className="mt-4 grid gap-6 md:grid-cols-2">
+          <div className="space-y-2">
+            <h3 className="text-sm font-bold text-slate-700">1. Silme İşlemleri</h3>
+            <p className="text-xs leading-5 text-slate-500">
+              Eski mimaride bazı silme işlemleri özet tabloları (parti özeti, sipariş bakiye vb.) güncellemiyor olabilir. Bu araç özetleri hareketlere göre senkronize eder.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-sm font-bold text-slate-700">2. Transaction Hataları</h3>
+            <p className="text-xs leading-5 text-slate-500">
+              İnternet kesintisi veya sunucu zaman aşımı nedeniyle yarıda kalan işlemler "yetim veri" oluşturabilir. Temizlik aracı bunları güvenle ayıklar.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+async function apiDelete(url: string) {
+  const res = await fetch(url, { method: "DELETE" });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: "Silme hatası" }));
+    throw new Error(error.error || "Silme hatası");
+  }
+  return res.json();
+}
+
+async function apiPatch(url: string, body: any) {
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: "Güncelleme hatası" }));
+    throw new Error(error.error || "Güncelleme hatası");
+  }
+  return res.json();
+}
+
+function removeSettingFromData(data: ErpData, entity: SettingEntity, id: string): ErpData {
+  return {
+    ...data,
+    [entity]: (data[entity as keyof ErpData] as any[]).filter((row: any) => row.id !== id),
+  };
+}
+
+function replaceSettingInData(data: ErpData, entity: SettingEntity, nextRow: any): ErpData {
+  return {
+    ...data,
+    [entity]: (data[entity as keyof ErpData] as any[]).map((row: any) => (row.id === nextRow.id ? { ...row, ...nextRow } : row)),
+  };
+}
+
+const warehouseKindLabels: Record<string, string> = {
+  YARN: "İplik deposu",
+  KNITTER: "Fasoncu deposu",
+  RAW: "Ham kumaş deposu",
+  DYEHOUSE: "Boyahane deposu",
+  FINISHED: "Mamül depo",
+  STORE: "Satış mağazası",
+  WASTE: "Fire deposu",
+};

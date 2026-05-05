@@ -108,13 +108,89 @@ export function getDashboardMetrics(data: ErpData) {
     monthlyReceivedKg: data.purchaseReceipts.reduce((sum, receipt) => sum + normalizeItems(receipt.items).reduce((itemSum, item) => itemSum + (item.receivedKg || 0), 0), 0),
     partialPurchaseCount: data.purchaseOrders.filter((order) => order.status === "Kısmi Geldi").length,
     delayedPurchaseCount: data.purchaseOrders.filter((order) => new Date(order.dueDate) < new Date("2026-05-02") && order.totalRemainingKg > 0).length,
+    integrityIssues: [
+      ...data.productionRaw.filter(item => !data.stockMovements.some(m => m.sourceTransactionId === item.id && m.sourceTransactionType === 'production_raw')),
+      ...data.productionDyehouse.filter(item => !data.stockMovements.some(m => m.sourceTransactionId === item.id && m.sourceTransactionType === 'production_dyehouse')),
+      ...data.transfers.filter(item => !data.stockMovements.some(m => m.sourceTransactionId === item.id && m.sourceTransactionType === 'transfer')),
+      ...data.sales.filter(item => !data.stockMovements.some(m => m.sourceTransactionId === item.id && m.sourceTransactionType === 'sale')),
+      ...data.purchaseReceipts.filter(item => !data.stockMovements.some(m => m.sourceTransactionId === item.id && m.sourceTransactionType === 'direct_purchase_receipt')),
+    ].length,
   };
 }
 
 export function getComputedNotifications(data: ErpData) {
   const today = new Date();
   const dayMs = 24 * 60 * 60 * 1000;
+  const integrityAlerts = [
+    ...data.productionRaw
+      .filter(item => !data.stockMovements.some(m => m.sourceTransactionId === item.id && m.sourceTransactionType === 'production_raw'))
+      .map(item => ({
+        id: `integrity-raw-${item.id}`,
+        type: "integrity_error",
+        title: "Kritik Veri Hatası",
+        message: `Ham üretim (${item.id}) başlık kaydı var ama stok hareketi yok!`,
+        severity: "danger" as const,
+        relatedType: "productionRaw",
+        relatedId: item.id,
+        isRead: false,
+        createdAt: today.toISOString(),
+      })),
+    ...data.productionDyehouse
+      .filter(item => !data.stockMovements.some(m => m.sourceTransactionId === item.id && m.sourceTransactionType === 'production_dyehouse'))
+      .map(item => ({
+        id: `integrity-dye-${item.id}`,
+        type: "integrity_error",
+        title: "Kritik Veri Hatası",
+        message: `Boyahane üretimi (${item.id}) başlık kaydı var ama stok hareketi yok!`,
+        severity: "danger" as const,
+        relatedType: "productionDyehouse",
+        relatedId: item.id,
+        isRead: false,
+        createdAt: today.toISOString(),
+      })),
+    ...data.transfers
+      .filter(item => !data.stockMovements.some(m => m.sourceTransactionId === item.id && m.sourceTransactionType === 'transfer'))
+      .map(item => ({
+        id: `integrity-transfer-${item.id}`,
+        type: "integrity_error",
+        title: "Kritik Veri Hatası",
+        message: `Depo transferi (${item.id}) başlık kaydı var ama stok hareketi yok!`,
+        severity: "danger" as const,
+        relatedType: "transfer",
+        relatedId: item.id,
+        isRead: false,
+        createdAt: today.toISOString(),
+      })),
+    ...data.sales
+      .filter(item => !data.stockMovements.some(m => m.sourceTransactionId === item.id && m.sourceTransactionType === 'sale'))
+      .map(item => ({
+        id: `integrity-sale-${item.id}`,
+        type: "integrity_error",
+        title: "Kritik Veri Hatası",
+        message: `Satış sevkiyatı (${item.id}) başlık kaydı var ama stok hareketi yok!`,
+        severity: "danger" as const,
+        relatedType: "sale",
+        relatedId: item.id,
+        isRead: false,
+        createdAt: today.toISOString(),
+      })),
+    ...data.purchaseReceipts
+      .filter(item => !data.stockMovements.some(m => m.sourceTransactionId === item.id && m.sourceTransactionType === 'direct_purchase_receipt'))
+      .map(item => ({
+        id: `integrity-receipt-${item.id}`,
+        type: "integrity_error",
+        title: "Kritik Veri Hatası",
+        message: `Mal kabul (${item.id}) başlık kaydı var ama stok hareketi yok!`,
+        severity: "danger" as const,
+        relatedType: "purchaseReceipt",
+        relatedId: item.id,
+        isRead: false,
+        createdAt: today.toISOString(),
+      })),
+  ];
+
   const notifications = [
+    ...integrityAlerts,
     ...data.stockCards
       .filter((stock) => stock.criticalStockKg > 0 && stock.currentStockKg <= stock.criticalStockKg)
       .map((stock) => ({
