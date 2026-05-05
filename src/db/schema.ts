@@ -89,6 +89,7 @@ export const orders = pgTable("orders", {
   mmStockId: text("mm_stock_id"),
   status: text("status").notNull(),
   processTypeIds: jsonb("process_type_ids").$type<string[]>().default([]).notNull(),
+  dyehouseProcessTypeIds: jsonb("dyehouse_process_type_ids").$type<string[]>().default([]).notNull(),
   description: text("description").default("").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

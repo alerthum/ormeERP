@@ -464,6 +464,7 @@ async function getSettingUsageCount(entity: SettingEntity, recordId: string) {
   const rows = await sql`
     select
       (select count(*) from orders where process_type_ids @> ${JSON.stringify([recordId])}::jsonb) +
+      (select count(*) from orders where dyehouse_process_type_ids @> ${JSON.stringify([recordId])}::jsonb) +
       (select count(*) from production_dyehouse where process_type_ids @> ${JSON.stringify([recordId])}::jsonb) as count
   `;
   return Number(rows[0]?.count ?? 0);
