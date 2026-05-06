@@ -1,14 +1,15 @@
 "use client";
 
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { AlertTriangle, ArrowRight, Boxes, Factory, PackageCheck, ShieldAlert, ShoppingCart, Timer, TrendingDown, Truck } from "lucide-react";
+import { AlertTriangle, ArrowRight, Boxes, Factory, PackageCheck, ShieldAlert, ShieldCheck, ShoppingCart, Timer, TrendingDown, Truck } from "lucide-react";
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
 import { StatCard } from "@/components/ui/stat-card";
 import { StatusBadge, statusTone } from "@/components/ui/status-badge";
 import { useErpData } from "@/components/erp-data-provider";
 import { getComputedNotifications, getDashboardMetrics, getName, getPurchaseProgress } from "@/services/erp-service";
-import { formatKg, formatPercent, formatDate, wasteTone } from "@/lib/utils";
+import { formatKg, formatPercent, formatDate, wasteTone, cn } from "@/lib/utils";
+import { SystemHealthWidget } from "@/components/ui/system-health";
 
 export function Dashboard() {
   const mounted = useSyncExternalStore(
@@ -39,22 +40,7 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {metrics.integrityIssues > 0 && (
-        <div className="premium-card border-none bg-rose-600 p-5 text-white flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl shadow-rose-100">
-          <div className="flex items-center gap-4">
-            <div className="grid size-12 place-items-center rounded-none bg-white/20">
-              <ShieldAlert className="size-7 text-white" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold">Kritik Veri Tutarsızlığı Tespit Edildi</h2>
-              <p className="text-white/80 text-sm">{metrics.integrityIssues} adet operasyonel kayıt (üretim, transfer vb.) stok hareketi olmadan kaydedilmiş!</p>
-            </div>
-          </div>
-          <Link href="/settings/data-control" className="rounded-none bg-white px-6 py-3 text-rose-600 font-bold text-sm flex items-center gap-2 hover:bg-slate-50 transition-colors">
-            Veri Kontrol Paneline Git <ArrowRight className="size-4" />
-          </Link>
-        </div>
-      )}
+      <SystemHealthWidget status={data.integrityStatus} stats={data.integrityStats} />
       <div className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
         <StatCard title="Bu Ay Ham Üretim" value={formatKg(metrics.monthlyRawKg)} helper="Örülen ham kumaş toplamı" icon={Factory} tone="blue" compact />
         <StatCard title="Bu Ay Mamül Üretim" value={formatKg(metrics.monthlyFinishedKg)} helper="Boyadan dönen mamül toplamı" icon={PackageCheck} tone="green" compact />
@@ -65,7 +51,7 @@ export function Dashboard() {
       <div className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-5">
         <StatCard title="Örmede" value={String(metrics.knittingOrders)} helper="Fason örmeci üzerinde" icon={Factory} compact />
         <StatCard title="Boyahanede" value={String(metrics.dyehouseOrders)} helper="Proses bekleyen işler" icon={Truck} compact />
-        <StatCard title="Kısmi gelen" value={String(metrics.partialPurchaseCount)} helper="Satıcı siparişleri" icon={Boxes} tone="amber" compact />
+        <StatCard title="Kısmi gelen" value={String(metrics.partialPurchaseCount)} helper="Hammadde siparişleri" icon={Boxes} tone="amber" compact />
         <StatCard title="Bu ay gelen" value={formatKg(metrics.monthlyReceivedKg)} helper="Mal kabul toplamı" icon={PackageCheck} tone="green" compact />
         <StatCard title="Geciken satın alma" value={String(metrics.delayedPurchaseCount)} helper="Termin riski" icon={AlertTriangle} tone="red" compact />
       </div>
@@ -224,4 +210,5 @@ export function Dashboard() {
     </div>
   );
 }
+
 

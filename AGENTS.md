@@ -599,3 +599,139 @@ If inconsistency is detected, show an admin-level critical integrity warning and
 # Data Consistency Rule
 
 Veri tutarsızlığını raporda saklama. Tutarsız veri oluşmasını engelle. Her stok etkileyen işlem transaction içinde header + movements + balances + summaries + timeline kayıtlarını birlikte oluşturmalı veya birlikte rollback etmelidir.
+
+
+# ERP Data Integrity Constitution
+
+This ERP system is built on strict operational data integrity rules.
+
+## Core Principle
+
+Operational data either exists completely or does not exist at all.
+
+Soft delete logic is forbidden for operational stock transactions.
+
+The following concepts must NOT be used for operational movements:
+- deleted
+- cancelled
+- void
+- passive
+- isDeleted
+- isCancelled
+- status=cancelled
+
+Operational stock-impacting transactions must be physically removed or fully reversed inside one database transaction.
+
+## Stock Movement Integrity
+
+The single source of truth for operational stock reality is:
+- stock_movements
+
+All balances, summaries, dashboards and statuses must derive from stock_movements.
+
+The system must never leave:
+- transaction header without movements
+- movements without transaction header
+- balances without movements
+- parties without movements
+- lots without movements
+
+Orphan operational data is forbidden.
+
+## Later Movement Lock Rule
+
+Before deleting or updating any stock-impacting transaction, the system MUST check whether the same:
+- LotNo
+- PartiNo
+
+has any later stock movement.
+
+If later movement exists:
+- deletion/update must be blocked.
+
+This applies to:
+- Purchase Receipt
+- Warehouse Transfer
+- Raw Production
+- Dyehouse Production
+- Sale / Shipment
+
+The system must not rely only on sourceMovementId or parentMovementId.
+
+Fallback validation is mandatory using:
+- LotNo / PartiNo
+- movementDate
+- createdAt
+- id ordering
+- different sourceTransactionId
+
+## Delete Order Principle
+
+Transactions may only be safely deleted from newest to oldest.
+
+Example:
+Sale → Dyehouse → Raw Production → Transfer → Purchase
+
+Deleting older transactions while newer dependent movements exist is forbidden.
+
+## Rebuild Principle
+
+After every create/update/delete:
+- balances
+- summaries
+- order statuses
+- dashboard KPIs
+- party summaries
+
+must be recalculated from stock_movements.
+
+Cached operational summaries are not authoritative.
+
+## Order Status Principle
+
+Order statuses must always reflect real movement state.
+
+If related movements are deleted:
+- statuses must rollback automatically.
+
+Example:
+If raw production is deleted:
+- "Ham Geldi" status must disappear.
+
+## Lot / Parti Principle
+
+Raw materials use:
+- LotNo
+
+Fabric production uses:
+- PartiNo
+
+LotNo and PartiNo are fundamentally different concepts and must never be mixed.
+
+A stock cannot simultaneously behave as both lot-tracked and party-tracked in the same movement.
+
+## Transaction Safety Principle
+
+All stock-impacting operations must run inside ONE database transaction.
+
+If any step fails:
+- the whole operation must rollback.
+
+No partial save is acceptable.
+
+## UI / Reporting Principle
+
+Reports must never hide inconsistencies.
+
+The system must prevent inconsistencies at write time.
+
+If inconsistency is detected:
+- show admin-level integrity warning
+- provide diagnostics/rebuild tools
+
+## Turkish Character Rule
+
+All files must remain UTF-8 encoded.
+
+Never corrupt Turkish characters:
+ğ ş ı ç ö ü Ğ Ş İ Ç Ö Ü

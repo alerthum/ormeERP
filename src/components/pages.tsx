@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AlertTriangle, BarChart3, Bell, BookOpen, Boxes, CheckCircle2, Download, Factory, KeyRound, Layout, Maximize2, PackageCheck, PackagePlus, Plus, RefreshCcw, Search, Settings, ShieldCheck, ShoppingCart, SlidersHorizontal, Trash2, Truck, Users, Warehouse, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DataTable, type Column } from "@/components/ui/data-table";
 import { PageHeader } from "@/components/ui/page-header";
@@ -14,8 +14,8 @@ import { DirectPurchaseForm, DyehouseProductionForm, OrderEditForm, OrderForm, P
 import { PartyTimeline } from "@/components/party-timeline";
 import { useErpData } from "@/components/erp-data-provider";
 import { getDashboardMetrics, getName, getPurchaseProgress } from "@/services/erp-service";
-import type { DyehouseProduction, ErpData, NamedEntity, Order, Partner, Party, PurchaseOrder, PurchaseReceipt, RawProduction, Role, Sale, StockCard, StockMovement, Transfer, UserProfile, Warehouse as WarehouseEntity } from "@/types/erp";
-import { cn, formatDate, formatKg, formatPercent, wasteTone, normalizeItems } from "@/lib/utils";
+import { DyehouseProduction, ErpData, NamedEntity, Order, Partner, Party, PurchaseOrder, PurchaseReceipt, RawProduction, Role, Sale, StockCard, StockMovement, Transfer, UserProfile, Warehouse as WarehouseEntity } from "@/types/erp";
+import { cn, formatDate, formatKg, formatPercent, wasteTone, normalizeItems, patchJson, postJson, apiDelete, apiPatch } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 
 const primaryButton = "inline-flex items-center justify-center gap-2 rounded-none bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-100";
@@ -38,7 +38,19 @@ function refreshInBackground(refresh: () => Promise<void>) {
 }
 
 type SettingEntity = "fabricTypes" | "colors" | "yarnCounts" | "yarnTypes" | "processTypes" | "warehouses" | "partners";
-type EditableSetting = { id: string; name: string; code?: string; isActive?: boolean; kind?: WarehouseEntity["kind"]; type?: Partner["type"] };
+type EditableSetting = { 
+  id: string; 
+  name: string; 
+  code?: string; 
+  isActive?: boolean; 
+  kind?: WarehouseEntity["kind"]; 
+  type?: Partner["type"];
+  defaultPurchaseWarehouseId?: string;
+  defaultTransferTargetWarehouseId?: string;
+  defaultDyehouseConsumptionWarehouseId?: string;
+  defaultSalesWarehouseId?: string;
+  defaultRawProductionInputWarehouseId?: string;
+};
 type OrderGroupMode = "none" | "ymStock" | "mmStock" | "fabricType" | "color" | "yarnCount" | "customer" | "status";
 type OrderFilters = {
   status: string;
@@ -82,7 +94,19 @@ function replaceSettingInData(current: ErpData, entity: SettingEntity, row: Edit
     return { ...current, warehouses: current.warehouses.map((item) => (item.id === row.id ? { ...item, ...base, kind: row.kind ?? item.kind } : item)) };
   }
   if (entity === "partners") {
-    return { ...current, partners: current.partners.map((item) => (item.id === row.id ? { ...item, ...base, type: row.type ?? item.type } : item)) };
+    return { 
+      ...current, 
+      partners: current.partners.map((item) => (item.id === row.id ? { 
+        ...item, 
+        ...base, 
+        type: row.type ?? item.type,
+        defaultPurchaseWarehouseId: row.defaultPurchaseWarehouseId,
+        defaultTransferTargetWarehouseId: row.defaultTransferTargetWarehouseId,
+        defaultDyehouseConsumptionWarehouseId: row.defaultDyehouseConsumptionWarehouseId,
+        defaultSalesWarehouseId: row.defaultSalesWarehouseId,
+        defaultRawProductionInputWarehouseId: row.defaultRawProductionInputWarehouseId
+      } : item)) 
+    };
   }
   if (entity === "yarnTypes") {
     return { ...current, yarnTypes: current.yarnTypes.map((item) => (item.id === row.id ? { ...item, ...base, code: row.code ?? item.code, isActive: row.isActive ?? item.isActive } : item)) };
@@ -143,43 +167,10 @@ function applySmartOrderFilter(order: Order, data: ErpData, smart: string) {
   return keywordMatch && overdueMatch && openMatch && dyehouseMatch && knittingMatch;
 }
 
-async function apiDelete(endpoint: string) {
-  const session = await supabase.auth.getSession();
-  const token = session.data.session?.access_token;
-  const response = await fetch(endpoint, { method: "DELETE", headers: token ? { Authorization: `Bearer ${token}` } : undefined, signal: requestSignal() });
-  const result = (await response.json()) as { ok: boolean; error?: string };
-  if (!response.ok || !result.ok) throw new Error(result.error ?? "İşlem tamamlanamadı.");
-}
 
-async function apiPatch(endpoint: string, payload: Record<string, unknown>) {
-  const session = await supabase.auth.getSession();
-  const token = session.data.session?.access_token;
-  const response = await fetch(endpoint, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}) },
-    body: JSON.stringify(payload),
-    signal: requestSignal(),
-  });
-  const result = (await response.json()) as { ok: boolean; error?: string };
-  if (!response.ok || !result.ok) throw new Error(result.error ?? "İşlem tamamlanamadı.");
-}
-
-async function postJson(endpoint: string, payload: Record<string, unknown>) {
-  const session = await supabase.auth.getSession();
-  const token = session.data.session?.access_token;
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}) },
-    body: JSON.stringify(payload),
-    signal: requestSignal(),
-  });
-  const result = (await response.json()) as { ok: boolean; error?: string };
-  if (!response.ok || !result.ok) throw new Error(result.error ?? "İşlem tamamlanamadı.");
-  return result;
-}
 
 export function OrdersPage() {
-  const { data, refresh, mutateData } = useErpData();
+  const { data, loading, refresh, mutateData } = useErpData();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Order | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Order | null>(null);
@@ -458,8 +449,8 @@ export function OrdersPage() {
           </div>
         </div>
       </FormDrawer>
-      <FormDrawer open={open} title="Yeni müşteri siparişi" onClose={() => setOpen(false)}><OrderForm /></FormDrawer>
-      <FormDrawer open={Boolean(editing)} title="Sipariş düzenle" onClose={() => setEditing(null)}>{editing ? <OrderEditForm order={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
+      <FormDrawer open={open} title="Yeni müşteri siparişi" onClose={() => setOpen(false)} loading={loading}><OrderForm /></FormDrawer>
+      <FormDrawer open={Boolean(editing)} title="Sipariş düzenle" onClose={() => setEditing(null)} loading={loading}>{editing ? <OrderEditForm order={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
       <ConfirmModal
         open={Boolean(deleteTarget)}
         title="Sipariş silinsin mi?"
@@ -742,7 +733,7 @@ export function OrderDetailPage({ id }: { id: string }) {
 }
 
 export function PurchaseOrdersPage() {
-  const { data, refresh, mutateData } = useErpData();
+  const { data, loading, refresh, mutateData } = useErpData();
   const [orderOpen, setOrderOpen] = useState(false);
   const [editing, setEditing] = useState<PurchaseOrder | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<PurchaseOrder | null>(null);
@@ -764,9 +755,9 @@ export function PurchaseOrdersPage() {
       mutateData((current) => ({ ...current, purchaseOrders: current.purchaseOrders.filter((order) => order.id !== deleteTarget.id) }));
       refreshInBackground(refresh);
       setDeleteTarget(null);
-      toast.success("Satıcı siparişi silindi.");
+      toast.success("Hammadde siparişi silindi.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Satıcı siparişi silinemedi.");
+      toast.error(error instanceof Error ? error.message : "Hammadde siparişi silinemedi.");
     }
   }
   const columns: Column<PurchaseOrder>[] = [
@@ -781,7 +772,7 @@ export function PurchaseOrdersPage() {
   ];
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Satın alma" title="Satıcı Siparişleri" description="IP, LYC ve POLY için açık satıcı siparişleri, termin ve bekleyen kg takibi." icon={PackagePlus} action={<button className={primaryButton} onClick={() => setOrderOpen(true)}><Plus className="size-4" />Satıcı siparişi</button>} />
+      <PageHeader eyebrow="Satın alma" title="Hammadde Siparişleri" description="IP, LYC ve POLY için açık satıcı siparişleri, termin ve bekleyen kg takibi." icon={PackagePlus} action={<button className={primaryButton} onClick={() => setOrderOpen(true)}><Plus className="size-4" />Hammadde siparişi</button>} />
       <div className="premium-card rounded-none p-5 mb-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
@@ -820,12 +811,12 @@ export function PurchaseOrdersPage() {
           </div>
         ))}
       </div>
-      <DataTable rows={filteredOrders} columns={columns} searchPlaceholder="Satıcı siparişi, tedarikçi, durum veya stokta ara" getSearchText={(row) => [row.purchaseOrderNo, getName(data.partners, row.supplierId), row.status, getPurchaseStockSummary(row), normalizeItems(row.items).map((item) => `${item.stockCode} ${item.stockName}`).join(" ")].join(" ")} />
-      <FormDrawer open={orderOpen} title="Yeni satıcı siparişi" onClose={() => setOrderOpen(false)}><PurchaseOrderForm /></FormDrawer>
-      <FormDrawer open={Boolean(editing)} title="Satıcı siparişi düzenle" onClose={() => setEditing(null)}>{editing ? <PurchaseOrderEditForm order={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
+      <DataTable rows={filteredOrders} columns={columns} searchPlaceholder="Hammadde siparişi, tedarikçi, durum veya stokta ara" getSearchText={(row) => [row.purchaseOrderNo, getName(data.partners, row.supplierId), row.status, getPurchaseStockSummary(row), normalizeItems(row.items).map((item) => `${item.stockCode} ${item.stockName}`).join(" ")].join(" ")} />
+      <FormDrawer open={orderOpen} title="Yeni hammadde siparişi" onClose={() => setOrderOpen(false)} loading={loading}><PurchaseOrderForm /></FormDrawer>
+      <FormDrawer open={Boolean(editing)} title="Hammadde siparişi düzenle" onClose={() => setEditing(null)} loading={loading}>{editing ? <PurchaseOrderEditForm order={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
       <ConfirmModal
         open={Boolean(deleteTarget)}
-        title="Satıcı siparişi silinsin mi?"
+        title="Hammadde siparişi silinsin mi?"
         description={`${deleteTarget?.purchaseOrderNo ?? "Bu sipariş"} için mal kabul veya stok hareketi varsa silinmeyecek.`}
         onClose={() => setDeleteTarget(null)}
         onConfirm={deletePurchase}
@@ -835,12 +826,11 @@ export function PurchaseOrdersPage() {
 }
 
 export function PurchasesPage() {
-  const { data } = useErpData();
+  const { data, loading, refresh } = useErpData();
   const [directOpen, setDirectOpen] = useState(false);
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [editingReceipt, setEditingReceipt] = useState<PurchaseReceipt | null>(null);
   const [deleteReceiptTarget, setDeleteReceiptTarget] = useState<PurchaseReceipt | null>(null);
-  const { refresh } = useErpData();
 
   async function deleteReceipt() {
     if (!deleteReceiptTarget) return;
@@ -935,9 +925,9 @@ export function PurchasesPage() {
         searchPlaceholder="Fiş, satıcı, depo veya stokta ara"
         getSearchText={(row) => [row.receiptNo, getName(data.partners, row.supplierId), getName(data.warehouses, row.warehouseId), normalizeItems(row.items).map((item) => getName(data.stockCards, item.stockId)).join(" "), row.description].join(" ")}
       />
-      <FormDrawer open={directOpen} title="Hızlı hammadde alışı" onClose={() => setDirectOpen(false)}><DirectPurchaseForm /></FormDrawer>
-      <FormDrawer open={receiptOpen} title="Siparişe bağlı mal kabul" onClose={() => setReceiptOpen(false)}><PurchaseReceiptForm /></FormDrawer>
-      <FormDrawer open={Boolean(editingReceipt)} title="Mal kabul düzenle" onClose={() => setEditingReceipt(null)}>{editingReceipt ? <PurchaseReceiptEditForm receipt={editingReceipt} onDone={() => setEditingReceipt(null)} /> : null}</FormDrawer>
+      <FormDrawer open={directOpen} title="Hızlı hammadde alışı" onClose={() => setDirectOpen(false)} loading={loading}><DirectPurchaseForm /></FormDrawer>
+      <FormDrawer open={receiptOpen} title="Siparişe bağlı mal kabul" onClose={() => setReceiptOpen(false)} loading={loading}><PurchaseReceiptForm /></FormDrawer>
+      <FormDrawer open={Boolean(editingReceipt)} title="Mal kabul düzenle" onClose={() => setEditingReceipt(null)} loading={loading}>{editingReceipt ? <PurchaseReceiptEditForm receipt={editingReceipt} onDone={() => setEditingReceipt(null)} /> : null}</FormDrawer>
       <ConfirmModal
         open={Boolean(deleteReceiptTarget)}
         title="Alış kaydı silinsin mi?"
@@ -951,7 +941,7 @@ export function PurchasesPage() {
 }
 
 export function StocksPage() {
-  const { data, refresh, mutateData } = useErpData();
+  const { data, loading, refresh, mutateData } = useErpData();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<StockCard | null>(null);
   const [actionTarget, setActionTarget] = useState<StockCard | null>(null);
@@ -1033,8 +1023,8 @@ export function StocksPage() {
         </div>
       </div>
       <DataTable rows={filteredStocks} columns={columns} searchPlaceholder="Stok kodu, ad, tip veya özellikte ara" getSearchText={(row) => [row.code, row.name, row.type, getName(data.fabricTypes, row.fabricTypeId), getName(data.colors, row.colorId), getName(data.yarnCounts, row.yarnCountId)].join(" ")} />
-      <FormDrawer open={open} title="Yeni stok kartı" onClose={() => setOpen(false)}><StockCardForm /></FormDrawer>
-      <FormDrawer open={Boolean(editing)} title="Stok kartı düzenle" onClose={() => setEditing(null)}>{editing ? <StockCardEditForm stock={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
+      <FormDrawer open={open} title="Yeni stok kartı" onClose={() => setOpen(false)} loading={loading}><StockCardForm /></FormDrawer>
+      <FormDrawer open={Boolean(editing)} title="Stok kartı düzenle" onClose={() => setEditing(null)} loading={loading}>{editing ? <StockCardEditForm stock={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
       <FormDrawer open={Boolean(detailTarget)} title={`${detailTarget?.code ?? "Stok"} hareket detayları`} onClose={() => setDetailTarget(null)}>
         {detailTarget ? (
           <div className="space-y-4">
@@ -1119,7 +1109,7 @@ export function StockDetailPage({ id }: { id: string }) {
       const order = data.purchaseOrders.find((purchaseOrder) => purchaseOrder.purchaseOrderNo === item.orderNo);
       return {
         id: `purchase-${item.id}`,
-        type: "Satıcı siparişi",
+        type: "Hammadde siparişi",
         no: item.orderNo,
         partner: order ? getName(data.partners, order.supplierId) : "-",
         quantity: item.orderedKg,
@@ -1416,7 +1406,7 @@ export function PartyShiftPage() {
 }
 
 export function ProductionPage({ type }: { type: 'raw' | 'dyehouse' }) {
-  const { data, refresh } = useErpData();
+  const { data, loading, refresh } = useErpData();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<RawProduction | DyehouseProduction | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<RawProduction | DyehouseProduction | null>(null);
@@ -1503,7 +1493,7 @@ export function ProductionPage({ type }: { type: 'raw' | 'dyehouse' }) {
         <DataTable rows={filteredDyehouse} columns={dyehouseColumns} searchPlaceholder='Sipariş, parti, boyahane veya açıklamada ara' getSearchText={(row) => [data.orders.find((order) => order.id === row.orderId)?.orderNo, data.parties.find((party) => party.id === row.partyId)?.partyNo, getName(data.partners, row.dyehousePartnerId), row.description].join(' ')} />
       )}
 
-      <FormDrawer open={open || !!editing} title={editing ? (isRaw ? 'Ham Üretimi Düzenle' : 'Boyahane Üretimini Düzenle') : (isRaw ? 'Yeni Üretim Kaydı' : 'Yeni Boyahane Üretimi')} onClose={() => { setOpen(false); setEditing(null); }}>
+      <FormDrawer open={open || !!editing} title={editing ? (isRaw ? 'Ham Üretimi Düzenle' : 'Boyahane Üretimini Düzenle') : (isRaw ? 'Yeni Üretim Kaydı' : 'Yeni Boyahane Üretimi')} onClose={() => { setOpen(false); setEditing(null); }} loading={loading}>
         {isRaw ? <RawProductionForm initialData={editing as RawProduction} /> : <DyehouseProductionForm initialData={editing as DyehouseProduction} />}
       </FormDrawer>
 
@@ -1518,7 +1508,7 @@ export function ProductionPage({ type }: { type: 'raw' | 'dyehouse' }) {
   );
 }
 export function TransfersPage() {
-  const { data, refresh } = useErpData();
+  const { data, loading, refresh } = useErpData();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Transfer | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Transfer | null>(null);
@@ -1574,7 +1564,7 @@ export function TransfersPage() {
         )},
       ]} searchPlaceholder='Kaynak depo, hedef depo veya açıklamada ara' getSearchText={(row) => [getName(data.warehouses, row.fromWarehouseId), getName(data.warehouses, row.toWarehouseId), row.description].join(' ')} />
       
-      <FormDrawer open={open || !!editing} title={editing ? 'Transferi Düzenle' : 'Yeni Transfer'} onClose={() => { setOpen(false); setEditing(null); }}>
+      <FormDrawer open={open || !!editing} title={editing ? 'Transferi Düzenle' : 'Yeni Transfer'} onClose={() => { setOpen(false); setEditing(null); }} loading={loading}>
         <TransferForm initialData={editing || undefined} />
       </FormDrawer>
       <ConfirmModal
@@ -1815,7 +1805,7 @@ export function ReportsPage() {
 }
 
 export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "sales" | "reports" | "settings" }) {
-  const { data, refresh, mutateData } = useErpData();
+  const { data, loading, refresh, mutateData } = useErpData();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<EditableSetting | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<EditableSetting | null>(null);
@@ -1850,7 +1840,7 @@ export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "
       <div className="space-y-6">
         <PageHeader eyebrow="Satış" title={map.title} description={map.desc} icon={map.icon} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Sevkiyat</button>} />
         <DataTable rows={data.sales} columns={columns} />
-        <FormDrawer open={open} title="Satış / sevkiyat kaydı" onClose={() => setOpen(false)}><SaleForm /></FormDrawer>
+        <FormDrawer open={open} title="Satış / sevkiyat kaydı" onClose={() => setOpen(false)} loading={loading}><SaleForm /></FormDrawer>
       </div>
     );
   }
@@ -1868,6 +1858,11 @@ export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "
         name: String(form.get("name") ?? editing.name),
         kind: (form.get("kind") ?? editing.kind) as WarehouseEntity["kind"] | undefined,
         type: (form.get("type") ?? editing.type) as Partner["type"] | undefined,
+        defaultPurchaseWarehouseId: form.get("defaultPurchaseWarehouseId") ? String(form.get("defaultPurchaseWarehouseId")) : undefined,
+        defaultTransferTargetWarehouseId: form.get("defaultTransferTargetWarehouseId") ? String(form.get("defaultTransferTargetWarehouseId")) : undefined,
+        defaultDyehouseConsumptionWarehouseId: form.get("defaultDyehouseConsumptionWarehouseId") ? String(form.get("defaultDyehouseConsumptionWarehouseId")) : undefined,
+        defaultSalesWarehouseId: form.get("defaultSalesWarehouseId") ? String(form.get("defaultSalesWarehouseId")) : undefined,
+        defaultRawProductionInputWarehouseId: form.get("defaultRawProductionInputWarehouseId") ? String(form.get("defaultRawProductionInputWarehouseId")) : undefined,
       };
       await apiPatch(`/api/settings/${entity}/${editing.id}`, nextRow);
       mutateData((current) => replaceSettingInData(current, entity, nextRow));
@@ -1917,6 +1912,11 @@ export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "
                     name: row.name,
                     kind: "kind" in row ? (row.kind as WarehouseEntity["kind"]) : undefined,
                     type: "type" in row ? (row.type as Partner["type"]) : undefined,
+                    defaultPurchaseWarehouseId: "defaultPurchaseWarehouseId" in row ? (row as Partner).defaultPurchaseWarehouseId : undefined,
+                    defaultTransferTargetWarehouseId: "defaultTransferTargetWarehouseId" in row ? (row as Partner).defaultTransferTargetWarehouseId : undefined,
+                    defaultDyehouseConsumptionWarehouseId: "defaultDyehouseConsumptionWarehouseId" in row ? (row as Partner).defaultDyehouseConsumptionWarehouseId : undefined,
+                    defaultSalesWarehouseId: "defaultSalesWarehouseId" in row ? (row as Partner).defaultSalesWarehouseId : undefined,
+                    defaultRawProductionInputWarehouseId: "defaultRawProductionInputWarehouseId" in row ? (row as Partner).defaultRawProductionInputWarehouseId : undefined,
                   })
                 }
                 type="button"
@@ -1930,43 +1930,11 @@ export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "
           ),
         }] : []),
       ]} />
-      <FormDrawer open={open} title="Tanım ekle" onClose={() => setOpen(false)}>
-        {kind === "warehouses" ? <SettingForm entity="warehouses" extra="warehouse" onDone={() => setOpen(false)} /> : null}
-        {kind === "partners" ? <SettingForm entity="partners" extra="partner" onDone={() => setOpen(false)} /> : null}
+      <FormDrawer open={open} title="Tanım ekle" onClose={() => setOpen(false)} loading={loading}>
+        <SettingForm entity={entity} extra={kind === "warehouses" ? "warehouse" : (kind === "partners" ? "partner" : undefined)} onDone={() => setOpen(false)} />
       </FormDrawer>
-      <FormDrawer open={Boolean(editing)} title="Tanım düzenle" onClose={() => setEditing(null)}>
-        <form className="grid gap-4" onSubmit={updateDefinition}>
-          <label className="space-y-2">
-            <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Ad</span>
-            <input className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="name" defaultValue={editing?.name} required />
-          </label>
-          {kind === "warehouses" ? (
-            <label className="space-y-2">
-              <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Tip</span>
-              <select className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="kind" defaultValue={editing?.kind ?? "RAW"}>
-                <option value="YARN">İplik deposu</option>
-                <option value="KNITTER">Fasoncu deposu</option>
-                <option value="RAW">Ham kumaş deposu</option>
-                <option value="DYEHOUSE">Boyahane deposu</option>
-                <option value="FINISHED">Mamül depo</option>
-                <option value="STORE">Satış mağazası</option>
-                <option value="WASTE">Fire deposu</option>
-              </select>
-            </label>
-          ) : null}
-          {kind === "partners" ? (
-            <label className="space-y-2">
-              <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Tip</span>
-              <select className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="type" defaultValue={editing?.type ?? "SUPPLIER"}>
-                <option value="KNITTER">Fason örmeci</option>
-                <option value="DYEHOUSE">Boyahane</option>
-                <option value="SUPPLIER">Satıcı</option>
-                <option value="CUSTOMER">Müşteri</option>
-              </select>
-            </label>
-          ) : null}
-          <button className={primaryButton} type="submit">Güncelle</button>
-        </form>
+      <FormDrawer open={Boolean(editing)} title="Tanım düzenle" onClose={() => setEditing(null)} loading={loading}>
+        <SettingForm entity={entity} extra={kind === "warehouses" ? "warehouse" : (kind === "partners" ? "partner" : undefined)} initialData={editing} onDone={() => setEditing(null)} />
       </FormDrawer>
       <ConfirmModal
         open={Boolean(deleteTarget)}
@@ -2000,7 +1968,7 @@ export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "
 }
 
 export function RolesSecurityPage() {
-  const { data, refresh } = useErpData();
+  const { data, loading, refresh } = useErpData();
   const [roleOpen, setRoleOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
 
@@ -2046,8 +2014,8 @@ export function RolesSecurityPage() {
       </div>
       <DataTable rows={data.roles} columns={roleColumns} />
       <DataTable rows={data.userProfiles} columns={userColumns} />
-      <FormDrawer open={roleOpen} title="Rol tanımı" onClose={() => setRoleOpen(false)}><RoleForm /></FormDrawer>
-      <FormDrawer open={userOpen} title="Kullanıcı profili" onClose={() => setUserOpen(false)}><UserProfileForm /></FormDrawer>
+      <FormDrawer open={roleOpen} title="Rol tanımı" onClose={() => setRoleOpen(false)} loading={loading}><RoleForm /></FormDrawer>
+      <FormDrawer open={userOpen} title="Kullanıcı profili" onClose={() => setUserOpen(false)} loading={loading}><UserProfileForm /></FormDrawer>
     </div>
   );
 }
@@ -2131,7 +2099,7 @@ const startSteps = [
   "Kumaş cinsi, renk, Ne numarası ve boyahane işlem türlerini tanımla.",
   "Depoları ve cari kartları aç: fason örmeci, boyahane, satıcı ve müşteri.",
   "IP, LYC ve POLY hammadde stok kartlarını oluştur.",
-  "Satıcı siparişi gir ve gelen hammaddeler için mal kabul yap.",
+  "Hammadde siparişi gir ve gelen hammaddeler için mal kabul yap.",
   "Müşteri siparişi oluştur; sistem YM/MM stok eşleşmesini hazırlar.",
   "Ham üretim, boyahane, transfer ve satış akışını parti üzerinden takip et.",
 ];
@@ -2215,7 +2183,7 @@ export function PrefixCountersPage() {
             {[
               "Önce Stok Kartları ekranında IP, LYC veya POLY tipinde hammadde stok kartı aç.",
               "Stok kodunu sistem otomatik üretir; prefix veya sıra numarası elle yazılmaz.",
-              "Sonra Alış İşlemleri ekranında Hızlı alış ile siparişsiz giriş yap veya Satıcı Siparişleri üzerinden açık sipariş oluşturup Mal kabul gir.",
+              "Sonra Alış İşlemleri ekranında Hızlı alış ile siparişsiz giriş yap veya Hammadde Siparişleri üzerinden açık sipariş oluşturup Mal kabul gir.",
               "Gelen kg seçilen depoya stok hareketi olarak işlenir ve tüm kullanıcılarda realtime yenilenir.",
             ].map((step, index) => (
               <div key={step} className="flex gap-3 rounded-none bg-slate-50 p-4">
@@ -2404,7 +2372,7 @@ export function RoadmapPage() {
 }
 
 export function SettingsGuidePage({ section }: { section?: "fabric-types" | "colors" | "yarn-counts" | "yarn-types" | "process-types" | "warehouses" }) {
-  const { data, refresh, mutateData } = useErpData();
+  const { data, loading, refresh, mutateData } = useErpData();
   const [editing, setEditing] = useState<EditableSetting | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<EditableSetting | null>(null);
   const [detailWarehouse, setDetailWarehouse] = useState<WarehouseEntity | null>(null);
@@ -2559,40 +2527,13 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
               ))
             )}
           </div>
-          <FormDrawer open={Boolean(editing)} title="Tanım düzenle" onClose={() => setEditing(null)}>
-            <form className="grid gap-4" onSubmit={updateDefinition}>
-              <label className="space-y-2">
-                <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Ad</span>
-                <input className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="name" defaultValue={editing?.name} required />
-              </label>
-              {section === "yarn-types" ? (
-                <>
-                  <label className="space-y-2">
-                    <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Kod</span>
-                    <input className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm uppercase outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="code" defaultValue={editing?.code} required />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm text-slate-600">
-                    <input defaultChecked={editing?.isActive !== false} name="isActive" type="checkbox" />
-                    Aktif
-                  </label>
-                </>
-              ) : null}
-              {section === "warehouses" ? (
-                <label className="space-y-2">
-                  <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Tip</span>
-                  <select className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" name="kind" defaultValue={editing?.kind ?? "RAW"}>
-                    <option value="YARN">İplik deposu</option>
-                    <option value="KNITTER">Fasoncu deposu</option>
-                    <option value="RAW">Ham kumaş deposu</option>
-                    <option value="DYEHOUSE">Boyahane deposu</option>
-                    <option value="FINISHED">Mamül depo</option>
-                    <option value="STORE">Satış mağazası</option>
-                    <option value="WASTE">Fire deposu</option>
-                  </select>
-                </label>
-              ) : null}
-              <button className={primaryButton} type="submit">Güncelle</button>
-            </form>
+          <FormDrawer open={Boolean(editing)} title="Tanım düzenle" onClose={() => setEditing(null)} loading={loading}>
+            <SettingForm 
+              entity={settingConfig.entity} 
+              extra={section === "warehouses" ? "warehouse" : undefined} 
+              initialData={editing} 
+              onDone={() => setEditing(null)} 
+            />
           </FormDrawer>
           <ConfirmModal
             open={Boolean(deleteTarget)}
@@ -2644,224 +2585,11 @@ export function SettingsGuidePage({ section }: { section?: "fabric-types" | "col
 
 
 
-export function ProjectSettingsPage() {
-  const { data, refresh, mutateData } = useErpData();
-  const settings = data.uiSettings;
-  const [loading, setLoading] = useState(false);
 
-  async function updateSettings(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setLoading(true);
-    const formData = new FormData(e.currentTarget);
-    const payload = {
-      menuMode: formData.get("menuMode"),
-      submenuDefaultState: formData.get("submenuDefaultState"),
-      modalPosition: formData.get("modalPosition"),
-      modalPositionMobile: formData.get("modalPositionMobile"),
-      notificationsEnabled: formData.get("notificationsEnabled") === "on",
-      maxNotificationCount: Number(formData.get("maxNotificationCount")),
-      showCriticalStock: formData.get("showCriticalStock") === "on",
-      showDelayedOrders: formData.get("showDelayedOrders") === "on",
-      showProductionAlerts: formData.get("showProductionAlerts") === "on",
-      sidebarGroupBg: formData.get("sidebarGroupBg"),
-      sidebarGroupText: formData.get("sidebarGroupText"),
-      notificationModules: settings.notificationModules,
-    };
 
-    try {
-      await apiPatch("/api/settings/ui", payload as any);
-      mutateData((prev) => ({ ...prev, uiSettings: { ...prev.uiSettings, ...payload } as any }));
-      await refresh();
-      toast.success("Ayarlar başarıyla kaydedildi ve uygulandı.");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Ayarlar güncellenemedi.");
-    } finally {
-      setLoading(false);
-    }
-  }
 
-  return (
-    <div className="space-y-6" key={JSON.stringify(settings)}>
-      <PageHeader
-        eyebrow="Ayarlar"
-        title="Proje Ayarları"
-        description="Sistemin görsel davranışı ve kullanıcı deneyimi tercihlerini buradan yönetebilirsiniz."
-        icon={SlidersHorizontal}
-      />
 
-      <form onSubmit={updateSettings} className="grid gap-6 lg:grid-cols-2">
-        <div className="premium-card rounded-3xl p-6 space-y-6">
-          <div className="flex items-center gap-3 border-b border-slate-50 pb-4">
-            <div className="grid size-10 place-items-center rounded-none bg-blue-50 text-blue-600">
-              <Layout className="size-5" />
-            </div>
-            <h2 className="font-bold text-slate-950">Menü ve Görünüm</h2>
-          </div>
-          
-          <div className="grid gap-4">
-            <Field label="Menü Modu">
-              <select name="menuMode" defaultValue={settings.menuMode} className={inputClass}>
-                <option value="static">Sabit Liste (Klasik)</option>
-                <option value="collapsible">Gruplanmış / Açılır-Kapanır</option>
-              </select>
-            </Field>
-            
-            <Field label="Alt Menü Varsayılan Durumu">
-              <select name="submenuDefaultState" defaultValue={settings.submenuDefaultState} className={inputClass}>
-                <option value="open">Açık</option>
-                <option value="closed">Kapalı</option>
-              </select>
-            </Field>
-          </div>
-        </div>
-
-        <div className="premium-card rounded-3xl p-6 space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-50 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="grid size-10 place-items-center rounded-none bg-orange-50 text-orange-600">
-                <Layout className="size-5" />
-              </div>
-              <h2 className="font-bold text-slate-950">Menü Grupları Tasarımı</h2>
-            </div>
-            <button 
-              type="button" 
-              onClick={() => {
-                const bgInput = document.getElementsByName("sidebarGroupBg")[0] as HTMLInputElement;
-                const textInput = document.getElementsByName("sidebarGroupText")[0] as HTMLInputElement;
-                if (bgInput) bgInput.value = "#f8fafc";
-                if (textInput) textInput.value = "#64748b";
-              }}
-              className="text-xs font-bold text-blue-600 hover:underline"
-            >
-              Varsayılana Dön
-            </button>
-          </div>
-          
-          <div className="grid gap-6">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Grup Arkaplan Rengi">
-                <div className="flex gap-2">
-                  <input type="color" name="sidebarGroupBg" defaultValue={settings.sidebarGroupBg || "#f8fafc"} className="size-11 rounded-none border-none p-1 shadow-sm" />
-                  <input type="text" value={settings.sidebarGroupBg || "#f8fafc"} readOnly className={cn(inputClass, "flex-1 font-mono text-xs")} />
-                </div>
-              </Field>
-              <Field label="Grup Yazı Rengi">
-                <div className="flex gap-2">
-                  <input type="color" name="sidebarGroupText" defaultValue={settings.sidebarGroupText || "#64748b"} className="size-11 rounded-none border-none p-1 shadow-sm" />
-                  <input type="text" value={settings.sidebarGroupText || "#64748b"} readOnly className={cn(inputClass, "flex-1 font-mono text-xs")} />
-                </div>
-              </Field>
-            </div>
-
-            <div className="space-y-3">
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Premium Renk Paletleri</p>
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-                {[
-                  { name: "Varsayılan", bg: "#f8fafc", text: "#64748b" },
-                  { name: "Orange", bg: "#fff7ed", text: "#ea580c" },
-                  { name: "Ocean", bg: "#eff6ff", text: "#2563eb" },
-                  { name: "Forest", bg: "#f0fdf4", text: "#16a34a" },
-                  { name: "Rose", bg: "#fff1f2", text: "#e11d48" },
-                  { name: "Indigo", bg: "#eef2ff", text: "#4f46e5" },
-                ].map((palette) => (
-                  <button
-                    key={palette.name}
-                    type="button"
-                    onClick={() => {
-                      const bgInput = document.getElementsByName("sidebarGroupBg")[0] as HTMLInputElement;
-                      const textInput = document.getElementsByName("sidebarGroupText")[0] as HTMLInputElement;
-                      if (bgInput) bgInput.value = palette.bg;
-                      if (textInput) textInput.value = palette.text;
-                    }}
-                    className="flex flex-col items-center gap-1.5 p-2 rounded-none border border-slate-100 hover:border-blue-200 hover:shadow-sm transition-all group"
-                  >
-                    <div className="size-8 rounded-full border border-slate-100 shadow-inner" style={{ backgroundColor: palette.bg }} />
-                    <span className="text-[10px] font-bold text-slate-500 group-hover:text-slate-900">{palette.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="premium-card rounded-3xl p-6 space-y-6">
-          <div className="flex items-center gap-3 border-b border-slate-50 pb-4">
-            <div className="grid size-10 place-items-center rounded-none bg-amber-50 text-amber-600">
-              <Maximize2 className="size-5" />
-            </div>
-            <h2 className="font-bold text-slate-950">Modal Pozisyonu</h2>
-          </div>
-          
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Masaüstü Pozisyonu">
-              <select name="modalPosition" defaultValue={settings.modalPosition} className={inputClass}>
-                <option value="right">Sağ (Slide)</option>
-                <option value="left">Sol (Slide)</option>
-                <option value="center">Orta (Geniş)</option>
-                <option value="top">Üst (Drop)</option>
-                <option value="bottom">Alt (Rise)</option>
-              </select>
-            </Field>
-            
-            <Field label="Mobil Pozisyonu">
-              <select name="modalPositionMobile" defaultValue={settings.modalPositionMobile} className={inputClass}>
-                <option value="bottom">Alt (Drawer)</option>
-                <option value="top">Üst</option>
-                <option value="right">Sağ</option>
-                <option value="left">Sol</option>
-              </select>
-            </Field>
-          </div>
-        </div>
-
-        <div className="premium-card rounded-3xl p-6 space-y-6 lg:col-span-2">
-          <div className="flex items-center gap-3 border-b border-slate-50 pb-4">
-            <div className="grid size-10 place-items-center rounded-none bg-rose-50 text-rose-600">
-              <Bell className="size-5" />
-            </div>
-            <h2 className="font-bold text-slate-950">Bildirim Sistemi</h2>
-          </div>
-          
-          <div className="grid gap-6 md:grid-cols-3">
-            <div className="space-y-4">
-              <label className="flex items-center gap-3 p-3 rounded-none bg-slate-50 transition-all hover:bg-white hover:ring-1 hover:ring-slate-200">
-                <input type="checkbox" name="notificationsEnabled" defaultChecked={settings.notificationsEnabled} className="size-5 rounded-none border-slate-300 text-blue-600 focus:ring-blue-500" />
-                <span className="text-sm font-semibold text-slate-700">Bildirimler Aktif</span>
-              </label>
-              <Field label="Maksimum Bildirim Sayısı">
-                <input type="number" name="maxNotificationCount" defaultValue={settings.maxNotificationCount} className={inputClass} />
-              </Field>
-            </div>
-            
-            <div className="md:col-span-2 grid gap-3 sm:grid-cols-3">
-              {[
-                { name: "showCriticalStock", label: "Kritik Stok Uyarısı" },
-                { name: "showDelayedOrders", label: "Geciken Siparişler" },
-                { name: "showProductionAlerts", label: "Üretim Sinyalleri" },
-              ].map((opt) => (
-                <label key={opt.name} className="flex flex-col gap-3 p-4 rounded-none border border-slate-100 bg-white transition-all hover:border-blue-200 hover:shadow-md group">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400 group-hover:text-blue-600">{opt.label}</span>
-                    <input type="checkbox" name={opt.name} defaultChecked={(settings as any)[opt.name]} className="size-5 rounded-none border-slate-300 text-blue-600 focus:ring-blue-500" />
-                  </div>
-                  <p className="text-[10px] text-slate-400 leading-relaxed">Gerçek zamanlı hesaplama ile panele yansıtılır.</p>
-                </label>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="lg:col-span-2 flex justify-end">
-          <button disabled={loading} className={cn(primaryButton, "px-12 py-4 text-base shadow-xl shadow-blue-100")} type="submit">
-            {loading ? "Kaydediliyor..." : "Ayarları Uygula"}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
-export function DataControlPage() {
+export function IntegrityControlPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [checkResult, setCheckResult] = useState<{ success: boolean; message?: string; error?: string; details?: any[] } | null>(null);
 
@@ -3043,6 +2771,230 @@ export function DataControlPage() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+export function ProjectSettingsPage() {
+  const { data, loading, refresh } = useErpData();
+  const [formSettings, setFormSettings] = useState<ErpData["uiSettings"] | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
+
+  // Force refresh data on mount to ensure we have the latest from DB
+  useEffect(() => {
+    refresh().catch(() => undefined);
+  }, []);
+
+  // Sync local form state with global data if not dirty (not modified by user)
+  useEffect(() => {
+    if (data.uiSettings && !isDirty) {
+      setFormSettings(data.uiSettings);
+    }
+  }, [data.uiSettings, isDirty]);
+
+  if (!formSettings) return null;
+
+  const settings = formSettings;
+  const inputClass = "w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50";
+
+  const updateField = (field: keyof ErpData["uiSettings"], value: any) => {
+    setIsDirty(true);
+    setFormSettings(prev => prev ? ({ ...prev, [field]: value }) : null);
+  };
+
+  async function saveSettings(event: React.FormEvent) {
+    event.preventDefault();
+    try {
+      await patchJson("/api/ui-settings", settings);
+      setIsDirty(false);
+      toast.success("Ayarlar başarıyla kaydedildi");
+      await refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Hata oluştu");
+    }
+  }
+
+  const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
+    <div className="space-y-2">
+      <label className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{label}</label>
+      {children}
+    </div>
+  );
+
+  return (
+    <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
+      <PageHeader 
+        eyebrow="Sistem Yönetimi" 
+        title="Proje Ayarları" 
+        description="ERP genel davranışlarını ve modül varsayılanlarını buradan yönetebilirsiniz." 
+        icon={Settings} 
+      />
+
+      <form onSubmit={saveSettings} className="grid gap-8 lg:grid-cols-2">
+        {/* Modül Giriş Varsayılanları - Geniş Kart */}
+        <div className="lg:col-span-2 premium-card rounded-3xl p-6 space-y-6">
+          <div className="flex items-center gap-3 border-b border-slate-50 pb-4">
+            <div className="grid size-10 place-items-center rounded-none bg-indigo-50 text-indigo-600">
+              <Plus className="size-5" />
+            </div>
+            <h2 className="font-bold text-slate-950">Modül Giriş Varsayılanları</h2>
+          </div>
+          <p className="text-sm text-slate-500">Formlar açıldığında gelmesi istenen varsayılan cari ve depoları seçebilirsiniz.</p>
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {[
+              { id: "direct_purchase", name: "Hızlı Hammadde Alışı", partner: "Satıcı", warehouse: "Depo" },
+              { id: "purchase_receipt", name: "Siparişe Bağlı Mal Kabul", partner: "Satıcı", warehouse: "Depo" },
+              { id: "raw_production", name: "Ham Üretim", partner: "Fasoncu (Örmeci)", warehouse: "Ham Giriş Deposu", secondWarehouse: "Kaynak Depo" },
+              { id: "dyehouse_production", name: "Boyahane Üretimi", partner: "Boyahane", warehouse: "Tüketilecek Ham Deposu", secondWarehouse: "Mamül Giriş Deposu" },
+              { id: "transfer", name: "Depo Transferi", partner: "", warehouse: "Kaynak Depo", secondWarehouse: "Hedef Depo" },
+              { id: "sale", name: "Satış / Sevkiyat", partner: "Cari", warehouse: "Depo" },
+            ].map((formCfg) => {
+              const fd = settings.formDefaults?.find(f => f.formId === formCfg.id) || { 
+                formId: formCfg.id, 
+                formName: formCfg.name, 
+                partnerFieldName: formCfg.partner, 
+                warehouseFieldName: formCfg.warehouse, 
+                secondWarehouseFieldName: formCfg.secondWarehouse 
+              };
+              const updateFormLocal = (field: "defaultPartnerId" | "defaultWarehouseId" | "defaultSecondWarehouseId", val: string) => {
+                const current = settings.formDefaults || [];
+                const idx = current.findIndex(f => f.formId === formCfg.id);
+                const next = [...current];
+                if (idx >= 0) next[idx] = { ...next[idx], [field]: val };
+                else next.push({ ...fd, [field]: val });
+                updateField("formDefaults", next);
+              };
+              return (
+                <div key={formCfg.id} className="group space-y-4 p-5 bg-white border border-slate-100 hover:border-blue-200 hover:shadow-lg transition-all duration-300">
+                  <div className="flex items-center gap-3 border-b border-slate-50 pb-3 mb-3">
+                    <div className="size-2 rounded-full bg-blue-600" />
+                    <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">{formCfg.name}</span>
+                  </div>
+                  {formCfg.partner && (
+                    <label className="block space-y-1.5">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{formCfg.partner}</span>
+                      <select className={inputClass} value={fd.defaultPartnerId || ""} onChange={(e) => updateFormLocal("defaultPartnerId", e.target.value)}>
+                        <option value="">Seçiniz</option>
+                        {data.partners.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      </select>
+                    </label>
+                  )}
+                  <label className="block space-y-1.5">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{formCfg.warehouse}</span>
+                    <select className={inputClass} value={fd.defaultWarehouseId || ""} onChange={(e) => updateFormLocal("defaultWarehouseId", e.target.value)}>
+                      <option value="">Seçiniz</option>
+                      {data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                    </select>
+                  </label>
+                  {formCfg.secondWarehouse && (
+                    <label className="block space-y-1.5">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{formCfg.secondWarehouse}</span>
+                      <select className={inputClass} value={fd.defaultSecondWarehouseId || ""} onChange={(e) => updateFormLocal("defaultSecondWarehouseId", e.target.value)}>
+                        <option value="">Seçiniz</option>
+                        {data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                      </select>
+                    </label>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Görünüm ve Menü */}
+        <div className="premium-card rounded-3xl p-6 space-y-6">
+          <div className="flex items-center gap-3 border-b border-slate-50 pb-4">
+            <div className="grid size-10 place-items-center rounded-none bg-blue-50 text-blue-600">
+              <Layout className="size-5" />
+            </div>
+            <h2 className="font-bold text-slate-950">Görünüm ve Menü</h2>
+          </div>
+          <div className="grid gap-6">
+            <Field label="Menü Davranışı">
+              <select value={settings.menuMode} onChange={(e) => updateField("menuMode", e.target.value)} className={inputClass}>
+                <option value="static">Sabit Menü</option>
+                <option value="collapsible">Açılır-Kapanır Menü</option>
+              </select>
+            </Field>
+            <Field label="Menü Rengi (Grup Arkaplan)">
+              <input type="text" value={settings.sidebarGroupBg || ""} onChange={(e) => updateField("sidebarGroupBg", e.target.value)} className={inputClass} placeholder="#f8fafc" />
+            </Field>
+            <Field label="Menü Yazı Rengi">
+              <input type="text" value={settings.sidebarGroupText || ""} onChange={(e) => updateField("sidebarGroupText", e.target.value)} className={inputClass} placeholder="#475569" />
+            </Field>
+          </div>
+        </div>
+
+        {/* Modal Davranışı */}
+        <div className="premium-card rounded-3xl p-6 space-y-6">
+          <div className="flex items-center gap-3 border-b border-slate-50 pb-4">
+            <div className="grid size-10 place-items-center rounded-none bg-amber-50 text-amber-600">
+              <Maximize2 className="size-5" />
+            </div>
+            <h2 className="font-bold text-slate-950">Modal ve Drawer</h2>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2">
+            <Field label="Masaüstü Pozisyonu">
+              <select value={settings.modalPosition} onChange={(e) => updateField("modalPosition", e.target.value)} className={inputClass}>
+                <option value="right">Sağ Panel</option>
+                <option value="left">Sol Panel</option>
+                <option value="center">Orta Modal</option>
+                <option value="top">Üst Bar</option>
+                <option value="bottom">Alt Bar</option>
+              </select>
+            </Field>
+            <Field label="Mobil Pozisyonu">
+              <select value={settings.modalPositionMobile} onChange={(e) => updateField("modalPositionMobile", e.target.value)} className={inputClass}>
+                <option value="bottom">Alt Panel (Sheet)</option>
+                <option value="top">Üst Panel</option>
+                <option value="center">Tam Ekran</option>
+              </select>
+            </Field>
+          </div>
+        </div>
+
+        {/* Bildirim Ayarları */}
+        <div className="premium-card rounded-3xl p-6 space-y-6 lg:col-span-2">
+          <div className="flex items-center gap-3 border-b border-slate-50 pb-4">
+            <div className="grid size-10 place-items-center rounded-none bg-rose-50 text-rose-600">
+              <Bell className="size-5" />
+            </div>
+            <h2 className="font-bold text-slate-950">Bildirim Sistemi</h2>
+          </div>
+          <div className="grid gap-6 md:grid-cols-3">
+            <div className="space-y-4">
+              <label className="flex items-center gap-3 p-3 rounded-none bg-slate-50 transition-all hover:bg-white hover:ring-1 hover:ring-slate-200 cursor-pointer">
+                <input type="checkbox" checked={settings.notificationsEnabled} onChange={(e) => updateField("notificationsEnabled", e.target.checked)} className="size-5 rounded-none border-slate-300 text-blue-600 focus:ring-blue-500" />
+                <span className="text-sm font-semibold text-slate-700">Bildirimler Aktif</span>
+              </label>
+              <Field label="Maksimum Bildirim Sayısı">
+                <input type="number" value={settings.maxNotificationCount} onChange={(e) => updateField("maxNotificationCount", Number(e.target.value))} className={inputClass} />
+              </Field>
+            </div>
+            <div className="md:col-span-2 grid gap-3 sm:grid-cols-3">
+              {[
+                { name: "showCriticalStock", label: "Kritik Stok Uyarısı" },
+                { name: "showDelayedOrders", label: "Geciken Siparişler" },
+                { name: "showProductionAlerts", label: "Üretim Sinyalleri" }
+              ].map((opt) => (
+                <label key={opt.name} className="flex flex-col gap-3 p-4 rounded-none border border-slate-100 bg-white transition-all hover:border-blue-200 hover:shadow-md group cursor-pointer">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400 group-hover:text-blue-600">{opt.label}</span>
+                    <input type="checkbox" checked={(settings as any)[opt.name]} onChange={(e) => updateField(opt.name as any, e.target.checked)} className="size-5 rounded-none border-slate-300 text-blue-600 focus:ring-blue-500" />
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-relaxed">Gerçek zamanlı panel yansıması.</p>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-2 flex justify-end">
+          <button disabled={loading} className={cn(primaryButton, "px-12 py-4 text-base shadow-xl shadow-blue-100")} type="submit">
+            {loading ? "Kaydediliyor..." : "Ayarları Uygula"}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

@@ -19,6 +19,11 @@ export interface YarnType extends NamedEntity {
 export interface Partner extends NamedEntity {
   type: PartnerType;
   riskScore?: number;
+  defaultPurchaseWarehouseId?: string;
+  defaultTransferTargetWarehouseId?: string;
+  defaultDyehouseConsumptionWarehouseId?: string;
+  defaultSalesWarehouseId?: string;
+  defaultRawProductionInputWarehouseId?: string;
 }
 
 export interface Warehouse extends NamedEntity {
@@ -51,6 +56,7 @@ export interface StockCard {
 export interface Order {
   id: string;
   orderNo: string;
+  customerId?: string;
   customerName: string;
   orderDate: string;
   dueDate: string;
@@ -239,6 +245,7 @@ export interface PurchaseReceipt {
   warehouseId: string;
   supplierId: string;
   items: { purchaseOrderItemId: string; stockId: string; receivedKg: number; unitPrice?: number; lotNo?: string; description?: string }[];
+  currency?: "TRY" | "USD" | "EUR";
   description: string;
   createdAt: string;
   createdBy: string;
@@ -297,6 +304,17 @@ export interface Role {
   updatedAt: string;
 }
 
+export interface FormDefault {
+  formId: string;
+  formName: string;
+  partnerFieldName: string;
+  warehouseFieldName: string;
+  secondWarehouseFieldName?: string;
+  defaultPartnerId?: string;
+  defaultWarehouseId?: string;
+  defaultSecondWarehouseId?: string;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -305,6 +323,10 @@ export interface UserProfile {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  defaultPurchaseWarehouseId?: string;
+  defaultTransferTargetWarehouseId?: string;
+  defaultDyehouseConsumptionWarehouseId?: string;
+  defaultSalesWarehouseId?: string;
 }
 
 export interface UISettings {
@@ -320,6 +342,7 @@ export interface UISettings {
   showProductionAlerts: boolean;
   sidebarGroupBg?: string;
   sidebarGroupText?: string;
+  formDefaults?: FormDefault[];
 }
 
 export interface Counter {
@@ -354,4 +377,10 @@ export interface ErpData {
   userProfiles: UserProfile[];
   counters: Counter[];
   uiSettings: UISettings;
+  integrityStatus?: "green" | "yellow" | "red";
+  integrityStats?: {
+    totalIssues: number;
+    criticalIssues: number;
+    warningIssues: number;
+  };
 }

@@ -12,6 +12,7 @@ import {
   PackageCheck,
   PackagePlus,
   Settings,
+  ShieldCheck,
   ShoppingCart,
   Store,
   Truck,
@@ -41,7 +42,7 @@ const navigationGroups = [
     title: "Siparişler",
     items: [
       { href: "/orders", label: "Müşteri Siparişleri", icon: ShoppingCart },
-      { href: "/purchase-orders", label: "Satıcı Siparişleri", icon: PackagePlus },
+      { href: "/purchase-orders", label: "Hammadde Siparişleri", icon: PackagePlus },
     ]
   },
   {
@@ -74,6 +75,7 @@ const navigationGroups = [
     items: [
       { href: "/settings", label: "Genel Ayarlar", icon: Settings },
       { href: "/settings/project", label: "Proje Ayarları", icon: BarChart3 },
+      { href: "/settings/integrity", label: "Veri Kontrol Merkezi", icon: ShieldCheck },
     ]
   }
 ];
@@ -92,8 +94,17 @@ export function AppShellContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const { data } = useErpData();
+  const { data, loading: globalLoading } = useErpData();
+  const [localLoading, setLocalLoading] = useState(false);
   const settings = data.uiSettings;
+
+  useEffect(() => {
+    setLocalLoading(true);
+    const timer = setTimeout(() => setLocalLoading(false), 300);
+    return () => clearTimeout(timer);
+  }, [pathname]);
+
+  const loading = globalLoading || localLoading;
   const notifications = getComputedNotifications(data).slice(0, settings.maxNotificationCount);
   
   const [mounted, setMounted] = useState(false);
@@ -367,6 +378,23 @@ export function AppShellContent({ children }: { children: React.ReactNode }) {
       ) : null}
 
       <main className="mobile-safe px-4 py-5 lg:ml-72 lg:px-8 lg:py-8">{children}</main>
+
+      {loading && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/80 backdrop-blur-md animate-in fade-in duration-500">
+          <div className="flex flex-col items-center gap-6">
+            <div className="relative">
+              <div className="size-20 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin shadow-2xl shadow-blue-100" />
+              <div className="absolute inset-0 grid place-items-center">
+                <Factory className="size-6 text-blue-600 animate-pulse" />
+              </div>
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-bold text-slate-900 uppercase tracking-[0.3em] animate-pulse">Veriler Yükleniyor</p>
+              <p className="text-[10px] text-slate-500 mt-2 font-medium">Lütfen bekleyin, sistem hazırlanıyor...</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] pt-2 shadow-[0_-18px_60px_rgba(15,23,42,0.10)] backdrop-blur-xl lg:hidden">
         <div className="grid grid-cols-5 gap-1">

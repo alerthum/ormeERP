@@ -1,24 +1,38 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useErpData } from "@/components/erp-data-provider";
-import { X } from "lucide-react";
+import { X, Factory } from "lucide-react";
 
 export function FormDrawer({
   open,
   title,
   children,
   onClose,
+  loading: externalLoading,
 }: {
   open: boolean;
   title: string;
   children: React.ReactNode;
   onClose: () => void;
+  loading?: boolean;
 }) {
-  const { data } = useErpData();
+  const { data, loading: globalLoading } = useErpData();
+  const [localLoading, setLocalLoading] = useState(false);
   const settings = data.uiSettings;
   
+  useEffect(() => {
+    if (open) {
+      setLocalLoading(true);
+      const timer = setTimeout(() => setLocalLoading(false), 400);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
+
   if (!open) return null;
+
+  const loading = externalLoading || globalLoading || localLoading;
 
   const position = settings.modalPosition || "right";
   const mobilePosition = settings.modalPositionMobile || "bottom";
@@ -87,9 +101,25 @@ export function FormDrawer({
           </button>
         </div>
         <div className={cn(
-          "flex-1 overflow-y-auto p-6 custom-scrollbar",
+          "flex-1 overflow-y-auto p-6 custom-scrollbar relative",
           position === "center" && "lg:p-10"
         )}>
+          {loading && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-md animate-in fade-in duration-300">
+              <div className="flex flex-col items-center gap-6">
+                <div className="relative">
+                  <div className="size-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin shadow-xl shadow-blue-100" />
+                  <div className="absolute inset-0 grid place-items-center">
+                    <Factory className="size-5 text-blue-600 animate-pulse" />
+                  </div>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs font-bold text-slate-900 uppercase tracking-[0.2em] animate-pulse">Veriler Yükleniyor</p>
+                  <p className="text-[10px] text-slate-500 mt-2">Lütfen bekleyin...</p>
+                </div>
+              </div>
+            </div>
+          )}
           {children}
         </div>
       </aside>

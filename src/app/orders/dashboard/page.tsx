@@ -7,7 +7,7 @@ export default function Page() {
   return (
     <AppShell>
       <div className="space-y-6">
-        <PageHeader eyebrow="Sipariş takip" title="Sipariş Takip Dashboard" description="Müşteri ve satıcı siparişlerinin üretim, termin ve açık kg görünümü." icon={ShoppingCart} />
+        <PageHeader eyebrow="Sipariş takip" title="Sipariş Takip Dashboard" description="Müşteri ve hammadde siparişlerinin üretim, termin ve açık kg görünümü." icon={ShoppingCart} />
         <Dashboard />
       </div>
     </AppShell>

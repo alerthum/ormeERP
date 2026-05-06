@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { supabase } from "./supabase";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -40,4 +41,55 @@ export function normalizeItems<T = any>(items: unknown): T[] {
     }
   }
   return [];
+}
+
+function requestSignal(ms = 8000) {
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), ms);
+  return controller.signal;
+}
+
+export async function postJson(endpoint: string, payload: Record<string, unknown>) {
+  const session = await supabase.auth.getSession();
+  const token = session.data.session?.access_token;
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}) },
+    body: JSON.stringify(payload),
+    signal: requestSignal(),
+  });
+  const result = (await response.json()) as { ok: boolean; error?: string };
+  if (!response.ok || !result.ok) throw new Error(result.error ?? "İşlem tamamlanamadı.");
+  return result;
+}
+
+export async function patchJson(endpoint: string, payload: Record<string, unknown>) {
+  const session = await supabase.auth.getSession();
+  const token = session.data.session?.access_token;
+  const response = await fetch(endpoint, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}) },
+    body: JSON.stringify(payload),
+    signal: requestSignal(),
+  });
+  const result = (await response.json()) as { ok: boolean; error?: string };
+  if (!response.ok || !result.ok) throw new Error(result.error ?? "İşlem tamamlanamadı.");
+  return result;
+}
+
+export async function apiDelete(endpoint: string) {
+  const session = await supabase.auth.getSession();
+  const token = session.data.session?.access_token;
+  const response = await fetch(endpoint, { 
+    method: "DELETE", 
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined, 
+    signal: requestSignal() 
+  });
+  const result = (await response.json()) as { ok: boolean; error?: string };
+  if (!response.ok || !result.ok) throw new Error(result.error ?? "İşlem tamamlanamadı.");
+  return result;
+}
+
+export async function apiPatch(endpoint: string, payload: Record<string, unknown>) {
+  return patchJson(endpoint, payload);
 }

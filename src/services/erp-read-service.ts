@@ -1,5 +1,6 @@
 import { sql } from "@/db/client";
 import type { ErpData } from "@/types/erp";
+import { getIntegritySummary } from "./integrity-service";
 
 type Row = Record<string, unknown>;
 
@@ -137,5 +138,12 @@ export async function getErpDataFromDb(): Promise<ErpData> {
       (select data from ui_settings where id = 'global' limit 1) as ui_settings
   `;
 
-  return normalizeObject(rows[0] as Row) as unknown as ErpData;
+  const integrity = await getIntegritySummary();
+  const data = normalizeObject(rows[0] as Row) as unknown as ErpData;
+  
+  return {
+    ...data,
+    integrityStatus: integrity.status,
+    integrityStats: integrity.stats
+  };
 }

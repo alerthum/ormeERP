@@ -405,8 +405,24 @@ export async function createSetting(entity: SettingEntity, payload: Record<strin
 
   if (entity === "partners") {
     const type = requireString(payload.type ?? "SUPPLIER", "Cari tipi");
-    await sql`insert into ${sql(table)} (id, name, type, risk_score, is_active) values (${recordId}, ${name}, ${type}, 0, true)`;
-    return { id: recordId, name, type };
+    const dpw = optionalString(payload.defaultPurchaseWarehouseId);
+    const dtw = optionalString(payload.defaultTransferTargetWarehouseId);
+    const ddw = optionalString(payload.defaultDyehouseConsumptionWarehouseId);
+    const dsw = optionalString(payload.defaultSalesWarehouseId);
+    await sql`
+      insert into ${sql(table)} (
+        id, name, type, risk_score, is_active,
+        default_purchase_warehouse_id, 
+        default_transfer_target_warehouse_id, 
+        default_dyehouse_consumption_warehouse_id, 
+        default_sales_warehouse_id
+      ) 
+      values (
+        ${recordId}, ${name}, ${type}, 0, true,
+        ${dpw}, ${dtw}, ${ddw}, ${dsw}
+      )
+    `;
+    return { id: recordId, name, type, defaultPurchaseWarehouseId: dpw, defaultTransferTargetWarehouseId: dtw, defaultDyehouseConsumptionWarehouseId: ddw, defaultSalesWarehouseId: dsw };
   }
 
   await sql`insert into ${sql(table)} (id, name, is_active) values (${recordId}, ${name}, true)`;
@@ -432,8 +448,21 @@ export async function updateSetting(entity: SettingEntity, recordId: string, pay
 
   if (entity === "partners") {
     const type = requireString(payload.type ?? "SUPPLIER", "Cari tipi");
-    await sql`update ${sql(table)} set name = ${name}, type = ${type} where id = ${recordId}`;
-    return { id: recordId, name, type };
+    const dpw = optionalString(payload.defaultPurchaseWarehouseId);
+    const dtw = optionalString(payload.defaultTransferTargetWarehouseId);
+    const ddw = optionalString(payload.defaultDyehouseConsumptionWarehouseId);
+    const dsw = optionalString(payload.defaultSalesWarehouseId);
+    await sql`
+      update ${sql(table)} set 
+        name = ${name}, 
+        type = ${type},
+        default_purchase_warehouse_id = ${dpw},
+        default_transfer_target_warehouse_id = ${dtw},
+        default_dyehouse_consumption_warehouse_id = ${ddw},
+        default_sales_warehouse_id = ${dsw}
+      where id = ${recordId}
+    `;
+    return { id: recordId, name, type, defaultPurchaseWarehouseId: dpw, defaultTransferTargetWarehouseId: dtw, defaultDyehouseConsumptionWarehouseId: ddw, defaultSalesWarehouseId: dsw };
   }
 
   await sql`update ${sql(table)} set name = ${name} where id = ${recordId}`;
@@ -553,8 +582,34 @@ export async function deleteRole(recordId: string) {
 export async function createUserProfile(payload: Record<string, unknown>) {
   const recordId = id("user");
   await sql`
-    insert into user_profiles (id, email, full_name, role_id, is_active, created_at, updated_at)
-    values (${recordId}, ${requireString(payload.email, "E-posta")}, ${requireString(payload.fullName, "Ad soyad")}, ${requireString(payload.roleId, "Rol")}, true, now(), now())
+    insert into user_profiles (
+      id, email, full_name, role_id, 
+      default_purchase_warehouse_id, default_transfer_target_warehouse_id, 
+      default_dyehouse_consumption_warehouse_id, default_sales_warehouse_id,
+      is_active, created_at, updated_at
+    )
+    values (
+      ${recordId}::text, ${requireString(payload.email, "E-posta")}::text, ${requireString(payload.fullName, "Ad soyad")}::text, ${requireString(payload.roleId, "Rol")}::text,
+      ${(payload.defaultPurchaseWarehouseId as string) || null}::text, ${(payload.defaultTransferTargetWarehouseId as string) || null}::text,
+      ${(payload.defaultDyehouseConsumptionWarehouseId as string) || null}::text, ${(payload.defaultSalesWarehouseId as string) || null}::text,
+      true, now(), now()
+    )
+  `;
+  return { id: recordId };
+}
+
+export async function updateUserProfile(recordId: string, payload: Record<string, unknown>) {
+  await sql`
+    update user_profiles set
+      email = ${requireString(payload.email, "E-posta")}::text,
+      full_name = ${requireString(payload.fullName, "Ad soyad")}::text,
+      role_id = ${requireString(payload.roleId, "Rol")}::text,
+      default_purchase_warehouse_id = ${(payload.defaultPurchaseWarehouseId as string) || null}::text,
+      default_transfer_target_warehouse_id = ${(payload.defaultTransferTargetWarehouseId as string) || null}::text,
+      default_dyehouse_consumption_warehouse_id = ${(payload.defaultDyehouseConsumptionWarehouseId as string) || null}::text,
+      default_sales_warehouse_id = ${(payload.defaultSalesWarehouseId as string) || null}::text,
+      updated_at = now()
+    where id = ${recordId}::text
   `;
   return { id: recordId };
 }

@@ -9,6 +9,7 @@ import { LayoutDashboard, Users, Truck, TrendingUp, Calendar, Search, Filter, Ch
 import { useState, useMemo } from "react";
 import { getName } from "@/services/erp-service";
 import { StatusBadge, statusTone } from "@/components/ui/status-badge";
+import { SystemHealthWidget } from "@/components/ui/system-health";
 
 function Dashboard2Content() {
   const { data, loading } = useErpData();
@@ -100,14 +101,6 @@ function Dashboard2Content() {
 
   return (
     <div className="space-y-6 relative min-h-[400px]">
-      {loading && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-[1px]">
-          <div className="flex flex-col items-center gap-3">
-            <div className="size-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Veriler Yükleniyor...</p>
-          </div>
-        </div>
-      )}
       
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <PageHeader 
@@ -164,6 +157,8 @@ function Dashboard2Content() {
           </div>
         </div>
       )}
+
+      <SystemHealthWidget status={data.integrityStatus} stats={data.integrityStats} />
 
       {/* Top KPIs */}
       <div className="grid gap-4 md:grid-cols-2">
@@ -235,7 +230,7 @@ function Dashboard2Content() {
                 <Truck className="size-5" />
               </div>
               <div>
-                <h2 className="font-bold text-slate-900">Tedarikçi Sipariş Durumları</h2>
+                <h2 className="font-bold text-slate-900">Hammadde Sipariş Durumları</h2>
                 <p className="text-xs text-slate-500">Termin Yaklaşan Satın Almalar</p>
               </div>
             </div>

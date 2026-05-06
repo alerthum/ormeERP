@@ -5,9 +5,9 @@ import { AlertTriangle, Boxes, CheckCircle2, Factory, Layout, PackageCheck, Plus
 import { toast } from "sonner";
 import { useErpData } from "@/components/erp-data-provider";
 import { calculateDyehouseWaste, calculateRawWaste, getName } from "@/services/erp-service";
-import { cn, formatKg, formatPercent, normalizeItems } from "@/lib/utils";
+import { cn, formatKg, formatPercent, normalizeItems, patchJson, postJson } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
-import type { DyehouseProduction, ErpData, NamedEntity, Order, Partner, PurchaseOrder, PurchaseReceipt, RawProduction, Sale, StockCard, Transfer, Warehouse } from "@/types/erp";
+import type { DyehouseProduction, ErpData, NamedEntity, Order, Partner, PurchaseOrder, PurchaseReceipt, RawProduction, Role, Sale, StockCard, Transfer, UserProfile, Warehouse } from "@/types/erp";
 
 const inputClass = "w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50";
 const labelClass = "text-xs font-bold uppercase tracking-[0.14em] text-slate-400";
@@ -18,11 +18,7 @@ interface ApiResponse<T = unknown> {
   error?: string;
 }
 
-function requestSignal(ms = 8000) {
-  const controller = new AbortController();
-  window.setTimeout(() => controller.abort(new DOMException("Sunucu yanıtı gecikti.", "TimeoutError")), ms);
-  return controller.signal;
-}
+
 
 function refreshInBackground(refresh: () => Promise<void>) {
   void refresh().catch(() => undefined);
@@ -84,33 +80,7 @@ function applySettingResult(current: ErpData, entity: SettingEntity, value: unkn
   }
 }
 
-async function postJson(endpoint: string, payload: Record<string, unknown>) {
-  const session = await supabase.auth.getSession();
-  const token = session.data.session?.access_token;
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    body: JSON.stringify(payload),
-    signal: requestSignal(),
-  });
-  const result = (await response.json()) as ApiResponse;
-  if (!response.ok || !result.ok) throw new Error(result.error ?? "Kayıt tamamlanamadı.");
-  return result.data;
-}
 
-async function patchJson(endpoint: string, payload: Record<string, unknown>) {
-  const session = await supabase.auth.getSession();
-  const token = session.data.session?.access_token;
-  const response = await fetch(endpoint, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    body: JSON.stringify(payload),
-    signal: requestSignal(),
-  });
-  const result = (await response.json()) as ApiResponse;
-  if (!response.ok || !result.ok) throw new Error(result.error ?? "Güncelleme tamamlanamadı.");
-  return result.data;
-}
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -311,21 +281,35 @@ function getStockLabel(data: ErpData, stockId?: string) {
   return stock ? `${stock.code} - ${stock.name}` : "-";
 }
 
-export function SettingForm({ entity, extra, onDone }: { entity: SettingEntity; extra?: "warehouse" | "partner"; onDone?: () => void }) {
-  const { refresh, mutateData } = useErpData();
+export function SettingForm({ entity, extra, initialData, onDone }: { entity: SettingEntity; extra?: "warehouse" | "partner"; initialData?: any; onDone?: () => void }) {
+  const { data, refresh, mutateData } = useErpData();
   const [loading, setLoading] = useState(false);
+  
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
     try {
-      const saved = await postJson(`/api/settings/${entity}`, {
+      const payload = {
         code: form.get("code"),
         name: String(form.get("name") ?? ""),
         kind: form.get("kind"),
         type: form.get("type"),
-      });
+        defaultPurchaseWarehouseId: form.get("defaultPurchaseWarehouseId"),
+        defaultTransferTargetWarehouseId: form.get("defaultTransferTargetWarehouseId"),
+        defaultDyehouseConsumptionWarehouseId: form.get("defaultDyehouseConsumptionWarehouseId"),
+        defaultSalesWarehouseId: form.get("defaultSalesWarehouseId"),
+        defaultRawProductionInputWarehouseId: form.get("defaultRawProductionInputWarehouseId"),
+      };
+      
+      let saved;
+      if (initialData) {
+        saved = await patchJson(`/api/settings/${entity}/${initialData.id}`, payload);
+      } else {
+        saved = await postJson(`/api/settings/${entity}`, payload);
+      }
+      
       formElement.reset();
       mutateData((current) => applySettingResult(current, entity, saved));
       refreshInBackground(refresh);
@@ -339,18 +323,18 @@ export function SettingForm({ entity, extra, onDone }: { entity: SettingEntity; 
   }
 
   return (
-    <form className="grid gap-3 sm:grid-cols-[1fr_auto_auto]" onSubmit={submit}>
+    <form className={cn("grid gap-3", extra === "partner" ? "grid-cols-1" : "sm:grid-cols-[1fr_auto_auto]")} onSubmit={submit}>
       {entity === "yarnTypes" ? (
         <Field label="Kod">
-          <input className={inputClass} name="code" placeholder="OE" required />
+          <input className={inputClass} name="code" defaultValue={initialData?.code} placeholder="OE" required />
         </Field>
       ) : null}
       <Field label="Ad">
-        <input className={inputClass} name="name" placeholder="Yeni tanım adı" required />
+        <input className={inputClass} name="name" defaultValue={initialData?.name} placeholder="Yeni tanım adı" required />
       </Field>
       {extra === "warehouse" ? (
         <Field label="Tip">
-          <select className={inputClass} name="kind" defaultValue="RAW">
+          <select className={inputClass} name="kind" defaultValue={initialData?.kind || "RAW"}>
             <option value="YARN">İplik deposu</option>
             <option value="KNITTER">Fasoncu deposu</option>
             <option value="RAW">Ham kumaş deposu</option>
@@ -362,17 +346,52 @@ export function SettingForm({ entity, extra, onDone }: { entity: SettingEntity; 
         </Field>
       ) : null}
       {extra === "partner" ? (
-        <Field label="Tip">
-          <select className={inputClass} name="type" defaultValue="SUPPLIER">
-            <option value="KNITTER">Fason örmeci</option>
-            <option value="DYEHOUSE">Boyahane</option>
-            <option value="SUPPLIER">Satıcı</option>
-            <option value="CUSTOMER">Müşteri</option>
-          </select>
-        </Field>
+        <>
+          <Field label="Tip">
+            <select className={inputClass} name="type" defaultValue={initialData?.type || "SUPPLIER"}>
+              <option value="KNITTER">Fason örmeci</option>
+              <option value="DYEHOUSE">Boyahane</option>
+              <option value="SUPPLIER">Satıcı</option>
+              <option value="CUSTOMER">Müşteri</option>
+            </select>
+          </Field>
+          <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-2 border-t border-slate-100 pt-4">
+            <h4 className="md:col-span-2 lg:col-span-3 text-[10px] font-bold uppercase tracking-widest text-blue-600 mb-1">Varsayılan Depo Eşleştirmeleri</h4>
+            <Field label="Mal Kabul Deposu">
+              <select className={inputClass} name="defaultPurchaseWarehouseId" defaultValue={initialData?.defaultPurchaseWarehouseId}>
+                <option value="">Seçiniz</option>
+                {data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+              </select>
+            </Field>
+            <Field label="Ham Çıkış (Transfer)">
+              <select className={inputClass} name="defaultTransferTargetWarehouseId" defaultValue={initialData?.defaultTransferTargetWarehouseId}>
+                <option value="">Seçiniz</option>
+                {data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+              </select>
+            </Field>
+            <Field label="Boyahane Tüketim">
+              <select className={inputClass} name="defaultDyehouseConsumptionWarehouseId" defaultValue={initialData?.defaultDyehouseConsumptionWarehouseId}>
+                <option value="">Seçiniz</option>
+                {data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+              </select>
+            </Field>
+            <Field label="Satış Sevkiyat">
+              <select className={inputClass} name="defaultSalesWarehouseId" defaultValue={initialData?.defaultSalesWarehouseId}>
+                <option value="">Seçiniz</option>
+                {data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+              </select>
+            </Field>
+            <Field label="Ham Giriş (Üretim)">
+              <select className={inputClass} name="defaultRawProductionInputWarehouseId" defaultValue={initialData?.defaultRawProductionInputWarehouseId}>
+                <option value="">Seçiniz</option>
+                {data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+              </select>
+            </Field>
+          </div>
+        </>
       ) : null}
-      <div className="flex items-end">
-        <FormButton loading={loading}>Kaydet</FormButton>
+      <div className="flex items-end mt-2">
+        <FormButton loading={loading}>{initialData ? "Güncelle" : "Kaydet"}</FormButton>
       </div>
     </form>
   );
@@ -769,6 +788,7 @@ export function PurchaseOrderForm() {
   const { data, refresh } = useErpData();
   const [loading, setLoading] = useState(false);
   const rawMaterialStocks = data.stockCards.filter((item) => ["IP", "LYC", "POLY", "YM"].includes(item.type) && item.isActive !== false);
+  const fd = data.uiSettings.formDefaults?.find(f => f.formId === "purchase_order");
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
@@ -796,9 +816,9 @@ export function PurchaseOrderForm() {
       });
       formElement.reset();
       refreshInBackground(refresh);
-      toast.success("Satıcı siparişi kaydedildi.");
+      toast.success("Hammadde siparişi kaydedildi.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Satıcı siparişi kaydedilemedi.");
+      toast.error(error instanceof Error ? error.message : "Hammadde siparişi kaydedilemedi.");
     } finally {
       setLoading(false);
     }
@@ -806,8 +826,8 @@ export function PurchaseOrderForm() {
   return (
     <form className="grid gap-4" onSubmit={submit}>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Satıcı"><select className={inputClass} name="supplierId" required>{data.partners.filter((item) => item.type === "SUPPLIER").map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
-        <Field label="Stok"><select className={inputClass} name="stockId" required>{rawMaterialStocks.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}</select></Field>
+        <Field label="Satıcı"><select className={inputClass} name="supplierId" defaultValue={fd?.defaultPartnerId} required>{data.partners.filter((item) => item.type === "SUPPLIER").map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
+        <Field label="Stok"><select className={inputClass} name="stockId" defaultValue={fd?.defaultWarehouseId} required>{rawMaterialStocks.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}</select></Field>
         <Field label="Sipariş tarihi"><input className={inputClass} name="orderDate" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required /></Field>
         <Field label="Termin"><input className={inputClass} name="dueDate" type="date" required /></Field>
         <Field label="Miktar kg"><input className={inputClass} name="orderedKg" type="number" required /></Field>
@@ -815,7 +835,7 @@ export function PurchaseOrderForm() {
         <Field label="Para birimi"><select className={inputClass} name="currency" defaultValue="TRY"><option>TRY</option><option>USD</option><option>EUR</option></select></Field>
       </div>
       <Field label="Açıklama"><textarea className={inputClass} name="description" rows={3} /></Field>
-      <FormButton loading={loading}>Satıcı siparişini kaydet</FormButton>
+      <FormButton loading={loading}>Hammadde siparişini kaydet</FormButton>
     </form>
   );
 }
@@ -843,9 +863,9 @@ export function PurchaseOrderEditForm({ order, onDone }: { order: PurchaseOrder;
       });
       refreshInBackground(refresh);
       onDone();
-      toast.success("Satıcı siparişi güncellendi.");
+      toast.success("Hammadde siparişi güncellendi.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Satıcı siparişi güncellenemedi.");
+      toast.error(error instanceof Error ? error.message : "Hammadde siparişi güncellenemedi.");
     } finally {
       setLoading(false);
     }
@@ -864,14 +884,30 @@ export function PurchaseOrderEditForm({ order, onDone }: { order: PurchaseOrder;
         <Field label="Durum"><select className={inputClass} name="status" defaultValue={order.status}><option>Taslak</option><option>Onaylandı</option><option>Kısmi Geldi</option><option>Tamamlandı</option><option>İptal</option></select></Field>
       </div>
       <Field label="Açıklama"><textarea className={inputClass} name="description" rows={3} defaultValue={order.description} /></Field>
-      <FormButton loading={loading}>Satıcı siparişini güncelle</FormButton>
+      <FormButton loading={loading}>Hammadde siparişini güncelle</FormButton>
     </form>
   );
 }
 
-export function PurchaseReceiptForm() {
+export function PurchaseReceiptForm({ initialData, onDone }: { initialData?: PurchaseReceipt; onDone?: () => void }) {
   const { data, refresh } = useErpData();
   const [loading, setLoading] = useState(false);
+  const fd = data.uiSettings.formDefaults?.find(f => f.formId === "purchase_receipt");
+  const [purchaseOrderId, setPurchaseOrderId] = useState(initialData?.purchaseOrderId || "");
+  const [warehouseId, setWarehouseId] = useState(initialData?.warehouseId || fd?.defaultWarehouseId || "");
+
+  // Update warehouse when PO changes (only for new records)
+  useEffect(() => {
+    if (!initialData && purchaseOrderId) {
+      const po = data.purchaseOrders.find(o => o.id === purchaseOrderId);
+      if (po) {
+        const supplier = data.partners.find(p => p.id === po.supplierId);
+        if (supplier?.defaultPurchaseWarehouseId) {
+          setWarehouseId(supplier.defaultPurchaseWarehouseId);
+        }
+      }
+    }
+  }, [purchaseOrderId, initialData, data.purchaseOrders, data.partners]);
   const getPurchaseReceiptOptionLabel = (order: PurchaseOrder) => {
     const item = normalizeItems(order.items)[0];
     const stockName = item?.stockName || data.stockCards.find((stock) => stock.id === item?.stockId)?.name || "Stok seçilmemiş";
@@ -886,8 +922,8 @@ export function PurchaseReceiptForm() {
     const order = data.purchaseOrders.find((item) => item.id === form.get("purchaseOrderId"));
     const item = normalizeItems(order?.items)[0];
     try {
-      if (!order || !item) throw new Error("Satıcı siparişi seçilmelidir.");
-      await postJson("/api/purchase-receipts", {
+      if (!order || !item) throw new Error("Hammadde siparişi seçilmelidir.");
+      const payload = {
         purchaseOrderId: order.id,
         purchaseOrderItemId: item.id,
         stockId: item.stockId,
@@ -896,42 +932,92 @@ export function PurchaseReceiptForm() {
         receivedKg: form.get("receivedKg"),
         lotNo: form.get("lotNo"),
         description: form.get("description"),
-      });
+      };
+
+      if (initialData) {
+        await patchJson(`/api/purchase-receipts/${initialData.id}`, payload);
+      } else {
+        await postJson("/api/purchase-receipts", payload);
+      }
+
       formElement.reset();
       refreshInBackground(refresh);
-      toast.success("Mal kabul kaydedildi.");
+      onDone?.();
+      toast.success(initialData ? "Mal kabul güncellendi." : "Mal kabul kaydedildi.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Mal kabul kaydedilemedi.");
+      toast.error(error instanceof Error ? error.message : "İşlem başarısız.");
     } finally {
       setLoading(false);
     }
   }
   return (
     <form className="grid gap-4" onSubmit={submit}>
-      <Field label="Satıcı siparişi"><select className={inputClass} name="purchaseOrderId" required>{data.purchaseOrders.filter((item) => item.status !== "Tamamlandı").map((item) => <option key={item.id} value={item.id}>{getPurchaseReceiptOptionLabel(item)}</option>)}</select></Field>
+      <Field label="Hammadde siparişi">
+        <select 
+          className={inputClass} 
+          name="purchaseOrderId" 
+          value={purchaseOrderId}
+          onChange={(e) => setPurchaseOrderId(e.target.value)}
+          required
+        >
+          <option value="" disabled>Seçiniz</option>
+          {data.purchaseOrders
+            .filter((item) => item.status !== "Tamamlandı" || item.id === initialData?.purchaseOrderId)
+            .map((item) => (
+              <option key={item.id} value={item.id}>{getPurchaseReceiptOptionLabel(item)}</option>
+            ))}
+        </select>
+      </Field>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Mal kabul tarihi"><input className={inputClass} name="receiptDate" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required /></Field>
-        <Field label="Depo"><select className={inputClass} name="warehouseId" required>{data.warehouses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
-        <Field label="Gelen kg"><input className={inputClass} name="receivedKg" type="number" required /></Field>
-        <Field label="Lot no (Girmek zorunludur)"><input className={inputClass} name="lotNo" required /></Field>
+        <Field label="Mal kabul tarihi"><input className={inputClass} name="receiptDate" type="date" defaultValue={initialData?.receiptDate || new Date().toISOString().slice(0, 10)} required /></Field>
+        <Field label="Depo">
+          <select 
+            className={inputClass} 
+            name="warehouseId" 
+            value={warehouseId} 
+            onChange={(e) => setWarehouseId(e.target.value)}
+            required
+          >
+            <option value="" disabled>Seçiniz</option>
+            {data.warehouses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+        </Field>
+        <Field label="Gelen kg"><input className={inputClass} name="receivedKg" type="number" step="0.01" defaultValue={initialData?.items?.[0]?.receivedKg} required /></Field>
+        <Field label="Lot no (Girmek zorunludur)"><input className={inputClass} name="lotNo" defaultValue={initialData?.items?.[0]?.lotNo || ""} required /></Field>
       </div>
-      <Field label="Açıklama"><textarea className={inputClass} name="description" rows={3} /></Field>
-      <FormButton loading={loading}>Mal kabul kaydet</FormButton>
+      <Field label="Açıklama"><textarea className={inputClass} name="description" rows={3} defaultValue={initialData?.description || ""} /></Field>
+      <FormButton loading={loading}>{initialData ? "Mal kabul güncelle" : "Mal kabul kaydet"}</FormButton>
     </form>
   );
 }
 
-export function DirectPurchaseForm() {
+export function DirectPurchaseForm({ initialData, onDone }: { initialData?: PurchaseReceipt; onDone?: () => void }) {
   const { data, refresh } = useErpData();
   const [loading, setLoading] = useState(false);
   const rawMaterialStocks = data.stockCards.filter((item) => ["IP", "LYC", "POLY", "YM"].includes(item.type) && item.isActive !== false);
+  const item = initialData?.items?.[0];
+  const fd = data.uiSettings.formDefaults?.find(f => f.formId === "direct_purchase");
+
+  const [supplierId, setSupplierId] = useState(initialData?.supplierId || fd?.defaultPartnerId || "");
+  const [warehouseId, setWarehouseId] = useState(initialData?.warehouseId || fd?.defaultWarehouseId || "");
+
+  // Update warehouse when supplier changes (only for new records)
+  useEffect(() => {
+    if (!initialData && supplierId) {
+      const supplier = data.partners.find(p => p.id === supplierId);
+      if (supplier?.defaultPurchaseWarehouseId) {
+        setWarehouseId(supplier.defaultPurchaseWarehouseId);
+      }
+    }
+  }, [supplierId, initialData, data.partners]);
+
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
     try {
-      await postJson("/api/direct-purchases", {
+      const payload = {
         supplierId: form.get("supplierId"),
         stockId: form.get("stockId"),
         receiptDate: form.get("receiptDate"),
@@ -941,12 +1027,22 @@ export function DirectPurchaseForm() {
         currency: form.get("currency"),
         lotNo: form.get("lotNo"),
         description: form.get("description"),
-      });
+      };
+
+      if (initialData) {
+        // Direct purchase records are special because they create PO + Receipt.
+        // For simplicity, we patch the receipt itself if it exists.
+        await patchJson(`/api/purchase-receipts/${initialData.id}`, payload);
+      } else {
+        await postJson("/api/direct-purchases", payload);
+      }
+
       formElement.reset();
       refreshInBackground(refresh);
-      toast.success("Hammadde alışı kaydedildi ve stok girişi işlendi.");
+      onDone?.();
+      toast.success(initialData ? "Hammadde alışı güncellendi." : "Hammadde alışı kaydedildi.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Hammadde alışı kaydedilemedi.");
+      toast.error(error instanceof Error ? error.message : "İşlem başarısız.");
     } finally {
       setLoading(false);
     }
@@ -954,20 +1050,45 @@ export function DirectPurchaseForm() {
   return (
     <form className="grid gap-4" onSubmit={submit}>
       <div className="rounded-none bg-blue-50 p-4 text-sm text-blue-800">
-        Bu ekran müşteri siparişinden bağımsız IP, LYC, POLY veya YM ham kumaş alışı içindir. Kaydettiğinde sistem tamamlanmış satıcı siparişi, mal kabul ve stok giriş hareketini birlikte oluşturur.
+        Bu ekran müşteri siparişinden bağımsız IP, LYC, POLY veya YM ham kumaş alışı içindir. {initialData ? "Güncelleme yapıldığında ilgili stok hareketleri ve bakiye revize edilir." : "Kaydettiğinde sistem tamamlanmış hammadde siparişi, mal kabul ve stok giriş hareketini birlikte oluşturur."}
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Satıcı"><select className={inputClass} name="supplierId" required>{data.partners.filter((item) => item.type === "SUPPLIER").map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
-        <Field label="Stok"><select className={inputClass} name="stockId" required>{rawMaterialStocks.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}</select></Field>
-        <Field label="Alış tarihi"><input className={inputClass} name="receiptDate" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required /></Field>
-        <Field label="Giriş deposu"><select className={inputClass} name="warehouseId" required>{data.warehouses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
-        <Field label="Gelen kg"><input className={inputClass} name="quantityKg" type="number" required /></Field>
-        <Field label="Birim fiyat"><input className={inputClass} name="unitPrice" type="number" step="0.01" /></Field>
-        <Field label="Para birimi"><select className={inputClass} name="currency" defaultValue="TRY"><option>TRY</option><option>USD</option><option>EUR</option></select></Field>
-        <Field label="Lot no (Girmek zorunludur)"><input className={inputClass} name="lotNo" required /></Field>
+        <Field label="Satıcı">
+          <select 
+            className={inputClass} 
+            name="supplierId" 
+            value={supplierId} 
+            onChange={(e) => setSupplierId(e.target.value)}
+            required
+          >
+            <option value="" disabled>Seçiniz</option>
+            {data.partners.filter((item) => item.type === "SUPPLIER").map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+        </Field>
+        <Field label="Stok"><select className={inputClass} name="stockId" defaultValue={item?.stockId || ""} required>
+          <option value="" disabled>Seçiniz</option>
+          {rawMaterialStocks.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}
+        </select></Field>
+        <Field label="Alış tarihi"><input className={inputClass} name="receiptDate" type="date" defaultValue={initialData?.receiptDate || new Date().toISOString().slice(0, 10)} required /></Field>
+        <Field label="Giriş deposu">
+          <select 
+            className={inputClass} 
+            name="warehouseId" 
+            value={warehouseId} 
+            onChange={(e) => setWarehouseId(e.target.value)}
+            required
+          >
+            <option value="" disabled>Seçiniz</option>
+            {data.warehouses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+        </Field>
+        <Field label="Gelen kg"><input className={inputClass} name="quantityKg" type="number" step="0.01" defaultValue={item?.receivedKg} required /></Field>
+        <Field label="Birim fiyat"><input className={inputClass} name="unitPrice" type="number" step="0.01" defaultValue={item?.unitPrice} /></Field>
+        <Field label="Para birimi"><select className={inputClass} name="currency" defaultValue={initialData?.currency || "TRY"}><option>TRY</option><option>USD</option><option>EUR</option></select></Field>
+        <Field label="Lot no (Girmek zorunludur)"><input className={inputClass} name="lotNo" defaultValue={item?.lotNo || ""} required /></Field>
       </div>
-      <Field label="Açıklama"><textarea className={inputClass} name="description" rows={3} /></Field>
-      <FormButton loading={loading}>Hammadde alışını kaydet</FormButton>
+      <Field label="Açıklama"><textarea className={inputClass} name="description" rows={3} defaultValue={initialData?.description || ""} /></Field>
+      <FormButton loading={loading}>{initialData ? "Güncelle" : "Hammadde alışını kaydet"}</FormButton>
     </form>
   );
 }
@@ -976,7 +1097,8 @@ export function TransferForm({ initialData }: { initialData?: Transfer }) {
   const { data, refresh } = useErpData();
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<any[]>(initialData?.items ? normalizeItems(initialData.items) : []);
-  const [formState, setFormState] = useState({ fromWarehouseId: initialData?.fromWarehouseId || '' });
+  const fd = data.uiSettings.formDefaults?.find(f => f.formId === "transfer");
+  const [formState, setFormState] = useState({ fromWarehouseId: initialData?.fromWarehouseId || fd?.defaultWarehouseId || '' });
   const [tempItem, setTempItem] = useState({ stockId: '', lotNo: '', partyId: '', quantity: '' });
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -1005,7 +1127,7 @@ export function TransferForm({ initialData }: { initialData?: Transfer }) {
       <div className='grid gap-4 sm:grid-cols-2'>
         <Field label='Tarih'><input className={inputClass} name='date' type='date' defaultValue={initialData?.date || new Date().toISOString().slice(0, 10)} required /></Field>
         <Field label='Kaynak Depo'><select className={inputClass} name='fromWarehouseId' value={formState.fromWarehouseId} onChange={e => setFormState({...formState, fromWarehouseId: e.target.value})} required>{data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></Field>
-        <Field label='Hedef Depo'><select className={inputClass} name='toWarehouseId' defaultValue={initialData?.toWarehouseId} required>{data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></Field>
+        <Field label='Hedef Depo'><select className={inputClass} name='toWarehouseId' defaultValue={initialData?.toWarehouseId || fd?.defaultSecondWarehouseId} required><option value="">Seçiniz</option>{data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></Field>
       </div>
       <div className='premium-card p-4 rounded-none bg-slate-50 border border-slate-100'>
          <h3 className='text-xs font-bold uppercase text-slate-400 mb-3 tracking-wider'>Transfer Kalemleri</h3>
@@ -1293,9 +1415,35 @@ export function RawProductionForm({ initialData }: { initialData?: RawProduction
   const [loading, setLoading] = useState(false);
   const [orderId, setOrderId] = useState(initialData?.orderId || '');
   const [partyNo, setPartyNo] = useState(initialData?.partyId ? data.parties.find(p => p.id === initialData.partyId)?.partyNo || '' : '');
+  const fd = data.uiSettings.formDefaults?.find(f => f.formId === "raw_production");
   const [consumedItems, setConsumedItems] = useState<{ stockId: string, warehouseId: string, quantityKg: number, lotNo?: string }[]>(initialData?.consumedItems || []);
-  const [tempConsumed, setTempConsumed] = useState({ stockId: '', warehouseId: '', lotNo: '', partyId: '', quantityKg: '' });
+  const [tempConsumed, setTempConsumed] = useState({ stockId: '', warehouseId: initialData ? '' : (fd?.defaultSecondWarehouseId || ''), lotNo: '', partyId: '', quantityKg: '' });
   const [producedRawKg, setProducedRawKg] = useState(initialData?.producedRawKg?.toString() || '');
+  const [knitterPartnerId, setKnitterPartnerId] = useState(initialData?.knitterPartnerId || "");
+  const [warehouseId, setWarehouseId] = useState(initialData?.warehouseId || "");
+
+  // Initial defaults
+  useEffect(() => {
+    if (!initialData) {
+      if (fd?.defaultPartnerId) setKnitterPartnerId(fd.defaultPartnerId);
+      if (fd?.defaultWarehouseId) setWarehouseId(fd.defaultWarehouseId);
+      if (fd?.defaultSecondWarehouseId) setTempConsumed(prev => ({ ...prev, warehouseId: fd.defaultSecondWarehouseId! }));
+    }
+  }, [initialData, fd]);
+
+  // Update warehouse when Knitter changes
+  useEffect(() => {
+    if (!initialData && knitterPartnerId) {
+      const partner = data.partners.find(p => p.id === knitterPartnerId);
+      if (partner?.defaultRawProductionInputWarehouseId) {
+        setWarehouseId(partner.defaultRawProductionInputWarehouseId);
+      }
+      if (partner?.defaultTransferTargetWarehouseId) {
+        setTempConsumed(prev => ({ ...prev, warehouseId: partner.defaultTransferTargetWarehouseId! }));
+      }
+    }
+  }, [knitterPartnerId, initialData, data.partners]);
+  
   const [rawWidth, setRawWidth] = useState(initialData?.rawWidth?.toString() || '');
   const [rawGsm, setRawGsm] = useState(initialData?.rawGsm?.toString() || '');
   
@@ -1358,8 +1506,30 @@ export function RawProductionForm({ initialData }: { initialData?: RawProduction
           <Field label='Tarih'><input className={inputClass} name='date' type='date' defaultValue={initialData?.date || new Date().toISOString().slice(0, 10)} required /></Field>
           <Field label='Sipariş'><OrderSelect value={orderId} onChange={setOrderId} required /></Field>
           <Field label='Parti No (Manuel)'><input className={inputClass} value={partyNo} onChange={e => setPartyNo(e.target.value)} placeholder="Parti No yazınız..." required /></Field>
-          <Field label='Fasoncu (Örmeci)'><select className={inputClass} name='knitterPartnerId' defaultValue={initialData?.knitterPartnerId} required>{data.partners.filter(p => p.type === 'KNITTER').map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></Field>
-          <Field label='Ham Giriş Deposu'><select className={inputClass} name='warehouseId' defaultValue={initialData?.warehouseId} required>{data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></Field>
+        <Field label='Fasoncu (Örmeci)'>
+          <select 
+            className={inputClass} 
+            name='knitterPartnerId' 
+            value={knitterPartnerId} 
+            onChange={e => setKnitterPartnerId(e.target.value)}
+            required
+          >
+            <option value="">Seçiniz</option>
+            {data.partners.filter(p => p.type === 'KNITTER').map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </Field>
+        <Field label='Ham Giriş Deposu'>
+          <select 
+            className={inputClass} 
+            name='warehouseId' 
+            value={warehouseId} 
+            onChange={e => setWarehouseId(e.target.value)}
+            required
+          >
+            <option value="">Seçiniz</option>
+            {data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+          </select>
+        </Field>
           <div className="grid grid-cols-2 gap-4">
             <Field label='Ham En'><input className={inputClass} type='number' value={rawWidth} onChange={e => setRawWidth(e.target.value)} required /></Field>
             <Field label='Ham Gr.'><input className={inputClass} type='number' value={rawGsm} onChange={e => setRawGsm(e.target.value)} required /></Field>
@@ -1488,6 +1658,28 @@ export function DyehouseProductionForm({ initialData }: { initialData?: Dyehouse
   const [inputWarehouseId, setInputWarehouseId] = useState(initialData?.inputWarehouseId || '');
   const [inputRawKg, setInputRawKg] = useState(initialData?.inputRawKg?.toString() || '');
   const [selectedProcessIds, setSelectedProcessIds] = useState<string[]>(initialData?.processTypeIds || []);
+  const [dyehousePartnerId, setDyehousePartnerId] = useState(initialData?.dyehousePartnerId || "");
+  const [outputWarehouseId, setOutputWarehouseId] = useState(initialData?.outputWarehouseId || "");
+  const fd = data.uiSettings.formDefaults?.find(f => f.formId === "dyehouse_production");
+
+  // Initial defaults
+  useEffect(() => {
+    if (!initialData) {
+      if (fd?.defaultWarehouseId) setInputWarehouseId(fd.defaultWarehouseId);
+      if (fd?.defaultSecondWarehouseId) setOutputWarehouseId(fd.defaultSecondWarehouseId);
+      if (fd?.defaultPartnerId) setDyehousePartnerId(fd.defaultPartnerId);
+    }
+  }, [initialData, fd]);
+
+  // When Boyahane changes, update consumption warehouse
+  useEffect(() => {
+    if (!initialData && dyehousePartnerId) {
+      const partner = data.partners.find(p => p.id === dyehousePartnerId);
+      if (partner?.defaultDyehouseConsumptionWarehouseId) {
+        setInputWarehouseId(partner.defaultDyehouseConsumptionWarehouseId);
+      }
+    }
+  }, [dyehousePartnerId, initialData, data.partners]);
   
   const selectedParty = data.parties.find(p => p.id === partyId);
   const selectedOrder = data.orders.find(o => o.id === selectedParty?.orderId);
@@ -1508,7 +1700,7 @@ export function DyehouseProductionForm({ initialData }: { initialData?: Dyehouse
         partyId: partyId,
         dyehousePartnerId: form.get('dyehousePartnerId'),
         inputWarehouseId: inputWarehouseId,
-        outputWarehouseId: form.get('outputWarehouseId'),
+        outputWarehouseId: outputWarehouseId,
         inputRawKg: Number(inputRawKg),
         finishedKg: Number(form.get('finishedKg')),
         finishWidth: Number(form.get('finishWidth')),
@@ -1540,7 +1732,18 @@ export function DyehouseProductionForm({ initialData }: { initialData?: Dyehouse
         <div className='grid gap-4'>
           <Field label='Tarih'><input className={inputClass} name='date' type='date' defaultValue={initialData?.date || new Date().toISOString().slice(0, 10)} required /></Field>
           <Field label='Parti'><select className={inputClass} value={partyId} onChange={e => setPartyId(e.target.value)} required><option value=''>Seçiniz</option>{data.parties.map(p => <option key={p.id} value={p.id}>{p.partyNo}</option>)}</select></Field>
-          <Field label='Boyahane'><select className={inputClass} name='dyehousePartnerId' defaultValue={initialData?.dyehousePartnerId} required>{data.partners.filter(p => p.type === 'DYEHOUSE').map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></Field>
+          <Field label='Boyahane'>
+            <select 
+              className={inputClass} 
+              name='dyehousePartnerId' 
+              value={dyehousePartnerId} 
+              onChange={e => setDyehousePartnerId(e.target.value)}
+              required
+            >
+              <option value="">Seçiniz</option>
+              {data.partners.filter(p => p.type === 'DYEHOUSE').map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </Field>
         </div>
       </div>
 
@@ -1553,9 +1756,9 @@ export function DyehouseProductionForm({ initialData }: { initialData?: Dyehouse
           <h3 className='text-sm font-bold text-slate-900'>Depo & Giriş</h3>
         </div>
         <div className='grid gap-4'>
-          <Field label='Ham Çıkış Deposu'><select className={inputClass} value={inputWarehouseId} onChange={e => setInputWarehouseId(e.target.value)} required><option value=''>Seçiniz</option>{data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></Field>
+          <Field label='Tüketilecek Ham Deposu'><select className={inputClass} value={inputWarehouseId} onChange={e => setInputWarehouseId(e.target.value)} required><option value=''>Seçiniz</option>{data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></Field>
           <Field label='Mamül Giriş Deposu'><select className={inputClass} name='outputWarehouseId' defaultValue={initialData?.outputWarehouseId} required>{data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></Field>
-          <Field label='Giden Ham (Kg)'><input className={inputClass} type='number' value={inputRawKg} onChange={e => setInputRawKg(e.target.value)} required /></Field>
+          <Field label='Tüketilecek Ham Kg'><input className={inputClass} type='number' value={inputRawKg} onChange={e => setInputRawKg(e.target.value)} required /></Field>
         </div>
       </div>
 
@@ -1606,8 +1809,25 @@ export function SaleForm() {
   const [partyId, setPartyId] = useState("");
   const [stockId, setStockId] = useState("");
   const [warehouseId, setWarehouseId] = useState("");
-  const [customerName, setCustomerName] = useState("");
+  const [customerId, setCustomerId] = useState("");
   const [quantityKg, setQuantityKg] = useState("");
+  const fd = data.uiSettings.formDefaults?.find(f => f.formId === "sale");
+
+  // Initial defaults
+  useEffect(() => {
+    if (fd?.defaultPartnerId) setCustomerId(fd.defaultPartnerId);
+    if (fd?.defaultWarehouseId) setWarehouseId(fd.defaultWarehouseId);
+  }, [fd]);
+
+  // Update warehouse when Customer changes
+  useEffect(() => {
+    if (customerId) {
+      const partner = data.partners.find(p => p.id === customerId);
+      if (partner?.defaultSalesWarehouseId) {
+        setWarehouseId(partner.defaultSalesWarehouseId);
+      }
+    }
+  }, [customerId, data.partners]);
   const finishedStocks = data.stockCards.filter((item) => item.type === "MM" && item.isActive !== false);
   const customers = data.partners.filter((item) => item.type === "CUSTOMER" && item.isActive !== false);
   const selectedParty = data.parties.find((item) => item.id === partyId);
@@ -1623,7 +1843,7 @@ export function SaleForm() {
     try {
       await postJson("/api/sales", {
         date: form.get("date"),
-        customerName: form.get("customerName"),
+        customerId: customerId,
         warehouseId: form.get("warehouseId"),
         stockId: form.get("stockId"),
         partyId: form.get("partyId"),
@@ -1657,7 +1877,18 @@ export function SaleForm() {
         </div>
         <div className="grid gap-4">
           <Field label="Tarih"><input className={inputClass} name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required /></Field>
-          <Field label="Müşteri"><select className={inputClass} name="customerName" value={customerName} onChange={(event) => setCustomerName(event.target.value)} required><option value="">Cari seçiniz</option>{customers.map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}</select></Field>
+          <Field label="Müşteri">
+            <select 
+              className={inputClass} 
+              name="customerId" 
+              value={customerId} 
+              onChange={(event) => setCustomerId(event.target.value)} 
+              required
+            >
+              <option value="">Cari seçiniz</option>
+              {customers.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+          </Field>
           <Field label="Açıklama"><textarea className={cn(inputClass, "h-32 resize-none")} name="description" placeholder="Sevkiyat notları..." /></Field>
         </div>
       </div>
@@ -1679,7 +1910,8 @@ export function SaleForm() {
               setPartyId(result.partyId);
               setStockId(party?.mmStockId ?? result.stockId ?? "");
               setWarehouseId(result.warehouseId ?? party?.currentWarehouseId ?? "");
-              setCustomerName(data.orders.find((item) => item.id === party?.orderId)?.customerName ?? customerName);
+              const order = data.orders.find((item) => item.id === party?.orderId);
+              if (order?.customerId) setCustomerId(order.customerId);
               return;
             }
             if (result.stockId) setStockId(result.stockId);
@@ -1693,7 +1925,8 @@ export function SaleForm() {
             setPartyId(event.target.value);
             setStockId(party?.mmStockId ?? stockId);
             setWarehouseId(party?.currentWarehouseId ?? warehouseId);
-            setCustomerName(data.orders.find((item) => item.id === party?.orderId)?.customerName ?? customerName);
+            const order = data.orders.find((item) => item.id === party?.orderId);
+            if (order?.customerId) setCustomerId(order.customerId);
           }} required><option value="">Seçiniz</option>{data.parties.map((item) => <option key={item.id} value={item.id}>{item.partyNo}</option>)}</select></Field>
           <Field label="Çıkış deposu"><select className={inputClass} name="warehouseId" value={warehouseId} onChange={(event) => setWarehouseId(event.target.value)} required><option value="">Seçiniz</option>{data.warehouses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
         </div>
@@ -1827,7 +2060,7 @@ export function RoleForm() {
   );
 }
 
-export function UserProfileForm() {
+export function UserProfileForm({ initialData, onDone }: { initialData?: UserProfile; onDone?: () => void }) {
   const { data, refresh } = useErpData();
   const [loading, setLoading] = useState(false);
 
@@ -1837,48 +2070,28 @@ export function UserProfileForm() {
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
     try {
-      await postJson("/api/users", {
+      const payload = {
         email: form.get("email"),
         fullName: form.get("fullName"),
         roleId: form.get("roleId"),
-      });
+        defaultPurchaseWarehouseId: form.get("defaultPurchaseWarehouseId"),
+        defaultTransferTargetWarehouseId: form.get("defaultTransferTargetWarehouseId"),
+        defaultDyehouseConsumptionWarehouseId: form.get("defaultDyehouseConsumptionWarehouseId"),
+        defaultSalesWarehouseId: form.get("defaultSalesWarehouseId"),
+      };
+
+      if (initialData) {
+        await patchJson(`/api/users/${initialData.id}`, payload);
+      } else {
+        await postJson("/api/users", payload);
+      }
+
       formElement.reset();
       refreshInBackground(refresh);
-      toast.success("Kullanıcı profili kaydedildi.");
+      onDone?.();
+      toast.success(initialData ? "Kullanıcı profili güncellendi." : "Kullanıcı profili kaydedildi.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Kullanıcı kaydedilemedi.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <form className="grid gap-4" onSubmit={submit}>
-      <Field label="Ad soyad"><input className={inputClass} name="fullName" required /></Field>
-      <Field label="E-posta"><input className={inputClass} name="email" type="email" required /></Field>
-      <Field label="Rol"><select className={inputClass} name="roleId" required>{data.roles.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
-      <FormButton loading={loading}>Kullanıcı kaydet</FormButton>
-    </form>
-  );
-}
-export function PurchaseReceiptEditForm({ receipt, onDone }: { receipt: PurchaseReceipt; onDone: () => void }) {
-  const { data, refresh } = useErpData();
-  const [loading, setLoading] = useState(false);
-  const item = receipt.items[0];
-  const isDirect = !receipt.purchaseOrderId;
-
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setLoading(true);
-    const formElement = event.currentTarget;
-    const form = new FormData(formElement);
-    try {
-      await patchJson(`/api/purchase-receipts/${receipt.id}`, Object.fromEntries(form.entries()));
-      refreshInBackground(refresh);
-      onDone();
-      toast.success("Mal kabul güncellendi.");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Mal kabul güncellenemedi.");
+      toast.error(error instanceof Error ? error.message : "İşlem başarısız.");
     } finally {
       setLoading(false);
     }
@@ -1887,16 +2100,50 @@ export function PurchaseReceiptEditForm({ receipt, onDone }: { receipt: Purchase
   return (
     <form className="grid gap-4" onSubmit={submit}>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Mal kabul tarihi"><input className={inputClass} name="receiptDate" type="date" defaultValue={receipt.receiptDate} required /></Field>
-        <Field label="Satıcı"><select className={inputClass} name="supplierId" defaultValue={receipt.supplierId} disabled={!isDirect} required>{data.partners.filter(p => p.type === "SUPPLIER").map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
-        <Field label="Depo"><select className={inputClass} name="warehouseId" defaultValue={receipt.warehouseId} required>{data.warehouses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
-        <Field label="Stok"><select className={inputClass} name="stockId" defaultValue={item?.stockId} disabled={!isDirect} required>{data.stockCards.filter(s => ["IP", "LYC", "POLY", "YM"].includes(s.type)).map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}</select></Field>
-        <Field label="Gelen kg"><input className={inputClass} name="receivedKg" type="number" defaultValue={item?.receivedKg} required /></Field>
-        {isDirect && <Field label="Birim Fiyat (₺)"><input className={inputClass} name="unitPrice" type="number" step="0.01" defaultValue={item?.unitPrice} required /></Field>}
-        <Field label="Lot no"><input className={inputClass} name="lotNo" defaultValue={item?.lotNo ?? ""} /></Field>
+        <Field label="Ad soyad"><input className={inputClass} name="fullName" defaultValue={initialData?.fullName} required /></Field>
+        <Field label="E-posta"><input className={inputClass} name="email" type="email" defaultValue={initialData?.email} required /></Field>
+        <Field label="Rol">
+          <select className={inputClass} name="roleId" defaultValue={initialData?.roleId} required>
+            <option value="">Seçiniz</option>
+            {data.roles.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+        </Field>
       </div>
-      <Field label="Açıklama"><textarea className={inputClass} name="description" rows={3} defaultValue={receipt.description} /></Field>
-      <FormButton loading={loading}>Mal kabul güncelle</FormButton>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-100 pt-4 mt-2">
+        <Field label="Varsayılan Alış Deposu">
+          <select className={inputClass} name="defaultPurchaseWarehouseId" defaultValue={initialData?.defaultPurchaseWarehouseId}>
+            <option value="">Seçiniz</option>
+            {data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+          </select>
+        </Field>
+        <Field label="Varsayılan Transfer Hedefi">
+          <select className={inputClass} name="defaultTransferTargetWarehouseId" defaultValue={initialData?.defaultTransferTargetWarehouseId}>
+            <option value="">Seçiniz</option>
+            {data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+          </select>
+        </Field>
+        <Field label="Varsayılan Boyahane Tüketim">
+          <select className={inputClass} name="defaultDyehouseConsumptionWarehouseId" defaultValue={initialData?.defaultDyehouseConsumptionWarehouseId}>
+            <option value="">Seçiniz</option>
+            {data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+          </select>
+        </Field>
+        <Field label="Varsayılan Satış Çıkış">
+          <select className={inputClass} name="defaultSalesWarehouseId" defaultValue={initialData?.defaultSalesWarehouseId}>
+            <option value="">Seçiniz</option>
+            {data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+          </select>
+        </Field>
+      </div>
+      <FormButton loading={loading}>{initialData ? "Profili Güncelle" : "Kullanıcı Kaydet"}</FormButton>
     </form>
   );
+}
+export function PurchaseReceiptEditForm({ receipt, onDone }: { receipt: PurchaseReceipt; onDone: () => void }) {
+  // If it has a purchaseOrderId, use PurchaseReceiptForm (Create with PO mode)
+  // If not, use DirectPurchaseForm (Direct buy mode)
+  if (receipt.purchaseOrderId) {
+    return <PurchaseReceiptForm initialData={receipt} onDone={onDone} />;
+  }
+  return <DirectPurchaseForm initialData={receipt} onDone={onDone} />;
 }
