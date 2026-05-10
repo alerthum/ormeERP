@@ -23,7 +23,7 @@ export type OperationModule =
  * Enterprise Permission Guard
  */
 export async function assertCanRead(user: PermissionUser | null, module: OperationModule) {
-  if (process.env.INTERNAL_BYPASS === "true") return;
+  if (process.env.ERP_AUTH_BYPASS === "true") return;
   if (!user) throw new Error("Bu işlem için giriş yapmalısınız.");
   if (user.isAdmin) return;
   if (user.permissions.includes(`${module}.read`) || user.permissions.includes(`${module}.update`) || user.permissions.includes(`${module}.create`)) return;
@@ -31,7 +31,7 @@ export async function assertCanRead(user: PermissionUser | null, module: Operati
 }
 
 export async function assertCanCreate(user: PermissionUser | null, module: OperationModule) {
-  if (process.env.INTERNAL_BYPASS === "true") return;
+  if (process.env.ERP_AUTH_BYPASS === "true") return;
   if (!user) throw new Error("Bu işlem için giriş yapmalısınız.");
   if (user.isAdmin) return;
   if (user.permissions.includes(`${module}.create`)) return;
@@ -39,7 +39,7 @@ export async function assertCanCreate(user: PermissionUser | null, module: Opera
 }
 
 export async function assertCanUpdate(user: PermissionUser | null, module: OperationModule) {
-  if (process.env.INTERNAL_BYPASS === "true") return;
+  if (process.env.ERP_AUTH_BYPASS === "true") return;
   if (!user) throw new Error("Bu işlem için giriş yapmalısınız.");
   if (user.isAdmin) return;
   if (user.permissions.includes(`${module}.update`)) return;
@@ -47,7 +47,7 @@ export async function assertCanUpdate(user: PermissionUser | null, module: Opera
 }
 
 export async function assertCanDelete(user: PermissionUser | null, module: OperationModule) {
-  if (process.env.INTERNAL_BYPASS === "true") return;
+  if (process.env.ERP_AUTH_BYPASS === "true") return;
   if (!user) throw new Error("Bu işlem için giriş yapmalısınız.");
   if (user.isAdmin) return;
   if (user.permissions.includes(`${module}.delete`)) return;

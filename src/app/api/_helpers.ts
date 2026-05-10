@@ -3,7 +3,9 @@ import { createClient } from "@supabase/supabase-js";
 import { sql } from "@/db/client";
 import { PermissionUser } from "@/services/write/permission-guard.service";
 
-if (process.env.NODE_ENV === "development") {
+if (process.env.ERP_AUTH_BYPASS === "true") {
+  console.log("⚠️ ERP_AUTH_BYPASS ACTIVE - Authentication is bypassed for this environment.");
+} else if (process.env.NODE_ENV === "development") {
   console.log("⚠️ DEVELOPMENT AUTH BYPASS ACTIVE");
 }
 
@@ -25,21 +27,24 @@ export function fail(error: unknown, status = 400) {
 }
 
 export async function requirePermission(request: Request, permission: string) {
-  const profileCount = await sql`select count(*)::int as count from user_profiles where is_active = true`;
-  if (Number(profileCount[0]?.count ?? 0) === 0) return;
-
   const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   
-  if (!token && process.env.NODE_ENV === "development") {
+  const isBypass = process.env.ERP_AUTH_BYPASS === "true" || (process.env.NODE_ENV === "development" && !token);
+
+  if (isBypass && !token) {
+    console.log("🛠️ BYPASS HIT: Granting bypass-admin access");
     return {
-      id: "dev-admin",
-      email: "dev@orme.erp",
+      id: "bypass-admin",
+      email: "bypass@orme.erp",
       roleId: "admin",
       permissions: ["*"],
       isAdmin: true,
-      isDevelopmentBypass: true
+      isAuthBypass: true
     } as any;
   }
+
+  const profileCount = await sql`select count(*)::int as count from user_profiles where is_active = true`;
+  if (Number(profileCount[0]?.count ?? 0) === 0) return;
 
   if (!token) throw new Error("Bu işlem için giriş yapmalısınız.");
 
