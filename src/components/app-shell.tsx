@@ -82,14 +82,6 @@ const navigationGroups = [
 
 const navigation = navigationGroups.flatMap(g => g.items);
 
-const mobileNavigation = [
-  { href: "/dashboard", label: "Panel", icon: Home },
-  { href: "/orders", label: "Sipariş", icon: ShoppingCart },
-  { href: "/production/raw", label: "Üretim", icon: Factory },
-  { href: "/parties", label: "Parti", icon: Store },
-  { href: "/stocks", label: "Stok", icon: Boxes },
-];
-
 export function AppShellContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -243,28 +235,47 @@ export function AppShellContent({ children }: { children: React.ReactNode }) {
         </nav>
       </aside>
 
-      <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/85 px-4 py-3 backdrop-blur-xl lg:ml-72 lg:px-8">
+      <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/85 px-4 py-2.5 backdrop-blur-xl lg:ml-72 lg:px-8">
         <div className="flex items-center justify-between gap-4">
-          <div className="hidden sm:block">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">Fason örme ERP</p>
-            <p className="text-sm text-slate-500">Canlı üretim ve stok takibi</p>
+          {/* Left: Mobile Menu Trigger (Visible only on mobile) */}
+          <button
+            aria-label="Menüyü aç"
+            className="grid size-11 shrink-0 place-items-center rounded-none border border-slate-200 bg-white text-slate-700 shadow-sm lg:hidden"
+            onClick={() => setMobileMenuOpen(true)}
+            type="button"
+          >
+            <Menu className="size-5" />
+          </button>
+
+          {/* Center: Search (Desktop & Tablet) or Title (Mobile) */}
+          <div className="flex flex-1 items-center justify-center gap-4">
+            <div className="hidden sm:block">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-600">Fason örme ERP</p>
+            </div>
+            <div className="hidden w-full max-w-lg lg:block">
+              <input className="w-full rounded-none border border-slate-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" placeholder="Hızlı arama..." />
+            </div>
+            <div className="lg:hidden text-center">
+              <p className="text-sm font-bold text-slate-900 truncate max-w-[150px]">
+                {navigation.find(n => n.href === pathname)?.label || "Operasyon"}
+              </p>
+            </div>
           </div>
-          <div className="flex flex-1 justify-center">
-            <input className="w-full max-w-xl rounded-none border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" placeholder="Hızlı arama..." />
-          </div>
-          <div className="flex items-center gap-3">
+
+          {/* Right: Actions */}
+          <div className="flex items-center gap-2">
             {settings.notificationsEnabled && (
               <div className="relative">
                 <button 
                   onClick={() => setNotifOpen(!notifOpen)}
                   className={cn(
-                    "relative grid size-11 place-items-center rounded-none border border-slate-200 bg-white text-slate-600 transition-all hover:bg-slate-50",
+                    "relative grid size-10 place-items-center rounded-none border border-slate-200 bg-white text-slate-600 transition-all hover:bg-slate-50",
                     notifOpen && "border-blue-200 bg-blue-50 text-blue-600 ring-4 ring-blue-50"
                   )}
                 >
-                  <Bell className="size-5" />
+                  <Bell className="size-4.5" />
                   {notifications.length > 0 && (
-                    <span className="absolute right-2.5 top-2.5 flex size-2.5 items-center justify-center rounded-full bg-rose-500 ring-2 ring-white" />
+                    <span className="absolute right-2 top-2 flex size-2 items-center justify-center rounded-full bg-rose-500 ring-2 ring-white" />
                   )}
                 </button>
                 
@@ -308,39 +319,30 @@ export function AppShellContent({ children }: { children: React.ReactNode }) {
               </div>
             )}
 
-            <Link href="/login" className="flex items-center gap-3 rounded-none border border-transparent p-1 transition hover:bg-slate-50">
+            <Link href="/login" className="flex items-center gap-2 rounded-none border border-transparent p-1 transition hover:bg-slate-50">
               <div className="hidden text-right lg:block">
-                <p className="text-sm font-bold text-slate-950">ERP Admin</p>
-                <p className="text-[11px] font-medium text-slate-400">Yönetici</p>
+                <p className="text-xs font-bold text-slate-950">ERP Admin</p>
+                <p className="text-[10px] font-medium text-slate-400">Yönetici</p>
               </div>
-              <div className="grid size-11 place-items-center rounded-none bg-slate-950 text-sm font-bold text-white shadow-lg shadow-slate-200">YA</div>
+              <div className="grid size-10 place-items-center rounded-none bg-slate-950 text-xs font-bold text-white shadow-lg shadow-slate-200">YA</div>
             </Link>
-            
-            <button
-              aria-label="Menüyü aç"
-              className="grid size-11 place-items-center rounded-none border border-slate-200 bg-white text-slate-700 shadow-sm lg:hidden"
-              onClick={() => setMobileMenuOpen(true)}
-              type="button"
-            >
-              <Menu className="size-5" />
-            </button>
           </div>
         </div>
       </header>
 
       {mobileMenuOpen ? (
         <div className="fixed inset-0 z-50 bg-slate-950/30 backdrop-blur-sm lg:hidden">
-          <div className="ml-auto flex h-full w-[86%] max-w-sm flex-col bg-white p-4 shadow-2xl">
-            <div className="flex items-center justify-between">
+          <div className="mr-auto flex h-full w-[86%] max-w-sm flex-col bg-white p-4 shadow-2xl animate-in slide-in-from-left duration-300">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
-                <p className="text-sm font-bold text-slate-950">Tüm menüler</p>
-                <p className="text-xs text-slate-500">ERP modülleri</p>
+                <p className="text-sm font-bold text-slate-950">Yokuş Örme ERP</p>
+                <p className="text-xs text-slate-500">Ana Menü</p>
               </div>
               <button aria-label="Menüyü kapat" className="grid size-10 place-items-center rounded-none bg-slate-50 text-slate-600" onClick={() => setMobileMenuOpen(false)} type="button">
                 <X className="size-5" />
               </button>
             </div>
-            <nav className="mt-5 grid gap-2 overflow-y-auto pb-6 custom-scrollbar">
+            <nav className="mt-5 grid gap-2 overflow-y-auto pb-10 custom-scrollbar">
               {navigationGroups.map(group => (
                 <div key={group.title} className="space-y-1">
                   <div 
@@ -348,7 +350,7 @@ export function AppShellContent({ children }: { children: React.ReactNode }) {
                     style={{ 
                       backgroundColor: settings.sidebarGroupBg || "#f8fafc",
                       color: settings.sidebarGroupText || "#64748b"
-                     }}
+                    }}
                   >
                     {group.title}
                   </div>
@@ -362,7 +364,7 @@ export function AppShellContent({ children }: { children: React.ReactNode }) {
                         onClick={() => setMobileMenuOpen(false)}
                         className={cn(
                           "flex items-center gap-3 rounded-none px-3 py-3 text-sm font-semibold transition",
-                          active ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-50",
+                          active ? "bg-blue-50 text-blue-700 ring-1 ring-blue-100/50" : "text-slate-600 hover:bg-slate-50",
                         )}
                       >
                         <Icon className="size-5" />
@@ -377,39 +379,7 @@ export function AppShellContent({ children }: { children: React.ReactNode }) {
         </div>
       ) : null}
 
-      <main className="mobile-safe px-4 py-5 lg:ml-72 lg:px-8 lg:py-8">{children}</main>
-
-      {loading && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/80 backdrop-blur-md animate-in fade-in duration-500">
-          <div className="flex flex-col items-center gap-6">
-            <div className="relative">
-              <div className="size-20 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin shadow-2xl shadow-blue-100" />
-              <div className="absolute inset-0 grid place-items-center">
-                <Factory className="size-6 text-blue-600 animate-pulse" />
-              </div>
-            </div>
-            <div className="text-center">
-              <p className="text-sm font-bold text-slate-900 uppercase tracking-[0.3em] animate-pulse">Veriler Yükleniyor</p>
-              <p className="text-[10px] text-slate-500 mt-2 font-medium">Lütfen bekleyin, sistem hazırlanıyor...</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/80 bg-white/97 px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_32px_rgba(15,23,42,0.08)] backdrop-blur-xl lg:hidden" style={{ height: `calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px))` }}>
-        <div className="grid h-[var(--bottom-nav-h)] grid-cols-5 gap-0.5">
-          {mobileNavigation.map((item) => {
-            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-            const Icon = item.icon;
-            return (
-              <Link key={item.href} href={item.href} className={cn("flex flex-col items-center justify-center gap-0.5 rounded-none text-[10px] font-bold tracking-wide", active ? "bg-blue-600 text-white" : "text-slate-400 active:bg-slate-50")}>
-                <Icon className="size-5" />
-                {item.label}
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
+      <main className="px-4 py-5 lg:ml-72 lg:px-8 lg:py-8 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">{children}</main>
     </div>
   );
 }

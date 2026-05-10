@@ -43,3 +43,13 @@ next-env.d.ts
 
 # scratch
 /scratch/
+
+# Orme ERP Backups & Temp
+AGENTS_old.md
+/backups/
+*.rar
+*.zip
+temp_*.txt
+*_old.ts
+*_old.tsx
+*.log

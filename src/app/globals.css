@@ -3,7 +3,6 @@
 :root {
   --background: #ffffff;
   --foreground: #0f172a;
-  --bottom-nav-h: 72px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
@@ -72,36 +71,18 @@ textarea {
   box-shadow: 0 18px 60px rgba(15, 23, 42, 0.08);
 }
 
-/* Mobile safe area: keeps content above bottom nav */
-.mobile-safe {
-  padding-bottom: calc(var(--safe-bottom) + var(--bottom-nav-h) + 16px);
-}
-
-@media (min-width: 1024px) {
-  .mobile-safe {
-    padding-bottom: 0;
-  }
-}
-
-/* Sonner toast on mobile: push above bottom nav */
-@media screen and (max-width: 1023px) {
-  [data-sonner-toaster] {
-    bottom: calc(var(--safe-bottom) + var(--bottom-nav-h) + 8px) !important;
-  }
-}
-
 /* Sticky form actions at bottom of drawer on mobile */
 @media screen and (max-width: 767px) {
   .mobile-sticky-action {
     position: sticky;
-    bottom: 0;
+    bottom: var(--safe-bottom);
     z-index: 10;
     background: rgba(255, 255, 255, 0.97);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-top: 1px solid rgba(226, 232, 240, 0.7);
-    padding: 12px 16px calc(var(--safe-bottom) + 12px) 16px;
-    margin: 0 -24px -24px -24px;
+    padding: 1rem 1.25rem calc(1rem + var(--safe-bottom)) 1.25rem;
+    margin: 0 -1.25rem -1.25rem -1.25rem;
   }
 }
 
