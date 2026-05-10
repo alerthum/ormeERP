@@ -3,9 +3,9 @@ import { deleteTransfer } from "@/services/erp-write-service";
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requirePermission(request, "stocks:write");
+    const user = await requirePermission(request, "stocks:write");
     const { id } = await params;
-    return ok(await deleteTransfer(id), 200);
+    return ok(await deleteTransfer(id, user), 200);
   } catch (error) {
     return fail(error);
   }

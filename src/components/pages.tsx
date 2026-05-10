@@ -2836,7 +2836,7 @@ export function IntegrityControlPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [checkResult, setCheckResult] = useState<{ success: boolean; message?: string; error?: string; details?: any[] } | null>(null);
 
-  async function runAction(action: "rebuild" | "clean" | "check") {
+  async function runAction(action: "rebuild" | "clean" | "check" | "rebuild_orders" | "rebuild_reporting" | "full_maintenance") {
     setLoading(action);
     setCheckResult(null);
     try {
@@ -2871,7 +2871,7 @@ export function IntegrityControlPage() {
         icon={ShieldCheck}
       />
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
         <div className="premium-card rounded-none p-6 space-y-4">
           <div className="flex items-center gap-3">
             <div className="grid size-10 place-items-center rounded-none bg-blue-50 text-blue-600">
@@ -2882,13 +2882,16 @@ export function IntegrityControlPage() {
           <p className="text-sm leading-6 text-slate-500">
             Tüm operasyonel tabloları tarayarak başlığı olmayan hareketleri veya hareketi olmayan başlık kayıtlarını bulur.
           </p>
-          <button
-            onClick={() => runAction("check")}
-            disabled={!!loading}
-            className="w-full rounded-none border border-blue-200 bg-white py-3 text-sm font-bold text-blue-600 hover:bg-blue-50 transition-colors"
-          >
-            {loading === "check" ? "Kontrol ediliyor..." : "Hemen Kontrol Et"}
-          </button>
+          <div className="space-y-3">
+            <button
+              onClick={() => runAction("check")}
+              disabled={!!loading}
+              className="w-full rounded-none border border-blue-200 bg-white py-3 text-sm font-bold text-blue-600 hover:bg-blue-50 transition-colors"
+            >
+              {loading === "check" ? "Kontrol ediliyor..." : "Hemen Kontrol Et"}
+            </button>
+            <p className="text-[10px] text-slate-400 text-center font-medium">(Tüm tablolar için orfan veri taraması)</p>
+          </div>
         </div>
 
         <div className="premium-card rounded-none p-6 space-y-4">
@@ -2901,17 +2904,72 @@ export function IntegrityControlPage() {
           <p className="text-sm leading-6 text-slate-500">
             Tüm depo ve stok bakiyelerini, gerçek stok hareketleri (stock_movements) üzerinden sıfırdan hesaplayarak günceller.
           </p>
-          <button
-            onClick={() => {
-              if (confirm("Tüm bakiyeler hareketlerden yeniden hesaplanacak. Emin misiniz?")) {
-                runAction("rebuild");
-              }
-            }}
-            disabled={!!loading}
-            className="w-full rounded-none border border-amber-200 bg-white py-3 text-sm font-bold text-amber-600 hover:bg-amber-50 transition-colors"
-          >
-            {loading === "rebuild" ? "Yenileniyor..." : "Bakiyeleri Yeniden Oluştur"}
-          </button>
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                if (confirm("Tüm bakiyeler hareketlerden yeniden hesaplanacak. Emin misiniz?")) {
+                  runAction("rebuild");
+                }
+              }}
+              disabled={!!loading}
+              className="w-full rounded-none border border-amber-200 bg-white py-3 text-sm font-bold text-amber-600 hover:bg-amber-50 transition-colors"
+            >
+              {loading === "rebuild" ? "Yenileniyor..." : "Bakiyeleri Yeniden Oluştur"}
+            </button>
+            <p className="text-[10px] text-slate-400 text-center font-medium">(stock_movements → warehouse_balances)</p>
+          </div>
+        </div>
+
+        <div className="premium-card rounded-none p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="grid size-10 place-items-center rounded-none bg-emerald-50 text-emerald-600">
+              <Factory className="size-5" />
+            </div>
+            <h2 className="font-bold text-slate-950">Sipariş Durumlarını Yenile</h2>
+          </div>
+          <p className="text-sm leading-6 text-slate-500">
+            Tüm siparişlerin üretim ve sevkiyat durumlarını hareket kayıtlarına göre yeniden hesaplar.
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                if (confirm("Tüm sipariş durumları hareketlerden yeniden hesaplanacak. Emin misiniz?")) {
+                  runAction("rebuild_orders");
+                }
+              }}
+              disabled={!!loading}
+              className="w-full rounded-none border border-emerald-200 bg-white py-3 text-sm font-bold text-emerald-600 hover:bg-emerald-50 transition-colors"
+            >
+              {loading === "rebuild_orders" ? "Hesaplanıyor..." : "Sipariş Durumlarını Yeniden Hesapla"}
+            </button>
+            <p className="text-[10px] text-slate-400 text-center font-medium">(orders / purchase_orders recalculation)</p>
+          </div>
+        </div>
+
+        <div className="premium-card rounded-none p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="grid size-10 place-items-center rounded-none bg-purple-50 text-purple-600">
+              <BarChart3 className="size-5" />
+            </div>
+            <h2 className="font-bold text-slate-950">Aggregate Raporları Güncelle</h2>
+          </div>
+          <p className="text-sm leading-6 text-slate-500">
+            Dashboard ve raporlama tablolarını (daily summaries) ana tablolardan yeniden oluşturur.
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                if (confirm("Rapor özetleri yeniden oluşturulacak. Emin misiniz?")) {
+                  runAction("rebuild_reporting");
+                }
+              }}
+              disabled={!!loading}
+              className="w-full rounded-none border border-purple-200 bg-white py-3 text-sm font-bold text-purple-600 hover:bg-purple-50 transition-colors"
+            >
+              {loading === "rebuild_reporting" ? "Güncelleniyor..." : "Aggregate Raporları Güncelle"}
+            </button>
+            <p className="text-[10px] text-slate-400 text-center font-medium">(report_daily_* rebuild)</p>
+          </div>
         </div>
 
         <div className="premium-card rounded-none p-6 space-y-4">
@@ -2922,19 +2980,48 @@ export function IntegrityControlPage() {
             <h2 className="font-bold text-slate-950">Yetim Veri Temizliği</h2>
           </div>
           <p className="text-sm leading-6 text-slate-500">
-            Hareketi olmayan siparişsiz üretimleri, sevkiyatları ve mal kabulleri kalıcı olarak siler. Bu işlem geri alınamaz.
+            Hareketi olmayan siparişsiz üretimleri, sevkiyatları ve mal kabulleri kalıcı olarak siler.
           </p>
-          <button
-            onClick={() => {
-              if (confirm("Tüm yetim kayıtlar ve bunlara bağlı hatalı özetler temizlenecek. Emin misiniz?")) {
-                runAction("clean");
-              }
-            }}
-            disabled={!!loading}
-            className="w-full rounded-none border border-rose-200 bg-white py-3 text-sm font-bold text-rose-600 hover:bg-rose-50 transition-colors"
-          >
-            {loading === "clean" ? "Temizleniyor..." : "Sistemi Temizle"}
-          </button>
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                if (confirm("Tüm yetim kayıtlar ve bunlara bağlı hatalı özetler temizlenecek. Emin misiniz?")) {
+                  runAction("clean");
+                }
+              }}
+              disabled={!!loading}
+              className="w-full rounded-none border border-rose-200 bg-white py-3 text-sm font-bold text-rose-600 hover:bg-rose-50 transition-colors"
+            >
+              {loading === "clean" ? "Temizleniyor..." : "Sistemi Temizle"}
+            </button>
+            <p className="text-[10px] text-slate-400 text-center font-medium">(Orphan record cleanup)</p>
+          </div>
+        </div>
+
+        <div className="premium-card rounded-none border-blue-200 bg-blue-50/30 p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="grid size-10 place-items-center rounded-none bg-blue-600 text-white shadow-lg shadow-blue-200">
+              <ShieldCheck className="size-5" />
+            </div>
+            <h2 className="font-bold text-slate-950">Tam Sistem Bakımı</h2>
+          </div>
+          <p className="text-sm leading-6 text-slate-600 font-medium">
+            Tüm temizlik ve rebuild işlemlerini (Cleanup + Rebuild + Reporting) tek seferde gerçekleştirir.
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                if (confirm("TÜM SİSTEM BAKIMI başlatılacak. Bu işlem birkaç dakika sürebilir. Emin misiniz?")) {
+                  runAction("full_maintenance");
+                }
+              }}
+              disabled={!!loading}
+              className="w-full rounded-none bg-blue-600 py-3 text-sm font-bold text-white shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all hover:-translate-y-0.5 active:translate-y-0"
+            >
+              {loading === "full_maintenance" ? "Sistem Bakımı Yapılıyor..." : "Tam Sistem Bakımını Başlat"}
+            </button>
+            <p className="text-[10px] text-blue-600/70 text-center font-bold uppercase tracking-tight">(cleanup + rebuild + reporting + build)</p>
+          </div>
         </div>
       </div>
 

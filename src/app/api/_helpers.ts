@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sql } from "@/db/client";
+import { PermissionUser } from "@/services/write/permission-guard.service";
+
+if (process.env.NODE_ENV === "development") {
+  console.log("⚠️ DEVELOPMENT AUTH BYPASS ACTIVE");
+}
 
 export async function readJson(request: Request) {
   try {
@@ -24,6 +29,18 @@ export async function requirePermission(request: Request, permission: string) {
   if (Number(profileCount[0]?.count ?? 0) === 0) return;
 
   const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  
+  if (!token && process.env.NODE_ENV === "development") {
+    return {
+      id: "dev-admin",
+      email: "dev@orme.erp",
+      roleId: "admin",
+      permissions: ["*"],
+      isAdmin: true,
+      isDevelopmentBypass: true
+    } as any;
+  }
+
   if (!token) throw new Error("Bu işlem için giriş yapmalısınız.");
 
   const supabase = createClient(

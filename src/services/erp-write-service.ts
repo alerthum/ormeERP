@@ -121,7 +121,7 @@ export {
 
 
 
-export async function updateOrderStatus(recordId: string, status: string) {
+export async function updateOrderStatus(recordId: string, status: string, user: any = null) {
   await sql`update orders set status = ${status}, updated_at = now() where id = ${recordId}`;
   return { id: recordId, status };
 }

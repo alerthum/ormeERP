@@ -3,9 +3,9 @@ import { deleteRawProduction, updateRawProduction } from "@/services/erp-write-s
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requirePermission(request, "production:write");
+    const user = await requirePermission(request, "production:write");
     const { id } = await params;
-    return ok(await deleteRawProduction(id), 200);
+    return ok(await deleteRawProduction(id, user), 200);
   } catch (error) {
     return fail(error);
   }
@@ -13,10 +13,10 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requirePermission(request, "production:write");
+    const user = await requirePermission(request, "production:write");
     const { id } = await params;
     const payload = await request.json();
-    return ok(await updateRawProduction(id, payload), 200);
+    return ok(await updateRawProduction(id, payload, user), 200);
   } catch (error) {
     return fail(error);
   }

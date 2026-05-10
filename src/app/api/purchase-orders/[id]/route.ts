@@ -3,9 +3,9 @@ import { deletePurchaseOrder, updatePurchaseOrder } from "@/services/erp-write-s
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requirePermission(request, "purchase:write");
+    const user = await requirePermission(request, "purchase:write");
     const { id } = await params;
-    return ok(await updatePurchaseOrder(id, await readJson(request)), 200);
+    return ok(await updatePurchaseOrder(id, await readJson(request), user), 200);
   } catch (error) {
     return fail(error);
   }
@@ -13,9 +13,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requirePermission(request, "purchase:write");
+    const user = await requirePermission(request, "purchase:write");
     const { id } = await params;
-    return ok(await deletePurchaseOrder(id), 200);
+    return ok(await deletePurchaseOrder(id, user), 200);
   } catch (error) {
     return fail(error);
   }
