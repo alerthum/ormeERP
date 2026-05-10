@@ -30,6 +30,14 @@ export function FormDrawer({
     }
   }, [open]);
 
+  // Lock body scroll on mobile when drawer is open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = ""; };
+    }
+  }, [open]);
+
   if (!open) return null;
 
   const loading = externalLoading || globalLoading || localLoading;
@@ -38,7 +46,6 @@ export function FormDrawer({
   const mobilePosition = settings.modalPositionMobile || "bottom";
 
   const getPositionClasses = () => {
-    // Mobile logic (default to bottom or the mobile setting)
     let classes = "fixed inset-0 z-50 flex bg-slate-950/25 backdrop-blur-sm transition-all duration-300 ";
     
     // Desktop positions
@@ -48,10 +55,8 @@ export function FormDrawer({
     else if (position === "top") classes += "lg:justify-center lg:items-start lg:p-4 ";
     else if (position === "bottom") classes += "lg:justify-center lg:items-end lg:p-4 ";
 
-    // Mobile positions
-    if (mobilePosition === "bottom") classes += "items-end ";
-    else if (mobilePosition === "top") classes += "items-start ";
-    else classes += "items-stretch "; 
+    // Mobile: always full screen for best ergonomics
+    classes += "items-stretch ";
 
     return classes;
   };
@@ -72,14 +77,8 @@ export function FormDrawer({
       else classes += "lg:animate-in lg:slide-in-from-bottom ";
     }
 
-    // Mobile sizing
-    if (mobilePosition === "bottom") {
-      classes += "h-auto max-h-[100vh] w-full animate-in slide-in-from-bottom ";
-    } else if (mobilePosition === "top") {
-      classes += "h-auto max-h-[100vh] w-full animate-in slide-in-from-top ";
-    } else {
-      classes += "h-full w-full max-w-[100%] ";
-    }
+    // Mobile: full screen for all forms
+    classes += "h-full w-full animate-in slide-in-from-bottom duration-300 ";
 
     return classes;
   };
@@ -87,21 +86,21 @@ export function FormDrawer({
   return (
     <div className={getPositionClasses()} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <aside className={getAsideClasses()}>
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/95 px-6 py-5 backdrop-blur">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/95 px-4 py-3 sm:px-6 sm:py-5 backdrop-blur">
           <div>
-            <h2 className="text-xl font-bold text-slate-950 tracking-tight">{title}</h2>
-            <div className="mt-1 h-1 w-8 bg-blue-600" />
+            <h2 className="text-base sm:text-xl font-bold text-slate-950 tracking-tight">{title}</h2>
+            <div className="mt-1 h-0.5 w-6 sm:h-1 sm:w-8 bg-blue-600" />
           </div>
           <button 
-            className="group grid size-11 place-items-center bg-slate-50 text-slate-500 transition-all hover:bg-rose-50 hover:text-rose-600" 
+            className="group grid size-10 sm:size-11 place-items-center bg-slate-50 text-slate-500 transition-all hover:bg-rose-50 hover:text-rose-600 active:scale-95" 
             onClick={onClose} 
             type="button"
           >
-            <X className="size-6 transition-transform group-hover:rotate-90" />
+            <X className="size-5 sm:size-6 transition-transform group-hover:rotate-90" />
           </button>
         </div>
         <div className={cn(
-          "flex-1 overflow-y-auto p-6 custom-scrollbar relative",
+          "flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar relative",
           position === "center" && "lg:p-10"
         )}>
           {loading && (

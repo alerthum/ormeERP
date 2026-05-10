@@ -1,5 +1,7 @@
 import { fail, ok } from "@/app/api/_helpers";
-import { rebuildBalancesFromMovements, cleanOrphanData, assertNoOrphanOperationalData } from "@/services/erp-write-service";
+import { rebuildBalancesFromMovements, cleanOrphanData } from "@/services/erp-write-service";
+import { assertNoOrphanOperationalData } from "@/services/write/integrity-validation.service";
+
 import { sql } from "@/db/client";
 
 export const dynamic = "force-dynamic";

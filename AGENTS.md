@@ -1,22 +1,21 @@
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
 
-This version has breaking changes — APIs, conventions and file structure may differ from your training data.
-Before writing code, read relevant documentation from `node_modules/next/dist/docs/`.
+This version may have breaking changes. Before coding, read relevant docs from `node_modules/next/dist/docs/`.
 Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
 # Turkish Character Rule
 
-All files must be saved with UTF-8 encoding.
+All files must remain UTF-8.
 
-NEVER corrupt Turkish characters:
+Never corrupt Turkish characters:
 
 ç Ç ğ Ğ ı İ ö Ö ş Ş ü Ü
 
-Do not convert Turkish strings to ASCII.
+Do not convert Turkish labels, messages or seed data to ASCII.
 
-Correct Turkish examples:
+Correct examples:
 
 - Müşteri
 - Sipariş
@@ -35,25 +34,20 @@ Correct Turkish examples:
 
 ---
 
-# ERP Project Core Rules
+# Core ERP Principle
 
-This project is a textile ERP system for knitted fabric production.
+This project is a textile ERP for knitted fabric production.
 
-The system tracks:
+The system must prioritize:
 
-- Customer orders
-- Supplier orders
-- Purchase receipts
-- Raw material lots
-- Fabric parties
-- Raw fabric production
-- Dyehouse production
-- Warehouse transfers
-- Sales / shipment
-- Returns / future repair processes
-- Stock movements
-- Warehouse balances
-- Lot / party traceability
+1. data integrity
+2. stock accuracy
+3. LotNo / PartiNo traceability
+4. transaction safety
+5. Turkish user-friendly messages
+6. existing premium UI protection
+
+Do not add new features before stabilizing core ERP flows.
 
 ---
 
@@ -61,19 +55,22 @@ The system tracks:
 
 Never say:
 
-- “tamamen çözüldü”
-- “bir daha olmayacak”
-- “kusursuz çalışıyor”
-- “her şey sorunsuz”
+- tamamen çözüldü
+- bir daha olmayacak
+- kusursuz çalışıyor
+- her şey sorunsuz
+- sistem tamamen stabil
 
 Instead always report:
 
-- What changed
-- Which files changed
-- Which modules are affected
-- Which scenarios were tested
-- Which scenarios were not tested
-- What risks remain
+- what changed
+- files changed
+- affected modules
+- tested scenarios
+- untested scenarios
+- remaining risks
+
+Only claim what was actually tested.
 
 ---
 
@@ -81,38 +78,118 @@ Instead always report:
 
 Before changing code, analyze:
 
-- Existing data model
-- Existing services
-- Existing UI components
-- Existing module dependencies
-- Existing database schema
-- Existing movement logic
+- existing data model
+- current services
+- current UI usage
+- module dependencies
+- database schema
+- movement logic
 
 Do not rewrite working modules without reason.
 
-Do not change UI unless specifically requested.
+Do not change UI unless explicitly requested.
 
-Do not change business logic unrelated to the request.
+Do not change unrelated business logic.
 
 ---
 
-# Movement-Based ERP Rule
+# Operational Data Rule
 
-This ERP does NOT have a single fixed transaction chain.
+Operational data either exists completely or does not exist at all.
 
-Do not assume a hardcoded flow such as:
+Soft delete is forbidden for operational stock transactions.
 
-Purchase → Transfer → Raw Production → Dyehouse → Transfer → Sale
+Do NOT use these concepts for operational stock-impacting records:
 
-The real system is flexible.
+- deleted
+- cancelled
+- void
+- passive
+- isDeleted
+- isCancelled
+- status=cancelled
+- [İPTAL]
 
-Valid examples:
+This applies to:
+
+- purchase receipts / alış
+- warehouse transfers / depo transferi
+- raw production / ham üretim
+- dyehouse production / boyahane üretimi
+- sales / sevkiyat
+- stock movements
+- balances
+- operational timelines
+- operational notifications
+
+Customer orders and supplier orders may have business statuses.
+But operational stock movements must not use soft delete.
+
+---
+
+# Single Source of Truth Rule
+
+The primary source of truth for operational stock reality is:
+
+stock_movements
+
+All operational summaries must be derived from stock_movements:
+
+- warehouse balances
+- lot balances
+- party balances
+- order production quantities
+- shipped quantities
+- dashboard KPIs
+- party reports
+- stock reports
+- supplier received quantities
+
+Cached fields are not authoritative.
+
+If a cache exists, it must be rebuilt from stock_movements after every stock-impacting create/update/delete.
+
+---
+
+# Lot / Parti Rule
+
+Raw materials use LotNo.
+
+Examples:
+
+- IP
+- LYC
+- POLY
+- other raw materials
+
+Fabric uses PartiNo.
+
+Examples:
+
+- YM
+- MM
+
+A movement must not have both LotNo and PartiNo.
+
+Raw material movements must not use PartiNo.
+
+Fabric movements must not use LotNo.
+
+Same stockId is not enough for traceability.
+Same stock can have different supplier lots, tones, prices, mixtures and quality.
+
+---
+
+# Movement-Based Architecture Rule
+
+This ERP does not have a single fixed transaction chain.
+
+Valid flows may include:
 
 - Purchase → Warehouse
 - Purchase → Sale
 - Purchase → Transfer
 - Purchase → Raw Production
-- Purchase → Stock
 - Raw Production → Transfer
 - Transfer → Dyehouse
 - Dyehouse → Transfer
@@ -120,99 +197,19 @@ Valid examples:
 - Sale → Return
 - Return → Warehouse
 - Return → Transfer
-- Return → Dyehouse Repair / Reprocess
+- Return → Dyehouse Repair
 
-Therefore dependency validation MUST NOT rely on module order.
+Dependency validation must not rely on module order.
 
-Dependency validation must be based on stockMovement relationships.
-
----
-
-# Stock Identity Rule
-
-stockId alone is NOT enough for traceability.
-
-The same stock can be purchased from different suppliers, on different dates, with different tones, quality, prices or mixture ratios.
-
-Therefore stock tracking must distinguish:
-
-- Same stock card
-- Different raw material lots
-- Different fabric parties
-
----
-
-# Lot and Party Rule
-
-A stock item must not be treated as both lot-tracked and party-tracked at the same time.
-
-## Raw materials
-
-For raw materials such as:
-
-- İplik
-- Likra
-- Polyester
-- Other hammaddeler
-
-tracking identity is:
-
-LotNo
-
-Raw materials use supplier-provided lot/serial numbers.
-
-Example:
-
-- IP stock
-- LYC stock
-- POLY stock
-
-These are tracked by LotNo.
-
-## Fabric
-
-For fabric such as:
-
-- YM Ham Kumaş
-- MM Mamül Kumaş
-
-tracking identity is:
-
-PartiNo
-
-Fabric party number is generated internally during raw production.
-
-The same PartiNo continues through:
-
-Ham üretim → Boyahane → Mamül → Transfer → Satış
-
-The stock changes from YM to MM, but PartiNo stays the same.
-
----
-
-# Traceability Purpose Rule
-
-Lot and party tracking exists for backward traceability.
-
-If customer reports a problem with a fabric party, the system must answer:
-
-- Which yarn lots were used?
-- Which supplier lots were consumed?
-- Which raw production created this party?
-- Which dyehouse process was applied?
-- What were the test/lab results?
-- Which warehouse transfers happened?
-- Which shipment delivered it?
-
-This is similar to serial tracking in Netsis.
+Dependency validation must rely on stock movement identity and later movement usage.
 
 ---
 
 # Stock Movement Relationship Rule
 
-Every stock-affecting operation must create stockMovement records.
+Every stock-affecting operation must create stock_movements.
 
-Each stockMovement should contain:
+Each stock movement should contain:
 
 - id
 - sourceTransactionId
@@ -223,7 +220,7 @@ Each stockMovement should contain:
 - warehouseId
 - direction: IN | OUT
 - quantity
-- movementDate
+- movementDate / date
 - lotNo nullable
 - partyNo nullable
 - partyId nullable
@@ -233,101 +230,163 @@ Each stockMovement should contain:
 - createdAt
 - createdBy
 
----
-
-# Source / Parent Movement Rule
-
-When one movement consumes or transfers stock created by a previous movement, it must reference the source movement when possible.
-
-Examples:
-
-Transfer:
-- OUT movement from source warehouse
-- IN movement to target warehouse
-- IN movement should reference the OUT movement
-- Both movements should belong to the same sourceTransactionId
-
-Raw Production:
-- OUT movements consume raw material LotNo
-- IN movement creates YM fabric PartiNo
-- YM movement should be connected to raw production transaction
-
-Dyehouse Production:
-- OUT movement consumes YM with PartiNo
-- IN movement creates MM with same PartiNo
-- MM movement must preserve the same PartiNo
-
-Sale:
-- OUT movement consumes MM with PartiNo
-
-Return:
-- IN movement brings back MM with same PartiNo
+UI and API must not create stock movements directly.
+All stock-impacting operations must go through domain/service logic.
 
 ---
 
-# Dependency Validation Rule
+# Later Movement Lock Rule
 
-Do not block deletion just because another movement has the same:
+Before deleting or updating any stock-impacting transaction, the system must check whether the same LotNo or PartiNo has any later stock movement in a different transaction.
 
-- stockId
-- lotNo
-- partyNo
-- partyId
+If later movement exists:
 
-Same stock/lot/party does not automatically mean dependency.
+- delete/update must be blocked
 
-A transaction can only be blocked if a later movement directly depends on the output of the current transaction.
+This applies to:
 
-Dependency should be checked using:
+- purchase receipt / alış
+- warehouse transfer / depo transferi
+- raw production / ham üretim
+- dyehouse production / boyahane üretimi
+- sale / sevkiyat
 
-- parentMovementId
-- sourceMovementId
-- sourceTransactionId
-- generated movement ids
-- actual consumed quantity
-- movementDate when needed
+Use sourceMovementId / parentMovementId when available.
 
-Previous movements must never block deletion of a later transaction.
+Fallback validation is mandatory:
 
-Unrelated later movements must not block deletion.
+- LotNo / PartiNo
+- movementDate/date
+- createdAt
+- id ordering
+- different sourceTransactionId
+
+Never allow deletion just because movement links are missing.
+
+Older transactions can only be deleted from newest to oldest.
+
+Example:
+
+Sale → Dyehouse → Raw Production → Transfer → Purchase
 
 ---
 
-# Delete / Reverse Operation Rule
+# Delete Rule
 
-Deleting a stock-impacting transaction is NOT a new stock consumption.
+Deleting a stock-impacting transaction is not a new stock consumption.
 
-It is a reverse operation.
-
-Therefore generic stock errors must not be shown during deletion.
+Do not show generic stock errors during delete.
 
 Wrong:
 
-“Yetersiz stok. Mevcut bakiye 0.000 kg, istenen 355.000 kg.”
+Yetersiz stok. Mevcut bakiye 0.000 kg, istenen 355.000 kg.
 
 Correct:
 
-“Bu depo transferi silinemez. Çünkü transfer edilen kumaş daha sonra boyahane üretiminde kullanılmış.”
+Bu alış kaydı silinemez. Çünkü LOT-001 lotu daha sonra 27.05.2026 tarihli Depo Transferi işleminde kullanılmış.
 
-If there is no true downstream dependency, delete/reverse must be allowed.
+Delete flow:
+
+1. validate later movements
+2. block if later movement exists
+3. if safe, delete header and related movements/balances/timeline records
+4. rebuild summaries from stock_movements
+5. commit inside one database transaction
+6. rollback if any step fails
+
+Do not mark operational records as cancelled.
 
 ---
 
-# Current Known Delete Logic Rule
+# Update Rule
 
-If the flow is:
+Updating a stock-impacting transaction must follow:
 
-Depo Transferi → Boyahane Üretimi
+1. validate later movements
+2. reverse/remove old effects safely
+3. create new movements
+4. update balances
+5. rebuild summaries
+6. commit inside one transaction
 
-Deleting Boyahane Üretimi:
+If the transaction already has later dependent movements, update must be blocked.
 
-- Previous transfer is NOT a blocker
-- It should be deleted if there is no later sale, transfer or consumption after the dyehouse production
+---
 
-Deleting Depo Transferi:
+# Transaction Safety Rule
 
-- If transferred stock was later used in dyehouse production, sale or another transfer, deletion must be blocked
-- Message must explain the later transaction
+Every stock-impacting operation must run in one database transaction.
+
+This includes:
+
+- header record
+- stock_movements
+- warehouse balances
+- lot balances
+- party balances
+- order summaries
+- timeline/log
+- notifications when relevant
+
+No partial save is acceptable.
+
+If any step fails, the whole operation must rollback.
+
+---
+
+# Zero Orphan Data Rule
+
+The system must never leave:
+
+- transaction header without movements
+- movements without transaction header
+- balances without movements
+- parties without movements
+- lots without movements
+
+Do not hide inconsistent data in reports.
+
+Prevent inconsistency at write time.
+
+If inconsistency is detected:
+
+- show admin-level integrity warning
+- provide diagnostics/rebuild tools
+- report exact issue
+
+---
+
+# Order Status Rule
+
+Order statuses must reflect real movement state.
+
+If movements are deleted, statuses must rollback automatically.
+
+Examples:
+
+- no movement → Taslak / Onaylandı
+- purchase movement exists → Hammadde Geldi
+- raw production movement exists → Ham Geldi
+- dyehouse movement exists → Mamül Hazır
+- partial shipment exists → Kısmi Sevk Edildi
+- full shipment exists → Sevk Edildi
+
+Do not leave “Ham Geldi” or “Mamül Hazır” after related movements are deleted.
+
+---
+
+# Balance Rule
+
+Balances must be derived from stock_movements.
+
+Required balance levels:
+
+- stock total
+- warehouse + stock
+- warehouse + stock + LotNo for raw materials
+- warehouse + stock + PartiNo for fabrics
+
+If balances are rebuilt, use stock_movements as the only source.
 
 ---
 
@@ -342,10 +401,10 @@ Never show:
 - UTC
 - Coordinated Universal Time
 - Universal Time
-- JavaScript raw Date string
-- PostgreSQL parameter names like $1, $4
-- Stack trace
-- Technical SQL details
+- raw JavaScript Date
+- PostgreSQL params like $1, $4
+- stack trace
+- raw SQL error
 
 Use date format:
 
@@ -357,151 +416,85 @@ Correct example:
 
 ---
 
-# Validation Message Standard
-
-User-facing validation messages must follow this structure:
-
-Title:
-
-İşlem yapılamıyor
-
-Description:
-
-Bu kayıt silinemez. Çünkü bu işlemden sonra aşağıdaki işlemler yapılmış:
-
-List:
-
-- 27.05.2026 tarihli Boyahane Üretimi, 355 kg
-- 28.05.2026 tarihli Satış Sevkiyatı, 120 kg
-
-Suggestion:
-
-Önce sonraki işlemleri silin veya düzeltin.
-
-Technical details may be logged to console/server logs, but must not be shown to the user.
-
----
-
-# Transaction Rule
-
-All stock-impacting operations must run in a single database transaction.
-
-This includes:
-
-- Main transaction record
-- Stock movements
-- Warehouse balances
-- Lot balances
-- Party balances
-- Order summaries
-- Timeline records
-- Notifications/log records
-
-Never leave partial data.
-
----
-
-# Update Rule
-
-Updating stock-impacting transactions must follow this pattern:
-
-1. Validate downstream dependencies
-2. Reverse previous movements safely
-3. Apply new movements
-4. Update balances
-5. Update summaries
-6. Commit everything in one transaction
-
----
-
-# Delete Rule
-
-Deleting stock-impacting transactions must follow this pattern:
-
-1. Find movements created by this transaction
-2. Check whether those movement outputs were used by later movements
-3. If used, block with meaningful Turkish message
-4. If not used, reverse movements safely
-5. Update balances
-6. Delete or mark transaction as cancelled
-7. Commit everything in one transaction
-
----
-
-# Balance Rule
-
-Stock balance must be tracked at these levels:
-
-- Total stock balance
-- Warehouse stock balance
-- Lot balance for raw materials
-- Party balance for fabrics
-- Warehouse + Lot balance
-- Warehouse + Party balance
-
-Raw materials use LotNo.
-
-Fabric uses PartiNo.
-
-Do not use LotNo for fabric.
-
-Do not use PartiNo for raw material.
-
----
-
-# Supplier Lot Rule
-
-When purchasing raw material:
-
-- LotNo comes from supplier
-- LotNo must be stored
-- Same stockId can have many LotNo records
-- Production must consume selected LotNo records
-
----
-
-# Fabric Party Rule
-
-When producing raw fabric:
-
-- System creates PartiNo
-- PartiNo belongs to fabric flow
-- YM and MM can share the same PartiNo
-- Boyahane changes stock from YM to MM but must preserve PartiNo
-
----
-
 # UI Protection Rule
 
-Do not change existing premium UI unless specifically requested.
+Do not change existing premium UI unless explicitly requested.
 
 Protect:
 
-- White background
-- Navy/blue accent
-- Soft shadow
-- Rounded cards
-- Sidebar
-- Mobile bottom navigation
-- Modal style
+- white background
+- navy/blue accent
+- soft shadow
+- rounded cards
+- sidebar
+- mobile bottom navigation
+- modal style
 - KPI cards
-- Table style
-- Typography
+- table style
+- typography
 - Turkish labels
+
+---
+
+# Read Service Rule
+
+Do not load the whole ERP database for every page.
+
+Page data must be modular.
+
+Preferred functions:
+
+- getDashboardData()
+- getOrdersPageData()
+- getPurchasePageData()
+- getProductionPageData()
+- getInventoryPageData()
+- getSettingsData()
+- getIntegrityData()
+
+Integrity summary must not be attached to every generic read unless the page actually needs it.
+
+---
+
+# Domain Layer Rule
+
+Business rules must not be scattered across UI, pages and generic services.
+
+Stock-impacting operations must be organized into domain services.
+
+Preferred structure:
+
+src/domains/purchase
+src/domains/transfer
+src/domains/raw-production
+src/domains/dyehouse
+src/domains/sales
+src/domains/inventory
+src/domains/integrity
+
+Each domain should own:
+
+- validation
+- create
+- update
+- delete
+- movement building
+- reverse/delete rules
+- summary rebuild hooks
+
+Shared stock movement logic belongs in inventory movement engine.
 
 ---
 
 # PostgreSQL Rule
 
-Always use explicit PostgreSQL parameter casts when needed.
+Use explicit PostgreSQL casts when needed:
 
-Examples:
-
-$1::text  
-$2::numeric  
-$3::jsonb  
-$4::uuid  
-$5::date  
+$1::text
+$2::numeric
+$3::jsonb
+$4::uuid
+$5::date
 
 Use explicit casts especially in:
 
@@ -517,11 +510,11 @@ Use explicit casts especially in:
 
 Do not test on real business data unless explicitly allowed.
 
-If temporary test data is created:
+If test data is created:
 
-- Clearly mark it
-- Clean it after testing
-- Report what was created and deleted
+- mark it clearly
+- clean it after testing
+- report what was created and deleted
 
 ---
 
@@ -530,208 +523,171 @@ If temporary test data is created:
 After stock-impacting changes, test or clearly mark as untested:
 
 1. Purchase receipt with LotNo
-2. Warehouse transfer
-3. Raw production consuming raw material lots
-4. YM fabric party creation
-5. Transfer to dyehouse
-6. Dyehouse production consuming YM and creating MM with same PartiNo
-7. Transfer
-8. Sale / shipment
-9. Reverse delete from last step backward
-10. Try deleting a middle transaction and verify meaningful blocking
+2. Transfer same LotNo
+3. Try deleting purchase receipt, must be blocked
+4. Raw production consuming LotNo
+5. Try deleting purchase receipt, must be blocked
+6. YM PartiNo creation
+7. Transfer to dyehouse
+8. Dyehouse production with same PartiNo
+9. Sale / shipment
+10. Delete from newest to oldest
+11. Verify lot/party/balance/order status cleanup
+12. Run integrity diagnostics
 
 If not tested, state clearly:
 
-“This chain was not fully tested.”
+This chain was not fully tested.
 
 ---
 
 # Change Report Rule
 
-After every change, report:
+After every task, report:
 
-- Changed files
-- Affected modules
-- Database changes
-- Tested scenarios
-- Untested risks
-- Rollback plan
+- changed files
+- affected modules
+- database changes
+- tested scenarios
+- untested risks
+- build result
+- rollback plan
 
----
-
-# Development Log Rule
-
-Long-term improvements must be written into development log when requested.
-
-Do not implement future features unless requested.
+Never provide false certainty.
 
 ---
 
-# Current Stability Goal
+# ORME ERP — Mobile UX Constitution v1.0
 
-The project must move from fragile party/lot/date-only validation to movement-based validation.
+## 1. Temel Prensip
 
-Long-term correct model:
+Mobil uygulama masaüstü ERP'nin küçültülmüş hali olmayacak.
+Mobil: daha az bilgi, daha doğru bilgi, daha hızlı aksiyon, daha net öncelik sunacak.
 
-- LotNo for raw materials
-- PartiNo for fabric
-- stockMovement relationship tracking
-- parentMovementId/sourceMovementId where needed
-- dependency validation based on actual movement usage, not generic same stock/party/lot matching
+## 2. Desktop Koruma Kuralı
 
+Desktop UI bozulmayacak, sadeleştirilmeyecek, mobil uğruna değiştirilmeyecek.
+Mobil optimizasyon sadece responsive breakpointlerde yapılacak.
+Tailwind: mobil default, md ve üzeri desktop.
 
-# Zero Orphan Data Rule
+## 3. Mobilde Maksimum Primary Action
 
-Operational orphan data is not acceptable.
+Bir mobil ekranda aynı anda sadece 1 primary action olabilir.
+Aynı seviyede birden fazla büyük mavi buton kullanılmayacak.
+Ana işlem tek olacak, diğer işlemler secondary/action menu altında sunulacak.
 
-The system must never leave a transaction header without its stock_movements, balances, summaries and timeline records.
+## 4. Hero Card Standardı
 
-The system must never leave balances or summaries that do not match stock_movements.
+Her operasyon sayfasının üstünde tek büyük hero alanı olacak.
+Bu alan kullanıcıya "şu an ne önemli" sorusunun cevabını verecek.
 
-All stock-impacting create/update/delete operations must run inside one database transaction.
+## 5. KPI Card Standardı
 
-If any part of the operation fails, the whole operation must rollback.
+Mobil KPI kartları: 2 kolon, compact, eşit yükseklik, yatay taşma yok.
+Başlık text-xs muted, değer text-xl bold, açıklama line-clamp-1.
+İkon sağ üstte, kart dışına taşmadan.
 
-Do not hide inconsistent data in reports. Prevent inconsistency at write time.
+## 6. Mobil Tablo Yasağı
 
-If inconsistency is detected, show an admin-level critical integrity warning and provide diagnostics/rebuild tools.
+Mobilde gerçek tablo gösterilmeyecek.
+Desktop tablo hidden md:block kalacak.
+Mobilde md:hidden card list kullanılacak.
 
-# Data Consistency Rule
+## 7. Mobil Card List Standardı
 
-Veri tutarsızlığını raporda saklama. Tutarsız veri oluşmasını engelle. Her stok etkileyen işlem transaction içinde header + movements + balances + summaries + timeline kayıtlarını birlikte oluşturmalı veya birlikte rollback etmelidir.
+Her operasyon kartında: belge no, cari adı, durum badge, stok adı, tarih, kg özetleri olacak.
+Uzun metinler line-clamp ile kırpılacak.
 
+## 8. Form UX Standardı
 
-# ERP Data Integrity Constitution
+Mobil formlar tek devasa form gibi olmayacak.
+Section/card yapısına bölünecek: Cari, Teknik, Miktar, Operasyon, Açıklama.
 
-This ERP system is built on strict operational data integrity rules.
+## 9. Input Standardı
 
-## Core Principle
+Mobil inputlar: min-height 44px, font-size 16px (iOS zoom engeli), touch-friendly spacing.
+Mobilde tiny input, sıkışık grid, 4 kolon layout kullanılmayacak.
 
-Operational data either exists completely or does not exist at all.
+## 10. Sticky Action Bar
 
-Soft delete logic is forbidden for operational stock transactions.
+Mobilde Kaydet/Güncelle/Sil butonları ekran altında sticky olacak.
+Safe-area destekli olacak. Kullanıcı formun en altına inmek zorunda kalmayacak.
 
-The following concepts must NOT be used for operational movements:
-- deleted
-- cancelled
-- void
-- passive
-- isDeleted
-- isCancelled
-- status=cancelled
+## 11. Drawer Standardı
 
-Operational stock-impacting transactions must be physically removed or fully reversed inside one database transaction.
+Mobil drawer: full screen veya bottom sheet olacak.
+Mobilde dar sağ panel kullanılmayacak.
 
-## Stock Movement Integrity
+## 12. Safe Area Standardı
 
-The single source of truth for operational stock reality is:
-- stock_movements
+iPhone notch, Android gesture nav, iOS Safari alt bar desteklenecek.
+env(safe-area-inset-bottom) kullanılacak.
 
-All balances, summaries, dashboards and statuses must derive from stock_movements.
+## 13. Toast Standardı
 
-The system must never leave:
-- transaction header without movements
-- movements without transaction header
-- balances without movements
-- parties without movements
-- lots without movements
+Toast ve issue badge: bottom nav üstüne binmeyecek, action butonunu kapatmayacak.
 
-Orphan operational data is forbidden.
+## 14. Loading UX Standardı
 
-## Later Movement Lock Rule
+Tam ekran spinner yerine skeleton cards / skeleton KPI / skeleton list kullanılacak.
 
-Before deleting or updating any stock-impacting transaction, the system MUST check whether the same:
-- LotNo
-- PartiNo
+## 15. Empty State Standardı
 
-has any later stock movement.
+Boş ekran sadece "Kayıt yok" demeyecek.
+Kullanıcıya bir sonraki aksiyonu önerecek ve CTA butonu sunacak.
 
-If later movement exists:
-- deletion/update must be blocked.
+## 16. Danger Action Standardı
 
-This applies to:
-- Purchase Receipt
-- Warehouse Transfer
-- Raw Production
-- Dyehouse Production
-- Sale / Shipment
+Silme işlemleri: kırmızı tema, iconlu confirm modal, sonuç açıklaması ile yapılacak.
+Browser alert kullanılmayacak.
 
-The system must not rely only on sourceMovementId or parentMovementId.
+## 17. Bottom Nav Standardı
 
-Fallback validation is mandatory using:
-- LotNo / PartiNo
-- movementDate
-- createdAt
-- id ordering
-- different sourceTransactionId
+Bottom nav: CSS variable ile sabit yükseklik (--bottom-nav-h), her sayfada aynı davranış.
+İcon + kısa label, maksimum 5 item.
 
-## Delete Order Principle
+## 18. Mobil Sayfa Yapısı
 
-Transactions may only be safely deleted from newest to oldest.
+Mobil sayfa sırası: 1. Hero, 2. Primary Action, 3. KPI, 4. Filters, 5. Content, 6. Secondary Actions.
 
-Example:
-Sale → Dyehouse → Raw Production → Transfer → Purchase
+## 19. ERP Mobil Felsefesi
 
-Deleting older transactions while newer dependent movements exist is forbidden.
+Mobil ERP veri göstermek için değil, iş bitirmek için vardır.
+Kullanıcı eldivenli, ayakta, üretim içinde, tek elle kullanıyor olabilir.
+Bütün mobil UX buna göre tasarlanacak.
 
-## Rebuild Principle
+## 20. Tasarım Felsefesi
 
-After every create/update/delete:
-- balances
-- summaries
-- order statuses
-- dashboard KPIs
-- party summaries
+Hedef görünüm: Stripe + Linear + modern warehouse ERP hissi.
+Yapı: endüstriyel, hızlı, ergonomik, yorucu olmayan.
 
-must be recalculated from stock_movements.
+## 21. Development Checklist
 
-Cached operational summaries are not authoritative.
+Yeni component veya ekran eklenirken önce şu sorular cevaplanacak:
 
-## Order Status Principle
+- Mobilde nasıl davranacak?
+- Kart mı tablo mu?
+- Sticky action gerekiyor mu?
+- Tek elle kullanılabilir mi?
+- 360px'de taşar mı?
+- Safe-area uyumlu mu?
+- Primary action fazla mı?
 
-Order statuses must always reflect real movement state.
+Bu sorular cevaplanmadan component tamamlanmış sayılmayacak.
 
-If related movements are deleted:
-- statuses must rollback automatically.
+---
 
-Example:
-If raw production is deleted:
-- "Ham Geldi" status must disappear.
+# Single Source of Truth Rule
 
-## Lot / Parti Principle
+Operational truth must only come from stock_movements.
 
-Raw materials use:
-- LotNo
+The following tables are projections/cache tables only:
+- warehouse_balances
+- lot_balances
+- party_balances
+- stock_cards.current_stock_kg
+- order status summaries
 
-Fabric production uses:
-- PartiNo
+These tables must NEVER be manually trusted as the primary operational truth.
 
-LotNo and PartiNo are fundamentally different concepts and must never be mixed.
-
-A stock cannot simultaneously behave as both lot-tracked and party-tracked in the same movement.
-
-## Transaction Safety Principle
-
-All stock-impacting operations must run inside ONE database transaction.
-
-If any step fails:
-- the whole operation must rollback.
-
-No partial save is acceptable.
-
-## UI / Reporting Principle
-
-Reports must never hide inconsistencies.
-
-The system must prevent inconsistencies at write time.
-
-If inconsistency is detected:
-- show admin-level integrity warning
-- provide diagnostics/rebuild tools
-
-## Turkish Character Rule
-
-All files must remain UTF-8 encoded.
-
-Never corrupt Turkish characters:
-ğ ş ı ç ö ü Ğ Ş İ Ç Ö Ü
+All projections must always be regenerated from stock_movements consistency rules.

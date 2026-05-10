@@ -396,13 +396,13 @@ export function AppShellContent({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] pt-2 shadow-[0_-18px_60px_rgba(15,23,42,0.10)] backdrop-blur-xl lg:hidden">
-        <div className="grid grid-cols-5 gap-1">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/80 bg-white/97 px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_32px_rgba(15,23,42,0.08)] backdrop-blur-xl lg:hidden" style={{ height: `calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px))` }}>
+        <div className="grid h-[var(--bottom-nav-h)] grid-cols-5 gap-0.5">
           {mobileNavigation.map((item) => {
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = item.icon;
             return (
-              <Link key={item.href} href={item.href} className={cn("flex min-h-16 flex-col items-center justify-center gap-1 rounded-none text-[11px] font-semibold", active ? "bg-blue-600 text-white" : "text-slate-500")}>
+              <Link key={item.href} href={item.href} className={cn("flex flex-col items-center justify-center gap-0.5 rounded-none text-[10px] font-bold tracking-wide", active ? "bg-blue-600 text-white" : "text-slate-400 active:bg-slate-50")}>
                 <Icon className="size-5" />
                 {item.label}
               </Link>

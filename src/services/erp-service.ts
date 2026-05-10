@@ -92,6 +92,16 @@ export function getDashboardMetrics(data: ErpData) {
   const avgRawWaste = data.parties.length > 0 ? data.parties.reduce((sum, party) => sum + party.rawWastePercent, 0) / data.parties.length : 0;
   const avgDyeWaste = data.parties.length > 0 ? data.parties.reduce((sum, party) => sum + party.dyehouseWastePercent, 0) / data.parties.length : 0;
   const openPurchaseOrders = data.purchaseOrders.filter((order) => order.status !== "Tamamlandı" && order.status !== "İptal");
+  const movementSourceIds = new Set(data.stockMovements.map(m => `${m.sourceTransactionType}:${m.sourceTransactionId}`));
+
+  const integrityIssues = [
+    ...data.productionRaw.filter(item => !movementSourceIds.has(`production_raw:${item.id}`)),
+    ...data.productionDyehouse.filter(item => !movementSourceIds.has(`production_dyehouse:${item.id}`)),
+    ...data.transfers.filter(item => !movementSourceIds.has(`transfer:${item.id}`)),
+    ...data.sales.filter(item => !movementSourceIds.has(`sale:${item.id}`)),
+    ...data.purchaseReceipts.filter(item => !movementSourceIds.has(`direct_purchase_receipt:${item.id}`)),
+  ].length;
+
   return {
     activeOrders,
     knittingOrders: data.orders.filter((order) => order.status === "Örmede").length,
@@ -108,22 +118,18 @@ export function getDashboardMetrics(data: ErpData) {
     monthlyReceivedKg: data.purchaseReceipts.reduce((sum, receipt) => sum + normalizeItems(receipt.items).reduce((itemSum, item) => itemSum + (item.receivedKg || 0), 0), 0),
     partialPurchaseCount: data.purchaseOrders.filter((order) => order.status === "Kısmi Geldi").length,
     delayedPurchaseCount: data.purchaseOrders.filter((order) => new Date(order.dueDate) < new Date("2026-05-02") && order.totalRemainingKg > 0).length,
-    integrityIssues: [
-      ...data.productionRaw.filter(item => !data.stockMovements.some(m => m.sourceTransactionId === item.id && m.sourceTransactionType === 'production_raw')),
-      ...data.productionDyehouse.filter(item => !data.stockMovements.some(m => m.sourceTransactionId === item.id && m.sourceTransactionType === 'production_dyehouse')),
-      ...data.transfers.filter(item => !data.stockMovements.some(m => m.sourceTransactionId === item.id && m.sourceTransactionType === 'transfer')),
-      ...data.sales.filter(item => !data.stockMovements.some(m => m.sourceTransactionId === item.id && m.sourceTransactionType === 'sale')),
-      ...data.purchaseReceipts.filter(item => !data.stockMovements.some(m => m.sourceTransactionId === item.id && m.sourceTransactionType === 'direct_purchase_receipt')),
-    ].length,
+    integrityIssues,
   };
 }
 
 export function getComputedNotifications(data: ErpData) {
   const today = new Date();
   const dayMs = 24 * 60 * 60 * 1000;
+  const movementSourceIds = new Set(data.stockMovements.map(m => `${m.sourceTransactionType}:${m.sourceTransactionId}`));
+
   const integrityAlerts = [
     ...data.productionRaw
-      .filter(item => !data.stockMovements.some(m => m.sourceTransactionId === item.id && m.sourceTransactionType === 'production_raw'))
+      .filter(item => !movementSourceIds.has(`production_raw:${item.id}`))
       .map(item => ({
         id: `integrity-raw-${item.id}`,
         type: "integrity_error",
@@ -136,7 +142,7 @@ export function getComputedNotifications(data: ErpData) {
         createdAt: today.toISOString(),
       })),
     ...data.productionDyehouse
-      .filter(item => !data.stockMovements.some(m => m.sourceTransactionId === item.id && m.sourceTransactionType === 'production_dyehouse'))
+      .filter(item => !movementSourceIds.has(`production_dyehouse:${item.id}`))
       .map(item => ({
         id: `integrity-dye-${item.id}`,
         type: "integrity_error",
@@ -149,7 +155,7 @@ export function getComputedNotifications(data: ErpData) {
         createdAt: today.toISOString(),
       })),
     ...data.transfers
-      .filter(item => !data.stockMovements.some(m => m.sourceTransactionId === item.id && m.sourceTransactionType === 'transfer'))
+      .filter(item => !movementSourceIds.has(`transfer:${item.id}`))
       .map(item => ({
         id: `integrity-transfer-${item.id}`,
         type: "integrity_error",
@@ -162,7 +168,7 @@ export function getComputedNotifications(data: ErpData) {
         createdAt: today.toISOString(),
       })),
     ...data.sales
-      .filter(item => !data.stockMovements.some(m => m.sourceTransactionId === item.id && m.sourceTransactionType === 'sale'))
+      .filter(item => !movementSourceIds.has(`sale:${item.id}`))
       .map(item => ({
         id: `integrity-sale-${item.id}`,
         type: "integrity_error",
@@ -175,7 +181,7 @@ export function getComputedNotifications(data: ErpData) {
         createdAt: today.toISOString(),
       })),
     ...data.purchaseReceipts
-      .filter(item => !data.stockMovements.some(m => m.sourceTransactionId === item.id && m.sourceTransactionType === 'direct_purchase_receipt'))
+      .filter(item => !movementSourceIds.has(`direct_purchase_receipt:${item.id}`))
       .map(item => ({
         id: `integrity-receipt-${item.id}`,
         type: "integrity_error",

@@ -296,7 +296,7 @@ async function internalRebuildBalances(tx: Tx) {
   await tx`
     insert into warehouse_balances (id, stock_id, warehouse_id, party_id, lot_no, quantity, updated_at)
     select 
-      'bal-' || md5(stock_id || warehouse_id || coalesce(party_id, '') || coalesce(lot_no, '')),
+      'bal-' || md5(stock_id || '|' || warehouse_id || '|' || coalesce(party_id, 'none') || '|' || coalesce(lot_no, 'none')),
       stock_id,
       warehouse_id,
       party_id,

@@ -343,6 +343,9 @@ export interface UISettings {
   sidebarGroupBg?: string;
   sidebarGroupText?: string;
   formDefaults?: FormDefault[];
+  operationLockDate?: string;
+  operationLockActive?: boolean;
+  lockOverrideRoleId?: string;
 }
 
 export interface Counter {
@@ -377,10 +380,19 @@ export interface ErpData {
   userProfiles: UserProfile[];
   counters: Counter[];
   uiSettings: UISettings;
+  lastSnapshotDate?: string;
   integrityStatus?: "green" | "yellow" | "red";
   integrityStats?: {
     totalIssues: number;
     criticalIssues: number;
     warningIssues: number;
   };
+  customerOrderSummaryByStock?: any[];
+  supplierOrderSummaryByStock?: any[];
+  customerOrderSummaryByColor?: any[];
+  customerOrderSummaryByYarnCount?: any[];
+  customerOrderSummaryByFabricType?: any[];
+  supplierOrderSummaryByYarnCount?: any[];
+  supplierOrderSummaryByColor?: any[];
+  totals?: any;
 }

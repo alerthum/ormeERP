@@ -10,6 +10,7 @@ import { useErpData } from "@/components/erp-data-provider";
 import { getComputedNotifications, getDashboardMetrics, getName, getPurchaseProgress } from "@/services/erp-service";
 import { formatKg, formatPercent, formatDate, wasteTone, cn } from "@/lib/utils";
 import { SystemHealthWidget } from "@/components/ui/system-health";
+import { MobilePageSkeleton } from "@/components/ui/mobile-skeleton";
 
 export function Dashboard() {
   const mounted = useSyncExternalStore(
@@ -17,9 +18,13 @@ export function Dashboard() {
     () => true,
     () => false,
   );
-  const { data } = useErpData();
+  const { data, loading } = useErpData();
   const metrics = getDashboardMetrics(data);
   const notifications = getComputedNotifications(data);
+
+  if (loading && data.orders.length === 0) {
+    return <MobilePageSkeleton kpiCount={5} />;
+  }
   const productionByMonth = new Map<string, { month: string; kg: number }>();
   for (const item of data.productionRaw) {
     const month = new Intl.DateTimeFormat("tr-TR", { month: "short" }).format(new Date(item.date));
@@ -56,16 +61,16 @@ export function Dashboard() {
         <StatCard title="Geciken satın alma" value={String(metrics.delayedPurchaseCount)} helper="Termin riski" icon={AlertTriangle} tone="red" compact />
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[1.4fr_0.8fr]">
-        <div className="premium-card rounded-none p-5">
+      <div className="grid gap-4 sm:gap-5 xl:grid-cols-[1.4fr_0.8fr]">
+        <div className="premium-card rounded-none p-4 sm:p-5">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-semibold text-slate-950">Aylık üretim ve fire trendi</h2>
-              <p className="text-sm text-slate-500">Üretim kg ile gerçek fire yüzdesi</p>
+              <h2 className="text-sm sm:text-base font-semibold text-slate-950">Aylık üretim trendi</h2>
+              <p className="text-xs sm:text-sm text-slate-500 hidden sm:block">Üretim kg ile gerçek fire yüzdesi</p>
             </div>
             <StatusBadge tone="green">Canlı</StatusBadge>
           </div>
-          <div className="mt-6 h-72">
+          <div className="mt-4 sm:mt-6 h-48 sm:h-72">
             {mounted ? (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={productionTrend}>
@@ -76,8 +81,8 @@ export function Dashboard() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="month" stroke="#94a3b8" />
-                  <YAxis stroke="#94a3b8" />
+                  <XAxis dataKey="month" stroke="#94a3b8" tick={{ fontSize: 11 }} />
+                  <YAxis stroke="#94a3b8" tick={{ fontSize: 11 }} width={40} />
                   <Tooltip />
                   <Area dataKey="kg" fill="url(#kg)" stroke="#2563eb" strokeWidth={3} />
                 </AreaChart>
@@ -86,13 +91,13 @@ export function Dashboard() {
           </div>
         </div>
 
-        <div className="premium-card rounded-none p-5">
-          <h2 className="font-semibold text-slate-950">Sipariş durum dağılımı</h2>
-          <div className="mt-6 h-60">
+        <div className="premium-card rounded-none p-4 sm:p-5">
+          <h2 className="text-sm sm:text-base font-semibold text-slate-950">Sipariş durum dağılımı</h2>
+          <div className="mt-4 sm:mt-6 h-44 sm:h-60">
             {mounted ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={statusData} dataKey="value" innerRadius={58} outerRadius={92} paddingAngle={6}>
+                  <Pie data={statusData} dataKey="value" innerRadius={40} outerRadius={68} paddingAngle={6}>
                     {statusData.map((entry, index) => <Cell key={entry.name} fill={colors[index % colors.length]} />)}
                   </Pie>
                   <Tooltip />
@@ -100,9 +105,9 @@ export function Dashboard() {
               </ResponsiveContainer>
             ) : null}
           </div>
-          <div className="grid gap-2">
+          <div className="grid gap-1.5 sm:gap-2">
             {statusData.map((item, index) => (
-              <div key={item.name} className="flex items-center justify-between text-sm">
+              <div key={item.name} className="flex items-center justify-between text-xs sm:text-sm">
                 <span className="flex items-center gap-2 text-slate-500"><span className="size-2 rounded-full" style={{ background: colors[index] }} />{item.name}</span>
                 <strong>{item.value}</strong>
               </div>
@@ -144,10 +149,11 @@ export function Dashboard() {
         </div>
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-2">
-        <div className="premium-card rounded-none p-5">
-          <h2 className="font-semibold text-slate-950">Termin yaklaşan satın alma siparişleri</h2>
-          <div className="mt-5 overflow-x-auto">
+      <div className="grid gap-4 sm:gap-5 xl:grid-cols-2">
+        <div className="premium-card rounded-none p-4 sm:p-5">
+          <h2 className="text-sm sm:text-base font-semibold text-slate-950">Termin yaklaşan satın alma</h2>
+          {/* Desktop table */}
+          <div className="mt-5 overflow-x-auto hidden md:block">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider">
@@ -188,20 +194,53 @@ export function Dashboard() {
               </tbody>
             </table>
           </div>
+          {/* Mobile card list */}
+          <div className="mt-4 space-y-2.5 md:hidden">
+            {data.purchaseOrders.slice(0, 6).map((order) => {
+              const item = order.items[0];
+              return (
+                <div key={order.id} className="rounded-none border border-slate-100 bg-white p-3 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-900 truncate">{getName(data.partners, order.supplierId)}</p>
+                      <p className="text-[10px] text-slate-400">{order.purchaseOrderNo}</p>
+                    </div>
+                    <StatusBadge tone={statusTone(order.status)}>{order.status}</StatusBadge>
+                  </div>
+                  <p className="text-[11px] text-slate-600 truncate">{item?.stockName || '-'}</p>
+                  <div className="grid grid-cols-3 gap-1 text-center border-t border-slate-50 pt-2">
+                    <div>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase">Sipariş</p>
+                      <p className="text-[11px] font-bold text-slate-800">{formatKg(order.totalOrderedKg)}</p>
+                    </div>
+                    <div className="border-x border-slate-50">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase">Gelen</p>
+                      <p className="text-[11px] font-bold text-emerald-600">{formatKg(order.totalReceivedKg)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase">Kalan</p>
+                      <p className="text-[11px] font-bold text-rose-600">{formatKg(order.totalRemainingKg)}</p>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-400">Termin: {formatDate(order.dueDate)}</p>
+                </div>
+              );
+            })}
+          </div>
         </div>
-        <div className="premium-card rounded-none p-5">
-          <h2 className="font-semibold text-slate-950">Son stok hareketleri</h2>
-          <div className="mt-5 space-y-3">
+        <div className="premium-card rounded-none p-4 sm:p-5">
+          <h2 className="text-sm sm:text-base font-semibold text-slate-950">Son stok hareketleri</h2>
+          <div className="mt-4 sm:mt-5 space-y-2 sm:space-y-3">
             {data.stockMovements.slice(0, 5).map((movement) => (
-              <div key={movement.id} className="flex items-center justify-between gap-3 rounded-none bg-slate-50 p-3">
-                <div className="flex items-center gap-3">
-                  <div className="grid size-10 place-items-center rounded-none bg-white text-blue-600 shadow-sm"><Timer className="size-4" /></div>
-                  <div>
-                    <p className="font-semibold text-slate-900">{movement.description}</p>
-                    <p className="text-sm text-slate-500">{getName(data.warehouses, movement.warehouseId)}</p>
+              <div key={movement.id} className="flex items-center justify-between gap-2 sm:gap-3 rounded-none bg-slate-50 p-2.5 sm:p-3">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <div className="grid size-8 sm:size-10 shrink-0 place-items-center rounded-none bg-white text-blue-600 shadow-sm"><Timer className="size-3.5 sm:size-4" /></div>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-semibold text-slate-900 truncate">{movement.description}</p>
+                    <p className="text-[10px] sm:text-sm text-slate-500 truncate">{getName(data.warehouses, movement.warehouseId)}</p>
                   </div>
                 </div>
-                <strong className={movement.direction === "IN" ? "text-emerald-600" : "text-rose-600"}>{movement.direction === "IN" ? "+" : "-"}{formatKg(movement.quantity)}</strong>
+                <strong className={cn("shrink-0 text-xs sm:text-sm", movement.direction === "IN" ? "text-emerald-600" : "text-rose-600")}>{movement.direction === "IN" ? "+" : "-"}{formatKg(movement.quantity)}</strong>
               </div>
             ))}
           </div>

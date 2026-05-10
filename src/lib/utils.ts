@@ -49,7 +49,7 @@ function requestSignal(ms = 8000) {
   return controller.signal;
 }
 
-export async function postJson(endpoint: string, payload: Record<string, unknown>) {
+export async function postJson(endpoint: string, payload: any) {
   const session = await supabase.auth.getSession();
   const token = session.data.session?.access_token;
   const response = await fetch(endpoint, {
@@ -63,7 +63,7 @@ export async function postJson(endpoint: string, payload: Record<string, unknown
   return result;
 }
 
-export async function patchJson(endpoint: string, payload: Record<string, unknown>) {
+export async function patchJson(endpoint: string, payload: any) {
   const session = await supabase.auth.getSession();
   const token = session.data.session?.access_token;
   const response = await fetch(endpoint, {
@@ -90,6 +90,6 @@ export async function apiDelete(endpoint: string) {
   return result;
 }
 
-export async function apiPatch(endpoint: string, payload: Record<string, unknown>) {
+export async function apiPatch(endpoint: string, payload: any) {
   return patchJson(endpoint, payload);
 }

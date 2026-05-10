@@ -35,14 +35,28 @@ export async function requirePermission(request: Request, permission: string) {
   if (error || !data.user?.email) throw new Error("Oturum doğrulanamadı.");
 
   const rows = await sql`
-    select r.permissions
+    select u.id, u.email, u.role_id, r.permissions, r.name as role_name
     from user_profiles u
     join roles r on r.id = u.role_id
     where lower(u.email) = lower(${data.user.email}) and u.is_active = true and r.is_active = true
     limit 1
   `;
-  const permissions = Array.isArray(rows[0]?.permissions) ? rows[0].permissions.map(String) : [];
-  if (!permissions.includes(permission) && !permissions.includes("settings:write")) {
+  
+  if (rows.length === 0) throw new Error("Kullanıcı profili bulunamadı.");
+
+  const permissions = Array.isArray(rows[0].permissions) ? rows[0].permissions.map(String) : [];
+  
+  const user = {
+    id: rows[0].id,
+    email: rows[0].email,
+    roleId: rows[0].role_id,
+    permissions,
+    isAdmin: rows[0].role_name.toLowerCase() === 'admin' || permissions.includes('admin')
+  };
+
+  if (!user.isAdmin && !permissions.includes(permission) && !permissions.includes("settings:write")) {
     throw new Error("Bu işlem için yetkiniz yok.");
   }
+
+  return user;
 }

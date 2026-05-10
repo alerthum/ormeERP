@@ -45,6 +45,8 @@ export function DataTable<T extends { id: string }>({
   getSearchText = defaultSearchText,
   groupBy,
   pageSize = 25,
+  emptyActionLabel,
+  onEmptyAction,
 }: {
   rows: T[];
   columns: Column<T>[];
@@ -52,6 +54,8 @@ export function DataTable<T extends { id: string }>({
   getSearchText?: (row: T) => string;
   groupBy?: GroupBy<T>;
   pageSize?: number;
+  emptyActionLabel?: string;
+  onEmptyAction?: () => void;
 }) {
   const { loading } = useErpData();
   const [query, setQuery] = useState("");
@@ -93,12 +97,21 @@ export function DataTable<T extends { id: string }>({
 
   if (rows.length === 0) {
     return (
-      <div className="premium-card rounded-2xl p-8 text-center">
-        <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-blue-50 text-blue-600">
-          <span className="text-2xl font-semibold">+</span>
+      <div className="premium-card rounded-2xl p-12 text-center flex flex-col items-center justify-center min-h-[300px]">
+        <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-blue-50 text-blue-600 mb-4">
+          <span className="text-3xl font-light">+</span>
         </div>
-        <h3 className="mt-4 text-lg font-semibold text-slate-950">Henüz kayıt yok</h3>
-        <p className="mt-2 text-sm text-slate-500">Başlamak için önce Ayarlar bölümünden temel tanımları girin, ardından ilgili modülde ilk kaydı oluşturun.</p>
+        <h3 className="text-lg font-semibold text-slate-950">Henüz kayıt yok</h3>
+        <p className="mt-2 text-sm text-slate-500 max-w-sm">Burada gösterilecek bir veri bulunamadı. Filtreleri kontrol edebilir veya yeni bir kayıt ekleyebilirsiniz.</p>
+        {emptyActionLabel && onEmptyAction && (
+          <button 
+            type="button"
+            onClick={onEmptyAction}
+            className="mt-6 inline-flex items-center gap-2 rounded-none bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-100 min-h-[44px]"
+          >
+            {emptyActionLabel}
+          </button>
+        )}
       </div>
     );
   }

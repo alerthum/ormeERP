@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, BarChart3, Bell, BookOpen, Boxes, CheckCircle2, Download, Factory, KeyRound, Layout, Maximize2, PackageCheck, PackagePlus, Plus, RefreshCcw, Search, Settings, ShieldCheck, ShoppingCart, SlidersHorizontal, Trash2, Truck, Users, Warehouse, X } from "lucide-react";
+import { AlertTriangle, BarChart3, Bell, BookOpen, Boxes, Camera, CheckCircle2, Clock, Download, Factory, KeyRound, Layout, Lock, Maximize2, PackageCheck, PackagePlus, Plus, RefreshCcw, Search, Settings, ShieldCheck, ShoppingCart, SlidersHorizontal, Store, Trash2, Truck, Users, Warehouse, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DataTable, type Column } from "@/components/ui/data-table";
@@ -12,11 +12,14 @@ import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { FormDrawer } from "@/components/ui/form-drawer";
 import { DirectPurchaseForm, DyehouseProductionForm, OrderEditForm, OrderForm, PartyShiftForm, PurchaseOrderEditForm, PurchaseOrderForm, PurchaseReceiptEditForm, PurchaseReceiptForm, RawProductionForm, RoleForm, SaleForm, SettingForm, StockCardEditForm, StockCardForm, TransferForm, UserProfileForm } from "@/components/forms";
 import { PartyTimeline } from "@/components/party-timeline";
+import { OrderTimeline } from "@/components/ui/order-timeline";
 import { useErpData } from "@/components/erp-data-provider";
 import { getDashboardMetrics, getName, getPurchaseProgress } from "@/services/erp-service";
 import { DyehouseProduction, ErpData, NamedEntity, Order, Partner, Party, PurchaseOrder, PurchaseReceipt, RawProduction, Role, Sale, StockCard, StockMovement, Transfer, UserProfile, Warehouse as WarehouseEntity } from "@/types/erp";
 import { cn, formatDate, formatKg, formatPercent, wasteTone, normalizeItems, patchJson, postJson, apiDelete, apiPatch } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
+import { MobileHeroCard } from "@/components/ui/mobile-hero-card";
+import { MobilePageSkeleton } from "@/components/ui/mobile-skeleton";
 
 const primaryButton = "inline-flex items-center justify-center gap-2 rounded-none bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-100";
 const dangerButton = "rounded-none border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700";
@@ -129,11 +132,11 @@ const emptyOrderFilters: OrderFilters = {
   smart: "",
 };
 
-const inputClass = "w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50";
+const inputClass = "w-full rounded-none border border-slate-200 bg-white px-3 py-3 text-base sm:text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50 min-h-[44px]";
 
 function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn("space-y-1.5 sm:space-y-2", className)}>
       <label className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{label}</label>
       {children}
     </div>
@@ -296,7 +299,12 @@ export function OrdersPage() {
     { header: "Kalan Kg", className: "text-right", cell: (row) => <span className="text-rose-600 font-bold">{formatKg(Math.max(row.quantityKg - row.sevkKg, 0))}</span> },
     { header: "Durum", cell: (row) => <StatusBadge tone={statusTone(row.computedStatus)}>{row.computedStatus}</StatusBadge> },
     { header: "Termin", cell: (row) => <span className="text-slate-500">{formatDate(row.dueDate)}</span> },
-    { header: "İşlem", className: "text-right", cell: (row) => <div className="flex justify-end gap-2"><button className="rounded-none border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditing(row)} type="button">Düzenle</button></div> },
+    { header: "İşlem", className: "text-right", cell: (row) => (
+      <div className="flex justify-end gap-2">
+        <button className="rounded-none border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700" onClick={() => setEditing(row)} type="button">Düzenle</button>
+        <button className={dangerButton} onClick={() => setDeleteTarget(row)} type="button">Sil</button>
+      </div>
+    ) },
   ];
   const filterControls = (
     <div className="grid gap-3 md:grid-cols-2">
@@ -359,7 +367,21 @@ export function OrdersPage() {
   );
   return (
     <div className="space-y-6">
+      {loading && data.orders.length === 0 ? <MobilePageSkeleton kpiCount={4} cardCount={3} /> : null}
       <PageHeader eyebrow="Siparişler" title="Müşteri Siparişleri" description="Kumaş üretim talepleri, otomatik YM/MM stok eşleşmesi ve üretim durum takibi." icon={ShoppingCart} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Yeni sipariş</button>} />
+      
+      <MobileHeroCard
+        eyebrow="Siparişler"
+        title="Aktif Müşteri Siparişleri"
+        description="Müşterilerden gelen aktif örgü ve boya siparişlerinin takibi."
+        metricLabel="Bekleyen toplam"
+        metricValue={formatKg(filteredOrders.filter(o => o.computedStatus !== 'Sevk Edildi').reduce((sum, o) => sum + (o.quantityKg - (o.sevkKg || 0)), 0))}
+        helperText={`${filteredOrders.filter(o => o.computedStatus !== 'Sevk Edildi').length} aktif sipariş`}
+        icon={ShoppingCart}
+        tone="blue"
+        actionLabel="Yeni sipariş"
+        onAction={() => setOpen(true)}
+      />
       <div className="premium-card rounded-none p-4 sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -387,7 +409,7 @@ export function OrdersPage() {
         </div>
       </div>
       <div className="hidden md:block">
-        <DataTable rows={filteredOrders} columns={columns} groupBy={orderGroupBy} searchPlaceholder="Liste içinde hızlı ara" getSearchText={(row) => [row.orderNo, row.customerName, row.computedStatus, getName(data.fabricTypes, row.fabricTypeId), getName(data.colors, row.colorId), getName(data.yarnCounts, row.yarnCountId), getName(data.stockCards, row.ymStockId), getName(data.stockCards, row.mmStockId), row.quantityKg].join(" ")} />
+        <DataTable rows={filteredOrders} columns={columns} groupBy={orderGroupBy} searchPlaceholder="Liste içinde hızlı ara" getSearchText={(row) => [row.orderNo, row.customerName, row.computedStatus, getName(data.fabricTypes, row.fabricTypeId), getName(data.colors, row.colorId), getName(data.yarnCounts, row.yarnCountId), getName(data.stockCards, row.ymStockId), getName(data.stockCards, row.mmStockId), row.quantityKg].join(" ")} emptyActionLabel="Yeni sipariş" onEmptyAction={() => setOpen(true)} />
       </div>
 
       <div className="grid gap-4 md:hidden">
@@ -433,7 +455,10 @@ export function OrdersPage() {
               </div>
               <div className="flex justify-between items-center pt-2">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Termin: {formatDate(order.dueDate)}</span>
-                <button className="text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1.5" onClick={() => setEditing(order)}>Düzenle</button>
+                <div className="flex gap-2">
+                  <button className="text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1.5" onClick={() => setEditing(order)}>Düzenle</button>
+                  <button className="text-xs font-bold text-rose-700 bg-rose-50 px-3 py-1.5" onClick={() => setDeleteTarget(order)}>Sil</button>
+                </div>
               </div>
             </div>
           );
@@ -607,11 +632,11 @@ export function OrderDetailPage({ id }: { id: string }) {
         icon={ShoppingCart} 
         action={<StatusBadge tone={statusTone(order.status)}>{order.status}</StatusBadge>} 
       />
-      <div className="grid gap-4 md:grid-cols-4">
-        <StatCard title="Sipariş" value={formatKg(order.quantityKg)} helper="Hedef miktar" icon={ShoppingCart} />
-        <StatCard title="Sevk Edilen" value={formatKg(shippedKg)} helper={`${formatPercent(progressPercent)} tamamlandı`} icon={Truck} tone="green" />
-        <StatCard title="Hazır" value={formatKg(readyKg)} helper="Depoda bekleyen mamül" icon={PackageCheck} tone="blue" />
-        <StatCard title="Kalan" value={formatKg(Math.max(order.quantityKg - shippedKg, 0))} helper="Eksik miktar" icon={Boxes} tone={progressPercent < 100 ? "amber" : "green"} />
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+        <StatCard title="Sipariş" value={formatKg(order.quantityKg)} helper="Hedef miktar" icon={ShoppingCart} compact />
+        <StatCard title="Sevk Edilen" value={formatKg(shippedKg)} helper={`${formatPercent(progressPercent)} tamamlandı`} icon={Truck} tone="green" compact />
+        <StatCard title="Hazır" value={formatKg(readyKg)} helper="Depoda bekleyen mamül" icon={PackageCheck} tone="blue" compact />
+        <StatCard title="Kalan" value={formatKg(Math.max(order.quantityKg - shippedKg, 0))} helper="Eksik miktar" icon={Boxes} tone={progressPercent < 100 ? "amber" : "green"} compact />
       </div>
       <div className="mt-2 h-3 overflow-hidden rounded-full bg-slate-100 shadow-inner">
         <div 
@@ -728,6 +753,14 @@ export function OrderDetailPage({ id }: { id: string }) {
           </div>
         </div>
       </div>
+
+      <div className="premium-card rounded-none p-5">
+        <h3 className="text-base font-semibold text-slate-950 flex items-center gap-2 mb-6">
+          <Clock className="size-4 text-blue-600" />
+          Sipariş Zaman Tüneli
+        </h3>
+        <OrderTimeline orderId={id} />
+      </div>
     </div>
   );
 }
@@ -772,7 +805,21 @@ export function PurchaseOrdersPage() {
   ];
   return (
     <div className="space-y-6">
+      {loading && data.purchaseOrders.length === 0 ? <MobilePageSkeleton kpiCount={3} cardCount={3} /> : null}
       <PageHeader eyebrow="Satın alma" title="Hammadde Siparişleri" description="IP, LYC ve POLY için açık satıcı siparişleri, termin ve bekleyen kg takibi." icon={PackagePlus} action={<button className={primaryButton} onClick={() => setOrderOpen(true)}><Plus className="size-4" />Hammadde siparişi</button>} />
+      
+      <MobileHeroCard
+        eyebrow="Satın Alma"
+        title="Bekleyen Hammadde"
+        description="Satıcılara verilen aktif iplik ve lycra siparişlerinin takibi."
+        metricLabel="Toplam kalan"
+        metricValue={formatKg(data.purchaseOrders.filter(o => o.status !== 'Tamamlandı').reduce((sum, o) => sum + o.totalRemainingKg, 0))}
+        helperText={`${data.purchaseOrders.filter(o => o.status !== 'Tamamlandı').length} açık sipariş`}
+        icon={PackagePlus}
+        tone="amber"
+        actionLabel="Hammadde siparişi"
+        onAction={() => setOrderOpen(true)}
+      />
       <div className="premium-card rounded-none p-5 mb-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
@@ -811,7 +858,7 @@ export function PurchaseOrdersPage() {
           </div>
         ))}
       </div>
-      <DataTable rows={filteredOrders} columns={columns} searchPlaceholder="Hammadde siparişi, tedarikçi, durum veya stokta ara" getSearchText={(row) => [row.purchaseOrderNo, getName(data.partners, row.supplierId), row.status, getPurchaseStockSummary(row), normalizeItems(row.items).map((item) => `${item.stockCode} ${item.stockName}`).join(" ")].join(" ")} />
+      <DataTable rows={filteredOrders} columns={columns} searchPlaceholder="Hammadde siparişi, tedarikçi, durum veya stokta ara" getSearchText={(row) => [row.purchaseOrderNo, getName(data.partners, row.supplierId), row.status, getPurchaseStockSummary(row), normalizeItems(row.items).map((item) => `${item.stockCode} ${item.stockName}`).join(" ")].join(" ")} emptyActionLabel="Hammadde siparişi" onEmptyAction={() => setOrderOpen(true)} />
       <FormDrawer open={orderOpen} title="Yeni hammadde siparişi" onClose={() => setOrderOpen(false)} loading={loading}><PurchaseOrderForm /></FormDrawer>
       <FormDrawer open={Boolean(editing)} title="Hammadde siparişi düzenle" onClose={() => setEditing(null)} loading={loading}>{editing ? <PurchaseOrderEditForm order={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
       <ConfirmModal
@@ -876,18 +923,43 @@ export function PurchasesPage() {
   ];
   return (
     <div className="space-y-6">
+      {/* Mobile skeleton loading — Constitution Kural 14 */}
+      {loading && data.purchaseReceipts.length === 0 ? <MobilePageSkeleton kpiCount={4} cardCount={3} /> : null}
       <PageHeader
         eyebrow="Alış"
         title="Alış İşlemleri"
         description="IP, LYC ve POLY hammaddeleri hızlı alışla veya açık satıcı siparişine bağlı mal kabul ile depoya alınır."
         icon={PackageCheck}
-        action={<><button className={primaryButton} onClick={() => setDirectOpen(true)}><Plus className="size-4" />Hızlı alış</button><button className={primaryButton} onClick={() => setReceiptOpen(true)}><Plus className="size-4" />Siparişe bağlı alış</button></>}
+        action={
+          <>
+            {/* Mobile: single primary action + secondary toggle */}
+            <div className="flex gap-2 md:hidden">
+              <button className={primaryButton} onClick={() => setDirectOpen(true)}><Plus className="size-4" />Hızlı alış</button>
+              <button className="rounded-none border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-600" onClick={() => setReceiptOpen(true)} type="button">Mal kabul</button>
+            </div>
+            {/* Desktop: both primary actions */}
+            <div className="hidden md:flex gap-2">
+              <button className={primaryButton} onClick={() => setDirectOpen(true)}><Plus className="size-4" />Hızlı alış</button>
+              <button className={primaryButton} onClick={() => setReceiptOpen(true)}><Plus className="size-4" />Siparişe bağlı alış</button>
+            </div>
+          </>
+        }
       />
-      <div className="grid gap-4 md:grid-cols-4">
-        <StatCard title="Açık sipariş" value={String(openOrders.length)} helper="Mal kabul bekleyen" icon={PackagePlus} tone="amber" />
-        <StatCard title="Bekleyen kg" value={formatKg(openOrders.reduce((sum, order) => sum + order.totalRemainingKg, 0))} helper="Satıcı siparişlerinden" icon={Truck} tone="amber" />
-        <StatCard title="Toplam gelen" value={formatKg(data.purchaseReceipts.reduce((sum, receipt) => sum + normalizeItems(receipt.items).reduce((itemSum, item) => itemSum + (item.receivedKg || 0), 0), 0))} helper="Tüm alış fişleri" icon={PackageCheck} tone="green" />
-        <StatCard title="Hızlı alış" value={String(data.purchaseReceipts.filter((receipt) => directReceiptIds.has(receipt.id)).length)} helper="Siparişsiz giriş" icon={CheckCircle2} tone="blue" />
+      <MobileHeroCard
+        eyebrow="Mal Kabul"
+        metricLabel="Bekleyen hammadde"
+        metricValue={formatKg(openOrders.reduce((sum, order) => sum + order.totalRemainingKg, 0))}
+        helperText={`${openOrders.length} açık satıcı siparişi`}
+        icon={PackagePlus}
+        tone="amber"
+        actionLabel="Siparişe bağlı alış"
+        onAction={() => setReceiptOpen(true)}
+      />
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+        <StatCard title="Açık sipariş" value={String(openOrders.length)} helper="Mal kabul bekleyen" icon={PackagePlus} tone="amber" compact />
+        <StatCard title="Bekleyen kg" value={formatKg(openOrders.reduce((sum, order) => sum + order.totalRemainingKg, 0))} helper="Satıcı siparişlerinden" icon={Truck} tone="amber" compact />
+        <StatCard title="Toplam gelen" value={formatKg(data.purchaseReceipts.reduce((sum, receipt) => sum + normalizeItems(receipt.items).reduce((itemSum, item) => itemSum + (item.receivedKg || 0), 0), 0))} helper="Tüm alış fişleri" icon={PackageCheck} tone="green" compact />
+        <StatCard title="Hızlı alış" value={String(data.purchaseReceipts.filter((receipt) => directReceiptIds.has(receipt.id)).length)} helper="Siparişsiz giriş" icon={CheckCircle2} tone="blue" compact />
       </div>
       <div className="premium-card rounded-none p-5 mb-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -1004,7 +1076,21 @@ export function StocksPage() {
   ];
   return (
     <div className="space-y-6">
+      {loading && data.stockCards.length === 0 ? <MobilePageSkeleton kpiCount={0} cardCount={5} /> : null}
       <PageHeader eyebrow="Stok" title="Stok Kartları" description="YM/MM partili izlenir; IP/LYC/POLY satın alma ve üretim tüketimiyle takip edilir." icon={Boxes} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Stok kartı</button>} />
+      
+      <MobileHeroCard
+        eyebrow="Stok Sağlığı"
+        title="Stok Kartları"
+        description="İplik, lycra ve kumaş stok tanımlarının yönetimi."
+        metricLabel="Kritik stok"
+        metricValue={`${data.stockCards.filter(s => (s.currentStockKg || 0) < 100).length} kart`}
+        helperText="Düşük bakiyeli stoklar"
+        icon={Boxes}
+        tone="blue"
+        actionLabel="Stok kartı ekle"
+        onAction={() => setOpen(true)}
+      />
       <div className="premium-card rounded-none p-5 mb-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
@@ -1022,16 +1108,16 @@ export function StocksPage() {
           </select>
         </div>
       </div>
-      <DataTable rows={filteredStocks} columns={columns} searchPlaceholder="Stok kodu, ad, tip veya özellikte ara" getSearchText={(row) => [row.code, row.name, row.type, getName(data.fabricTypes, row.fabricTypeId), getName(data.colors, row.colorId), getName(data.yarnCounts, row.yarnCountId)].join(" ")} />
+      <DataTable rows={filteredStocks} columns={columns} searchPlaceholder="Stok kodu, ad, tip veya özellikte ara" getSearchText={(row) => [row.code, row.name, row.type, getName(data.fabricTypes, row.fabricTypeId), getName(data.colors, row.colorId), getName(data.yarnCounts, row.yarnCountId)].join(" ")} emptyActionLabel="Stok kartı ekle" onEmptyAction={() => setOpen(true)} />
       <FormDrawer open={open} title="Yeni stok kartı" onClose={() => setOpen(false)} loading={loading}><StockCardForm /></FormDrawer>
       <FormDrawer open={Boolean(editing)} title="Stok kartı düzenle" onClose={() => setEditing(null)} loading={loading}>{editing ? <StockCardEditForm stock={editing} onDone={() => setEditing(null)} /> : null}</FormDrawer>
       <FormDrawer open={Boolean(detailTarget)} title={`${detailTarget?.code ?? "Stok"} hareket detayları`} onClose={() => setDetailTarget(null)}>
         {detailTarget ? (
           <div className="space-y-4">
-            <div className="grid gap-3 md:grid-cols-3">
-              <StatCard title="Hareket bakiyesi" value={formatKg(data.stockMovements.filter((movement) => movement.stockId === detailTarget.id).reduce((sum, movement) => sum + (movement.direction === "IN" ? movement.quantity : -movement.quantity), 0))} helper="Giriş eksi çıkış" icon={Boxes} />
-              <StatCard title="Giriş" value={formatKg(data.stockMovements.filter((movement) => movement.stockId === detailTarget.id && movement.direction === "IN").reduce((sum, movement) => sum + movement.quantity, 0))} helper="Tüm girişler" icon={PackagePlus} tone="green" />
-              <StatCard title="Çıkış" value={formatKg(data.stockMovements.filter((movement) => movement.stockId === detailTarget.id && movement.direction === "OUT").reduce((sum, movement) => sum + movement.quantity, 0))} helper="Tüm çıkışlar" icon={Truck} tone="red" />
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-3">
+              <StatCard title="Hareket bakiyesi" value={formatKg(data.stockMovements.filter((movement) => movement.stockId === detailTarget.id).reduce((sum, movement) => sum + (movement.direction === "IN" ? movement.quantity : -movement.quantity), 0))} helper="Giriş eksi çıkış" icon={Boxes} compact />
+              <StatCard title="Giriş" value={formatKg(data.stockMovements.filter((movement) => movement.stockId === detailTarget.id && movement.direction === "IN").reduce((sum, movement) => sum + movement.quantity, 0))} helper="Tüm girişler" icon={PackagePlus} tone="green" compact />
+              <StatCard title="Çıkış" value={formatKg(data.stockMovements.filter((movement) => movement.stockId === detailTarget.id && movement.direction === "OUT").reduce((sum, movement) => sum + movement.quantity, 0))} helper="Tüm çıkışlar" icon={Truck} tone="red" compact />
             </div>
             <DataTable
               rows={data.stockMovements.filter((movement) => movement.stockId === detailTarget.id)}
@@ -1287,7 +1373,20 @@ export function PartiesPage() {
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Parti takibi" title="Partiler" description="İlk ham üretimden satışa kadar parti numarası, fire, depo ve timeline izleme." icon={Factory} action={<button className={primaryButton} onClick={() => setShiftOpen(true)} type="button"><PackageCheck className="size-4" />Parti kaydır</button>} />
-      <DataTable rows={data.parties} columns={columns} />
+      
+      <MobileHeroCard
+        eyebrow="Parti Takibi"
+        title="Aktif Partiler"
+        description="Üretim hattındaki ve depolardaki aktif partilerin izlenmesi."
+        metricLabel="Takip edilen"
+        metricValue={`${data.parties.filter(p => p.status !== 'Sevk Edildi').length} parti`}
+        helperText="Örmede ve boyahanede olanlar"
+        icon={Store}
+        tone="blue"
+        actionLabel="Parti kaydır"
+        onAction={() => setShiftOpen(true)}
+      />
+      <DataTable rows={data.parties} columns={columns} emptyActionLabel="Parti kaydır" onEmptyAction={() => setShiftOpen(true)} />
       <FormDrawer open={shiftOpen} title="Parti kaydırma" onClose={() => setShiftOpen(false)}>
         <PartyShiftForm onDone={() => setShiftOpen(false)} />
       </FormDrawer>
@@ -1357,11 +1456,11 @@ export function PartyDetailPage({ id }: { id: string }) {
   return (
     <div className='space-y-6'>
       <PageHeader eyebrow={'Parti ' + party.partyNo} title={order?.customerName ?? 'Parti detayı'} description='Sipariş, iplik tüketimi, fasoncu, boyahane, satış ve kalan kg zinciri.' icon={Factory} action={<StatusBadge tone={statusTone(party.status)}>{party.status}</StatusBadge>} />
-      <div className='grid gap-4 md:grid-cols-4'>
-        <StatCard title='Ham üretim' value={formatKg(party.rawProducedKg)} helper={formatKg(party.rawConsumedKg) + ' iplik tüketildi'} icon={Factory} />
-        <StatCard title='Ham fire' value={formatPercent(party.rawWastePercent)} helper={formatKg(party.rawWasteKg)} icon={BarChart3} tone='red' />
-        <StatCard title='Boyahane giriş' value={formatKg(party.dyehouseInputKg)} helper='Ham kumaş sevki' icon={Truck} tone='amber' />
-        <StatCard title='Mamül' value={formatKg(party.finishedKg)} helper={formatPercent(party.dyehouseWastePercent) + ' boyahane fire'} icon={Boxes} tone='green' />
+      <div className='grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4'>
+        <StatCard title='Ham üretim' value={formatKg(party.rawProducedKg)} helper={formatKg(party.rawConsumedKg) + ' iplik tüketildi'} icon={Factory} compact />
+        <StatCard title='Ham fire' value={formatPercent(party.rawWastePercent)} helper={formatKg(party.rawWasteKg)} icon={BarChart3} tone='red' compact />
+        <StatCard title='Boyahane giriş' value={formatKg(party.dyehouseInputKg)} helper='Ham kumaş sevki' icon={Truck} tone='amber' compact />
+        <StatCard title='Mamül' value={formatKg(party.finishedKg)} helper={formatPercent(party.dyehouseWastePercent) + ' boyahane fire'} icon={Boxes} tone='green' compact />
       </div>
       <PartyTimeline items={timeline} />
     </div>
@@ -1535,7 +1634,18 @@ export function TransfersPage() {
 
   return (
     <div className='space-y-6'>
+      {loading && data.transfers.length === 0 ? <MobilePageSkeleton kpiCount={0} cardCount={3} /> : null}
       <PageHeader eyebrow='Stok' title='Depolar Arası Transfer' description='İplik, ham veya mamül kumaşların depolar arası sevkiyat kaydı.' icon={Truck} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className='size-4' />Yeni transfer</button>} />
+      <MobileHeroCard
+        eyebrow="Transfer"
+        metricLabel="Transfer edilebilir stok"
+        metricValue={formatKg(data.warehouseBalances.reduce((sum, b) => sum + b.quantity, 0))}
+        helperText={`${data.warehouses.length} aktif depo`}
+        icon={Truck}
+        tone="blue"
+        actionLabel="Depo transferi başlat"
+        onAction={() => setOpen(true)}
+      />
       
       <div className='premium-card rounded-none p-5 mb-6'>
         <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
@@ -1562,7 +1672,7 @@ export function TransfersPage() {
             <button className='rounded-none border border-rose-100 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-100 transition-colors' onClick={() => setDeleteTarget(row)} type='button'>Sil</button>
           </div>
         )},
-      ]} searchPlaceholder='Kaynak depo, hedef depo veya açıklamada ara' getSearchText={(row) => [getName(data.warehouses, row.fromWarehouseId), getName(data.warehouses, row.toWarehouseId), row.description].join(' ')} />
+      ]} searchPlaceholder='Kaynak depo, hedef depo veya açıklamada ara' getSearchText={(row) => [getName(data.warehouses, row.fromWarehouseId), getName(data.warehouses, row.toWarehouseId), row.description].join(' ')} emptyActionLabel="Yeni transfer" onEmptyAction={() => setOpen(true)} />
       
       <FormDrawer open={open || !!editing} title={editing ? 'Transferi Düzenle' : 'Yeni Transfer'} onClose={() => { setOpen(false); setEditing(null); }} loading={loading}>
         <TransferForm initialData={editing || undefined} />
@@ -1638,11 +1748,11 @@ export function WasteAnalysisPage() {
     <div className='space-y-6'>
       <PageHeader eyebrow='Fire' title='Fire Analizi Dashboard' description='Sipariş bazlı toplam üretim, tüketim ve fire oranları.' icon={BarChart3} />
       
-      <div className='grid gap-4 md:grid-cols-4'>
-        <StatCard title='Ham fire ort.' value={formatPercent(metrics.avgRawWaste)} helper='Tüm üretimler toplamı' icon={BarChart3} tone='red' />
-        <StatCard title='Boyahane fire ort.' value={formatPercent(metrics.avgDyeWaste)} helper='Tüm boyahaneler toplamı' icon={BarChart3} tone='amber' />
-        <StatCard title='Toplam Fire kg' value={formatKg(metrics.wasteKg)} helper='Ham + Boyahane' icon={Factory} tone='red' />
-        <StatCard title='Toplam Üretim' value={formatKg(metrics.monthlyProductionKg)} helper='Ham + Mamül' icon={Boxes} tone='blue' />
+      <div className='grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4'>
+        <StatCard title='Ham fire ort.' value={formatPercent(metrics.avgRawWaste)} helper='Tüm üretimler toplamı' icon={BarChart3} tone='red' compact />
+        <StatCard title='Boyahane fire ort.' value={formatPercent(metrics.avgDyeWaste)} helper='Tüm boyahaneler toplamı' icon={BarChart3} tone='amber' compact />
+        <StatCard title='Toplam Fire kg' value={formatKg(metrics.wasteKg)} helper='Ham + Boyahane' icon={Factory} tone='red' compact />
+        <StatCard title='Toplam Üretim' value={formatKg(metrics.monthlyProductionKg)} helper='Ham + Mamül' icon={Boxes} tone='blue' compact />
       </div>
 
       <div className='premium-card rounded-none p-5 mb-6'>
@@ -1700,13 +1810,39 @@ export function WasteAnalysisPage() {
 }
 
 export function ReportsPage() {
-  const { data } = useErpData();
+  const { data, refresh } = useErpData();
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [stockTypeFilter, setStockTypeFilter] = useState("ALL");
+  const [snapshotDate, setSnapshotDate] = useState<string | null>(null);
+  const [snapshotData, setSnapshotData] = useState<any>(null);
+  const [loadingSnapshot, setLoadingSnapshot] = useState(false);
+
+  useEffect(() => {
+    if (snapshotDate) {
+      loadSnapshot(snapshotDate);
+    } else {
+      setSnapshotData(null);
+    }
+  }, [snapshotDate]);
+
+  async function loadSnapshot(date: string) {
+    setLoadingSnapshot(true);
+    try {
+      const res = await fetch(`/api/snapshots/${date}`);
+      const json = await res.json();
+      setSnapshotData(json.data);
+    } catch (e) {
+      toast.error("Snapshot yüklenemedi.");
+    } finally {
+      setLoadingSnapshot(false);
+    }
+  }
+
   const metrics = getDashboardMetrics(data);
   const totalSalesKg = data.sales.filter((sale) => sale.status !== "İptal").reduce((sum, sale) => sum + sale.quantityKg, 0);
   const openPurchaseKg = data.purchaseOrders.reduce((sum, order) => sum + order.totalRemainingKg, 0);
   const stockValue = data.stockCards.reduce((sum, stock) => sum + stock.currentStockKg, 0);
+
   const productionRows = data.parties.map((party) => {
     const order = data.orders.find((item) => item.id === party.orderId);
     return {
@@ -1720,6 +1856,7 @@ export function ReportsPage() {
       status: party.status,
     };
   }).filter((row) => statusFilter === "ALL" || row.status === statusFilter);
+
   const stockRows = data.stockCards
     .filter((stock) => stock.isActive)
     .filter((stock) => stockTypeFilter === "ALL" || stock.type === stockTypeFilter)
@@ -1732,6 +1869,7 @@ export function ReportsPage() {
       criticalStockKg: stock.criticalStockKg,
       risk: stock.criticalStockKg > 0 && stock.currentStockKg <= stock.criticalStockKg,
     }));
+
   const statuses = Array.from(new Set(data.parties.map((party) => party.status))).filter(Boolean);
 
   function exportCsv() {
@@ -1751,55 +1889,98 @@ export function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Raporlama" title="Gelişmiş ERP Raporları" description="Üretim, stok, satın alma, satış ve fire metrikleri canlı PostgreSQL verisinden hesaplanır." icon={BarChart3} action={<button className={primaryButton} onClick={exportCsv} type="button"><Download className="size-4" />CSV dışa aktar</button>} />
-      <div className="premium-card grid gap-4 rounded-none p-4 md:grid-cols-2">
-        <label className="space-y-2">
-          <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Parti durumu</span>
-          <select className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-            <option value="ALL">Tüm durumlar</option>
-            {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
-          </select>
-        </label>
-        <label className="space-y-2">
-          <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Stok tipi</span>
-          <select className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" value={stockTypeFilter} onChange={(event) => setStockTypeFilter(event.target.value)}>
-            <option value="ALL">Tüm stoklar</option>
-            <option value="IP">IP</option>
-            <option value="LYC">LYC</option>
-            <option value="POLY">POLY</option>
-            <option value="YM">YM</option>
-            <option value="MM">MM</option>
-          </select>
-        </label>
-      </div>
-      <div className="grid gap-4 md:grid-cols-4">
-        <StatCard title="Üretim kg" value={formatKg(metrics.monthlyProductionKg)} helper="Ham + mamül zinciri" icon={Factory} />
-        <StatCard title="Satış kg" value={formatKg(totalSalesKg)} helper="İptal dışı sevkiyat" icon={Truck} tone="green" />
-        <StatCard title="Açık satın alma" value={formatKg(openPurchaseKg)} helper="Bekleyen hammadde" icon={PackagePlus} tone="amber" />
-        <StatCard title="Stok toplamı" value={formatKg(stockValue)} helper="Aktif kart bakiyesi" icon={Boxes} tone="blue" />
-      </div>
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatCard title="Ham fire ort." value={formatPercent(metrics.avgRawWaste)} helper={formatKg(data.parties.reduce((sum, item) => sum + item.rawWasteKg, 0))} icon={BarChart3} tone="red" />
-        <StatCard title="Boyahane fire ort." value={formatPercent(metrics.avgDyeWaste)} helper={formatKg(data.parties.reduce((sum, item) => sum + item.dyehouseWasteKg, 0))} icon={BarChart3} tone="amber" />
-        <StatCard title="Kritik stok" value={String(stockRows.filter((row) => row.risk).length)} helper="Eşik altında kalan kart" icon={Boxes} tone="red" />
-      </div>
-      <DataTable rows={productionRows} columns={[
-        { header: "Parti", cell: (row) => row.partyNo },
-        { header: "Müşteri", cell: (row) => row.customerName },
-        { header: "Ham kg", cell: (row) => formatKg(row.rawKg) },
-        { header: "Mamül kg", cell: (row) => formatKg(row.finishedKg) },
-        { header: "Ham fire", cell: (row) => <StatusBadge tone={wasteTone(row.rawWaste)}>{formatPercent(row.rawWaste)}</StatusBadge> },
-        { header: "Boya fire", cell: (row) => <StatusBadge tone={wasteTone(row.dyeWaste)}>{formatPercent(row.dyeWaste)}</StatusBadge> },
-        { header: "Durum", cell: (row) => <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge> },
-      ]} />
-      <DataTable rows={stockRows} columns={[
-        { header: "Kod", cell: (row) => row.code },
-        { header: "Ad", cell: (row) => row.name },
-        { header: "Tip", cell: (row) => <StatusBadge tone={row.type === "MM" ? "green" : row.type === "YM" ? "blue" : "amber"}>{row.type}</StatusBadge> },
-        { header: "Stok", cell: (row) => formatKg(row.currentStockKg) },
-        { header: "Kritik", cell: (row) => formatKg(row.criticalStockKg) },
-        { header: "Risk", cell: (row) => <StatusBadge tone={row.risk ? "red" : "green"}>{row.risk ? "Kritik" : "Normal"}</StatusBadge> },
-      ]} />
+      <PageHeader 
+        eyebrow="Raporlama" 
+        title={snapshotDate ? `${formatDate(snapshotDate)} Snapshot Raporu` : "Gelişmiş ERP Raporları"} 
+        description={snapshotDate ? "Seçilen tarihli dondurulmuş veriler gösteriliyor." : "Üretim, stok, satın alma, satış ve fire metrikleri canlı PostgreSQL verisinden hesaplanır."} 
+        icon={BarChart3} 
+        action={
+          <div className="flex items-center gap-3">
+            <select 
+              className="rounded-none border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-blue-400"
+              value={snapshotDate || ""}
+              onChange={(e) => setSnapshotDate(e.target.value || null)}
+            >
+              <option value="">Canlı Veri</option>
+              {data.lastSnapshotDate && <option value={data.lastSnapshotDate}>{formatDate(data.lastSnapshotDate)} (Son)</option>}
+              {/* Daha fazla snapshot tarihi varsa buraya eklenebilir */}
+            </select>
+            <button className={primaryButton} onClick={exportCsv} type="button"><Download className="size-4" />CSV dışa aktar</button>
+          </div>
+        } 
+      />
+
+      {snapshotDate && snapshotData ? (
+        <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-500">
+          <div className="grid gap-4 md:grid-cols-3">
+            <StatCard title="Snapshot Envanter" value={formatKg(snapshotData.financial?.totalInventoryKg)} helper="Dondurulmuş bakiye" icon={Boxes} tone="blue" />
+            <StatCard title="Snapshot Açık Sipariş" value={formatKg(snapshotData.financial?.totalOpenOrdersKg)} helper="Dönem sonu yükü" icon={Factory} tone="amber" />
+            <StatCard title="Kayıt Tarihi" value={formatDate(snapshotData.financial?.createdAt)} helper="Sistem zaman damgası" icon={Camera} />
+          </div>
+
+          <DataTable 
+            rows={snapshotData.inventory} 
+            columns={[
+              { header: "Stok Kod", cell: (row: any) => row.stock_code },
+              { header: "Stok Ad", cell: (row: any) => row.stock_name },
+              { header: "Depo", cell: (row: any) => row.warehouse_name },
+              { header: "Parti / Lot", cell: (row: any) => row.party_no || row.lot_no || "-" },
+              { header: "Miktar kg", cell: (row: any) => <span className="font-bold text-slate-900">{formatKg(row.quantity_kg)}</span> },
+            ]} 
+          />
+        </div>
+      ) : (
+        <>
+          <div className="premium-card grid gap-4 rounded-none p-4 md:grid-cols-2">
+            <label className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Parti durumu</span>
+              <select className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                <option value="ALL">Tüm durumlar</option>
+                {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
+              </select>
+            </label>
+            <label className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Stok tipi</span>
+              <select className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50" value={stockTypeFilter} onChange={(event) => setStockTypeFilter(event.target.value)}>
+                <option value="ALL">Tüm stoklar</option>
+                <option value="IP">IP</option>
+                <option value="LYC">LYC</option>
+                <option value="POLY">POLY</option>
+                <option value="YM">YM</option>
+                <option value="MM">MM</option>
+              </select>
+            </label>
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+            <StatCard title="Üretim kg" value={formatKg(metrics.monthlyProductionKg)} helper="Ham + mamül zinciri" icon={Factory} compact />
+            <StatCard title="Satış kg" value={formatKg(totalSalesKg)} helper="İptal dışı sevkiyat" icon={Truck} tone="green" compact />
+            <StatCard title="Açık satın alma" value={formatKg(openPurchaseKg)} helper="Bekleyen hammadde" icon={PackagePlus} tone="amber" compact />
+            <StatCard title="Stok toplamı" value={formatKg(stockValue)} helper="Aktif kart bakiyesi" icon={Boxes} tone="blue" compact />
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
+            <StatCard title="Ham fire ort." value={formatPercent(metrics.avgRawWaste)} helper={formatKg(data.parties.reduce((sum, item) => sum + item.rawWasteKg, 0))} icon={BarChart3} tone="red" compact />
+            <StatCard title="Boyahane fire ort." value={formatPercent(metrics.avgDyeWaste)} helper={formatKg(data.parties.reduce((sum, item) => sum + item.dyehouseWasteKg, 0))} icon={BarChart3} tone="amber" compact />
+            <StatCard title="Kritik stok" value={String(stockRows.filter((row) => row.risk).length)} helper="Eşik altında kalan kart" icon={Boxes} tone="red" compact />
+          </div>
+          <DataTable rows={productionRows} columns={[
+            { header: "Parti", cell: (row) => row.partyNo },
+            { header: "Müşteri", cell: (row) => row.customerName },
+            { header: "Ham kg", cell: (row) => formatKg(row.rawKg) },
+            { header: "Mamül kg", cell: (row) => formatKg(row.finishedKg) },
+            { header: "Ham fire", cell: (row) => <StatusBadge tone={wasteTone(row.rawWaste)}>{formatPercent(row.rawWaste)}</StatusBadge> },
+            { header: "Boya fire", cell: (row) => <StatusBadge tone={wasteTone(row.dyeWaste)}>{formatPercent(row.dyeWaste)}</StatusBadge> },
+            { header: "Durum", cell: (row) => <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge> },
+          ]} />
+          <DataTable rows={stockRows} columns={[
+            { header: "Kod", cell: (row) => row.code },
+            { header: "Ad", cell: (row) => row.name },
+            { header: "Tip", cell: (row) => <StatusBadge tone={row.type === "MM" ? "green" : row.type === "YM" ? "blue" : "amber"}>{row.type}</StatusBadge> },
+            { header: "Stok", cell: (row) => formatKg(row.currentStockKg) },
+            { header: "Kritik", cell: (row) => formatKg(row.criticalStockKg) },
+            { header: "Risk", cell: (row) => <StatusBadge tone={row.risk ? "red" : "green"}>{row.risk ? "Kritik" : "Normal"}</StatusBadge> },
+          ]} />
+        </>
+      )}
     </div>
   );
 }
@@ -1818,15 +1999,25 @@ export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "
     settings: { title: "Ayarlar", desc: "Kumaş cinsi, renk, Ne, proses, depo, rol ve prefix tanımları.", icon: Settings },
   }[kind];
   if (kind === "sales") {
+    const [cancelTarget, setCancelTarget] = useState<Sale | null>(null);
     async function cancelSaleRecord(id: string) {
       try {
         await apiDelete(`/api/sales/${id}`);
         refreshInBackground(refresh);
+        setCancelTarget(null);
         toast.success("Sevkiyat iptal edildi ve stok iadesi işlendi.");
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Sevkiyat iptal edilemedi.");
       }
     }
+    const totalShippedKg = data.sales.reduce((sum, s) => sum + s.quantityKg, 0);
+    const thisMonthSales = data.sales.filter(s => {
+      const d = new Date(s.date || s.createdAt);
+      const now = new Date();
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
+    const thisMonthKg = thisMonthSales.reduce((sum, s) => sum + s.quantityKg, 0);
+    const uniqueCustomers = new Set(data.sales.map(s => s.customerName)).size;
     const columns: Column<Sale>[] = [
       { header: "Sevkiyat", cell: (row) => <span className="font-semibold text-blue-700">{row.saleNo}</span> },
       { header: "Müşteri", cell: (row) => row.customerName },
@@ -1834,13 +2025,38 @@ export function SimpleModulePage({ kind }: { kind: "warehouses" | "partners" | "
       { header: "Depo", cell: (row) => getName(data.warehouses, row.warehouseId) },
       { header: "Kg", cell: (row) => formatKg(row.quantityKg) },
       { header: "Durum", cell: (row) => <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge> },
-      { header: "İşlem", cell: (row) => <button className={dangerButton} onClick={() => cancelSaleRecord(row.id)} type="button">İptal/iade</button> },
+      { header: "İşlem", cell: (row) => <button className={dangerButton} onClick={() => setCancelTarget(row)} type="button">İptal/iade</button> },
     ];
     return (
       <div className="space-y-6">
+        {loading && data.sales.length === 0 ? <MobilePageSkeleton kpiCount={3} cardCount={5} /> : null}
         <PageHeader eyebrow="Satış" title={map.title} description={map.desc} icon={map.icon} action={<button className={primaryButton} onClick={() => setOpen(true)}><Plus className="size-4" />Sevkiyat</button>} />
-        <DataTable rows={data.sales} columns={columns} />
+        <MobileHeroCard
+          eyebrow="Sevkiyat"
+          metricLabel="Bu ay sevk edilen"
+          metricValue={formatKg(thisMonthKg)}
+          helperText={`${thisMonthSales.length} sevkiyat · ${uniqueCustomers} müşteri`}
+          icon={Truck}
+          tone="green"
+          actionLabel="Yeni sevkiyat"
+          onAction={() => setOpen(true)}
+        />
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
+          <StatCard title="Toplam sevk" value={formatKg(totalShippedKg)} helper={`${data.sales.length} sevkiyat kaydı`} icon={Truck} tone="green" compact />
+          <StatCard title="Bu ay" value={formatKg(thisMonthKg)} helper={`${thisMonthSales.length} sevkiyat`} icon={PackageCheck} tone="blue" compact />
+          <StatCard title="Müşteri" value={String(uniqueCustomers)} helper="Aktif sevk edilen" icon={Users} compact />
+        </div>
+        <DataTable rows={data.sales} columns={columns} emptyActionLabel="Yeni sevkiyat" onEmptyAction={() => setOpen(true)} />
         <FormDrawer open={open} title="Satış / sevkiyat kaydı" onClose={() => setOpen(false)} loading={loading}><SaleForm /></FormDrawer>
+        <ConfirmModal
+          open={Boolean(cancelTarget)}
+          title="Sevkiyat iptal edilsin mi?"
+          description={`${cancelTarget?.saleNo ?? "Bu sevkiyat"} iptal edilirse stok iadesi otomatik yapılacaktır.`}
+          confirmLabel="İptal Et"
+          tone="danger"
+          onClose={() => setCancelTarget(null)}
+          onConfirm={() => cancelTarget && cancelSaleRecord(cancelTarget.id)}
+        />
       </div>
     );
   }
@@ -2200,6 +2416,28 @@ export function PrefixCountersPage() {
 
 const developmentTimeline = [
   {
+    date: "2026-05-09",
+    title: "Mimari Standardizasyon ve Performans Katmanı",
+    summary: "ERP çekirdek mimarisi modüler servis yapısına taşındı, dashboard hızı için Aggregate Reporting katmanı eklendi ve durum yönetim kuralları kesinleştirildi.",
+    items: [
+      "Read servisleri modüler endpoint mimarisine taşınarak gereksiz veri yükü engellendi. (erp-read-service.ts)",
+      "Write servisleri domain bazlı (Purchase, Production, Sales, Transfer) parçalanarak kod sürdürülebilirliği artırıldı.",
+      "Stok hareketleri ve bakiyeler için bağımsız Movement/Balance motoru ayrıldı.",
+      "Veri bütünlüğü doğrulamaları (Integrity Validation) merkezi bir servise toplandı.",
+      "Operational Lifecycle servisi ile insert/update/delete sonrası otomatik temizlik ve durum hesaplama standardı kuruldu.",
+      "Müşteri siparişi durumları (Kısmi Sevk, Mamül Hazır vb.) gerçek miktar verilerine göre kesinleştirildi.",
+      "Hammadde siparişi durumları (Kısmi Geldi, Tamamlandı) mal kabul miktarlarına göre otomatik hesaplanmaya başlandı.",
+      "Sipariş Zaman Tüneli (Audit Timeline) ile bir siparişin tüm yaşam döngüsü izlenebilir hale getirildi.",
+      "Dashboard performansı için Aggregate Reporting Layer (Özet Rapor Katmanı) kuruldu; ağır sorgular snapshot tablolarına taşındı.",
+      "Bozulan projeksiyon verilerini tamir etmek için Integrity Rebuild Center (Repair Tool) altyapısı eklendi.",
+      "Smoke Test ve ERP Flow Test altyapısı ile operasyonel zincirin doğruluğu otomatik test edilebilir hale getirildi.",
+      "Financial & Inventory Snapshot Layer ile dönem sonu stok ve sipariş verilerinin dondurulması sağlandı.",
+      "Immutable Snapshot Architecture ile tarihsel raporların değiştirilemezliği garanti altına alındı.",
+      "Snapshot Reports entegrasyonu ile geçmiş dönem envanterine anlık erişim sağlandı.",
+      "Period Closing Infrastructure ile snapshot sonrası operasyonel kilit önerisi sistemi kuruldu.",
+    ],
+  },
+  {
     date: "2026-05-05",
     title: "Hareket Bazlı ERP Mimarisi ve Tam İzlenebilirlik",
     summary: "Stok takibi sabit işlem sırası mantığından çıkarılarak hareket bazlı ilişki (parent/source movement) modeline taşındı.",
@@ -2280,6 +2518,11 @@ const pendingRoadmap = [
     title: "Tamir Üretimi (Uzun Vadeli)",
     description: "Hatalı çıkan veya boyadan dönen ürünlerin tamir süreçlerinin, fire ve maliyet etkileriyle beraber sistemde takip edilmesi.",
   },
+  {
+    priority: "P2",
+    title: "Mimari Modernizasyon: Modüler Veri Yükleme",
+    description: "Uygulamanın her sayfa açılışında tüm veri tabanını çekmesi yerine, modüler yapıya geçilmesi. Liste sayfalarının sadece kendi verilerini çekerek anlık açılması, formların ise gerekli verileri o an çekmesi sağlanacak. (Geç cevap verme sorununu kalıcı olarak çözer)",
+  },
 ];
 
 export function RoadmapPage() {
@@ -2297,7 +2540,7 @@ export function RoadmapPage() {
         <StatCard title="Proje ilerleme" value={`%${completion}`} helper="Müşteri demosu için güçlü MVP seviyesinde" icon={CheckCircle2} tone="green" />
         <StatCard title="Tamamlanan başlık" value={String(completedMilestones.length)} helper="Ana ERP modülleri ve altyapı" icon={BookOpen} />
         <StatCard title="Bekleyen öncelik" value={String(pendingRoadmap.length)} helper="Üretimleşme ve derinleşme işleri" icon={SlidersHorizontal} tone="amber" />
-        <StatCard title="Son güncelleme" value="04.05.2026" helper="Gün bazında takip edilir" icon={Settings} tone="blue" />
+        <StatCard title="Son güncelleme" value="09.05.2026" helper="Gün bazında takip edilir" icon={Settings} tone="blue" />
       </div>
 
       <div className="premium-card rounded-none p-5">
@@ -2950,6 +3193,132 @@ export function ProjectSettingsPage() {
                 <option value="center">Tam Ekran</option>
               </select>
             </Field>
+          </div>
+        </div>
+
+        {/* Operasyonel Kilit ve Güvenlik */}
+        <div className="premium-card rounded-3xl p-6 space-y-6 lg:col-span-2">
+          <div className="flex items-center gap-3 border-b border-slate-50 pb-4">
+            <div className="grid size-10 place-items-center rounded-none bg-red-50 text-red-600">
+              <Lock className="size-5" />
+            </div>
+            <h2 className="font-bold text-slate-950">Operasyonel Kilit (Period Lock)</h2>
+          </div>
+          <div className="grid gap-6 md:grid-cols-3 items-end">
+            <label className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-100 cursor-pointer hover:bg-white transition-colors group">
+              <input 
+                type="checkbox" 
+                checked={settings.operationLockActive || false} 
+                onChange={(e) => updateField("operationLockActive", e.target.checked)}
+                className="size-5 rounded-none border-slate-300 text-red-600 focus:ring-red-500" 
+              />
+              <div>
+                <span className="block text-sm font-bold text-slate-900">Kilit Aktif</span>
+                <span className="text-xs text-slate-500">Geçmişe dönük işlem engellenir.</span>
+              </div>
+            </label>
+            
+            <Field label="Kilit Tarihi">
+              <input 
+                type="date" 
+                value={settings.operationLockDate || ""} 
+                onChange={(e) => updateField("operationLockDate", e.target.value)} 
+                className={inputClass} 
+              />
+            </Field>
+
+            <Field label="Kilit Muafiyet Rolü">
+              <select 
+                value={settings.lockOverrideRoleId || ""} 
+                onChange={(e) => updateField("lockOverrideRoleId", e.target.value)} 
+                className={inputClass}
+              >
+                <option value="">Muafiyet Yok</option>
+                {data.roles.map(role => (
+                  <option key={role.id} value={role.id}>{role.name}</option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          <p className="rounded-none bg-amber-50 p-4 text-xs leading-5 text-amber-800 border-l-4 border-amber-400">
+            <strong>Önemli:</strong> Kilit aktif edildiğinde, seçilen tarih ve öncesine ait tüm operasyonel kayıtlar (Sipariş, Üretim, Sevkiyat, Transfer) üzerinde düzenleme ve silme işlemleri engellenir. Admin rolleri bu kısıtlamadan muaftır.
+          </p>
+        </div>
+
+        {/* Snapshot ve Dönem Kapanışı */}
+        <div className="premium-card rounded-3xl p-6 space-y-6 lg:col-span-2">
+          <div className="flex items-center justify-between border-b border-slate-50 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="grid size-10 place-items-center rounded-none bg-emerald-50 text-emerald-600">
+                <Camera className="size-5" />
+              </div>
+              <div>
+                <h2 className="font-bold text-slate-950">Snapshot ve Dönem Kapanışı</h2>
+                <p className="text-xs text-slate-500">Mevcut stok ve sipariş durumunu dondurarak tarihsel kayıt oluşturun.</p>
+              </div>
+            </div>
+            {data.lastSnapshotDate && (
+              <div className="text-right">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Son Snapshot</p>
+                <p className="text-sm font-bold text-emerald-600">{formatDate(data.lastSnapshotDate)}</p>
+              </div>
+            )}
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-4 rounded-none border border-slate-100 bg-slate-50/50 p-6">
+              <h3 className="text-sm font-bold text-slate-900">Yeni Snapshot Oluştur</h3>
+              <p className="text-xs leading-5 text-slate-500">
+                Snapshot oluşturulduğunda o anki tüm stok bakiyeleri, açık siparişler ve finansal özetler kalıcı olarak kaydedilir.
+              </p>
+              <div className="flex gap-3">
+                <input 
+                  type="date" 
+                  defaultValue={new Date().toISOString().slice(0, 10)}
+                  id="snapshot-date-input"
+                  className={inputClass} 
+                />
+                <button 
+                  type="button"
+                  className={primaryButton}
+                  onClick={async () => {
+                    const date = (document.getElementById('snapshot-date-input') as HTMLInputElement).value;
+                    if (!date) return toast.error("Tarih seçiniz.");
+                    try {
+                      await postJson("/api/snapshots", { snapshotDate: date });
+                      toast.success("Snapshot başarıyla oluşturuldu.");
+                      refresh();
+                    } catch (e: any) {
+                      toast.error(e.message);
+                    }
+                  }}
+                >
+                  Çalıştır
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-slate-900">Önemli Hatırlatma</h3>
+              <div className="rounded-none border-l-4 border-blue-400 bg-blue-50 p-4">
+                <p className="text-xs leading-5 text-blue-800">
+                  Snapshot oluşturduktan sonra, ilgili dönemi <strong>Operasyonel Kilit</strong> ile kapatmanız önerilir. Bu sayede tarihsel verilerin tutarlılığı korunur.
+                </p>
+                {data.lastSnapshotDate && !settings.operationLockActive && (
+                  <button 
+                    type="button"
+                    className="mt-3 text-xs font-bold text-blue-700 underline"
+                    onClick={() => {
+                      updateField("operationLockActive", true);
+                      updateField("operationLockDate", data.lastSnapshotDate);
+                      toast.info("Kilit ayarları son snapshot tarihine göre güncellendi. Kaydetmeyi unutmayın.");
+                    }}
+                  >
+                    Dönemi şimdi kilitle
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 

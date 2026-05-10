@@ -1,15 +1,16 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { AlertTriangle, Boxes, CheckCircle2, Factory, Layout, PackageCheck, Plus, Search, Users, X, Truck, ShoppingCart, SlidersHorizontal } from "lucide-react";
+import { AlertTriangle, Boxes, CheckCircle2, Factory, Layout, PackageCheck, Plus, Search, Users, X, Truck, ShoppingCart, SlidersHorizontal, Warehouse as WarehouseIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useErpData } from "@/components/erp-data-provider";
 import { calculateDyehouseWaste, calculateRawWaste, getName } from "@/services/erp-service";
 import { cn, formatKg, formatPercent, normalizeItems, patchJson, postJson } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
+import { MobileFormSection } from "@/components/ui/mobile-form-section";
 import type { DyehouseProduction, ErpData, NamedEntity, Order, Partner, PurchaseOrder, PurchaseReceipt, RawProduction, Role, Sale, StockCard, Transfer, UserProfile, Warehouse } from "@/types/erp";
 
-const inputClass = "w-full rounded-none border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50";
+const inputClass = "w-full rounded-none border border-slate-200 bg-white px-3 py-3 text-base sm:text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-50 min-h-[44px]";
 const labelClass = "text-xs font-bold uppercase tracking-[0.14em] text-slate-400";
 
 interface ApiResponse<T = unknown> {
@@ -84,7 +85,7 @@ function applySettingResult(current: ErpData, entity: SettingEntity, value: unkn
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="space-y-2">
+    <label className="space-y-1.5 sm:space-y-2">
       <span className={labelClass}>{label}</span>
       {children}
     </label>
@@ -93,9 +94,11 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function FormButton({ loading, children }: { loading: boolean; children: React.ReactNode }) {
   return (
-    <button className="rounded-none bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-100 disabled:cursor-not-allowed disabled:opacity-60" disabled={loading} type="submit">
-      {loading ? "Kaydediliyor..." : children}
-    </button>
+    <div className="mobile-sticky-action">
+      <button className="w-full sm:w-auto rounded-none bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-100 disabled:cursor-not-allowed disabled:opacity-60 min-h-[44px]" disabled={loading} type="submit">
+        {loading ? "Kaydediliyor..." : children}
+      </button>
+    </div>
   );
 }
 
@@ -951,41 +954,55 @@ export function PurchaseReceiptForm({ initialData, onDone }: { initialData?: Pur
     }
   }
   return (
-    <form className="grid gap-4" onSubmit={submit}>
-      <Field label="Hammadde siparişi">
-        <select 
-          className={inputClass} 
-          name="purchaseOrderId" 
-          value={purchaseOrderId}
-          onChange={(e) => setPurchaseOrderId(e.target.value)}
-          required
-        >
-          <option value="" disabled>Seçiniz</option>
-          {data.purchaseOrders
-            .filter((item) => item.status !== "Tamamlandı" || item.id === initialData?.purchaseOrderId)
-            .map((item) => (
-              <option key={item.id} value={item.id}>{getPurchaseReceiptOptionLabel(item)}</option>
-            ))}
-        </select>
-      </Field>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Mal kabul tarihi"><input className={inputClass} name="receiptDate" type="date" defaultValue={initialData?.receiptDate || new Date().toISOString().slice(0, 10)} required /></Field>
-        <Field label="Depo">
+    <form className="grid gap-6" onSubmit={submit}>
+      <MobileFormSection title="Hammadde Siparişi" icon={ShoppingCart} tone="blue">
+        <Field label="Hammadde siparişi">
           <select 
             className={inputClass} 
-            name="warehouseId" 
-            value={warehouseId} 
-            onChange={(e) => setWarehouseId(e.target.value)}
+            name="purchaseOrderId" 
+            value={purchaseOrderId}
+            onChange={(e) => setPurchaseOrderId(e.target.value)}
             required
           >
             <option value="" disabled>Seçiniz</option>
-            {data.warehouses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            {data.purchaseOrders
+              .filter((item) => item.status !== "Tamamlandı" || item.id === initialData?.purchaseOrderId)
+              .map((item) => (
+                <option key={item.id} value={item.id}>{getPurchaseReceiptOptionLabel(item)}</option>
+              ))}
           </select>
         </Field>
-        <Field label="Gelen kg"><input className={inputClass} name="receivedKg" type="number" step="0.01" defaultValue={initialData?.items?.[0]?.receivedKg} required /></Field>
-        <Field label="Lot no (Girmek zorunludur)"><input className={inputClass} name="lotNo" defaultValue={initialData?.items?.[0]?.lotNo || ""} required /></Field>
-      </div>
-      <Field label="Açıklama"><textarea className={inputClass} name="description" rows={3} defaultValue={initialData?.description || ""} /></Field>
+      </MobileFormSection>
+
+      <MobileFormSection title="Tarih ve Depo" icon={WarehouseIcon} tone="amber">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Mal kabul tarihi"><input className={inputClass} name="receiptDate" type="date" defaultValue={initialData?.receiptDate || new Date().toISOString().slice(0, 10)} required /></Field>
+          <Field label="Depo">
+            <select 
+              className={inputClass} 
+              name="warehouseId" 
+              value={warehouseId} 
+              onChange={(e) => setWarehouseId(e.target.value)}
+              required
+            >
+              <option value="" disabled>Seçiniz</option>
+              {data.warehouses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+          </Field>
+        </div>
+      </MobileFormSection>
+
+      <MobileFormSection title="Miktar ve Lot" icon={Boxes} tone="purple">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Gelen kg"><input className={inputClass} name="receivedKg" type="number" step="0.01" defaultValue={initialData?.items?.[0]?.receivedKg} required /></Field>
+          <Field label="Lot no (Girmek zorunludur)"><input className={inputClass} name="lotNo" defaultValue={initialData?.items?.[0]?.lotNo || ""} required /></Field>
+        </div>
+      </MobileFormSection>
+
+      <MobileFormSection title="Açıklama" icon={SlidersHorizontal} tone="slate">
+        <Field label="Açıklama"><textarea className={inputClass} name="description" rows={3} defaultValue={initialData?.description || ""} /></Field>
+      </MobileFormSection>
+
       <FormButton loading={loading}>{initialData ? "Mal kabul güncelle" : "Mal kabul kaydet"}</FormButton>
     </form>
   );
@@ -1048,46 +1065,58 @@ export function DirectPurchaseForm({ initialData, onDone }: { initialData?: Purc
     }
   }
   return (
-    <form className="grid gap-4" onSubmit={submit}>
+    <form className="grid gap-6" onSubmit={submit}>
       <div className="rounded-none bg-blue-50 p-4 text-sm text-blue-800">
         Bu ekran müşteri siparişinden bağımsız IP, LYC, POLY veya YM ham kumaş alışı içindir. {initialData ? "Güncelleme yapıldığında ilgili stok hareketleri ve bakiye revize edilir." : "Kaydettiğinde sistem tamamlanmış hammadde siparişi, mal kabul ve stok giriş hareketini birlikte oluşturur."}
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Satıcı">
-          <select 
-            className={inputClass} 
-            name="supplierId" 
-            value={supplierId} 
-            onChange={(e) => setSupplierId(e.target.value)}
-            required
-          >
+      <MobileFormSection title="Satıcı ve Depo" icon={Users} tone="blue">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Satıcı">
+            <select 
+              className={inputClass} 
+              name="supplierId" 
+              value={supplierId} 
+              onChange={(e) => setSupplierId(e.target.value)}
+              required
+            >
+              <option value="" disabled>Seçiniz</option>
+              {data.partners.filter((item) => item.type === "SUPPLIER").map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+          </Field>
+          <Field label="Alış tarihi"><input className={inputClass} name="receiptDate" type="date" defaultValue={initialData?.receiptDate || new Date().toISOString().slice(0, 10)} required /></Field>
+          <Field label="Giriş deposu">
+            <select 
+              className={inputClass} 
+              name="warehouseId" 
+              value={warehouseId} 
+              onChange={(e) => setWarehouseId(e.target.value)}
+              required
+            >
+              <option value="" disabled>Seçiniz</option>
+              {data.warehouses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+          </Field>
+        </div>
+      </MobileFormSection>
+      <MobileFormSection title="Stok ve Lot" icon={Boxes} tone="purple">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Stok"><select className={inputClass} name="stockId" defaultValue={item?.stockId || ""} required>
             <option value="" disabled>Seçiniz</option>
-            {data.partners.filter((item) => item.type === "SUPPLIER").map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-          </select>
-        </Field>
-        <Field label="Stok"><select className={inputClass} name="stockId" defaultValue={item?.stockId || ""} required>
-          <option value="" disabled>Seçiniz</option>
-          {rawMaterialStocks.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}
-        </select></Field>
-        <Field label="Alış tarihi"><input className={inputClass} name="receiptDate" type="date" defaultValue={initialData?.receiptDate || new Date().toISOString().slice(0, 10)} required /></Field>
-        <Field label="Giriş deposu">
-          <select 
-            className={inputClass} 
-            name="warehouseId" 
-            value={warehouseId} 
-            onChange={(e) => setWarehouseId(e.target.value)}
-            required
-          >
-            <option value="" disabled>Seçiniz</option>
-            {data.warehouses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-          </select>
-        </Field>
-        <Field label="Gelen kg"><input className={inputClass} name="quantityKg" type="number" step="0.01" defaultValue={item?.receivedKg} required /></Field>
-        <Field label="Birim fiyat"><input className={inputClass} name="unitPrice" type="number" step="0.01" defaultValue={item?.unitPrice} /></Field>
-        <Field label="Para birimi"><select className={inputClass} name="currency" defaultValue={initialData?.currency || "TRY"}><option>TRY</option><option>USD</option><option>EUR</option></select></Field>
-        <Field label="Lot no (Girmek zorunludur)"><input className={inputClass} name="lotNo" defaultValue={item?.lotNo || ""} required /></Field>
-      </div>
-      <Field label="Açıklama"><textarea className={inputClass} name="description" rows={3} defaultValue={initialData?.description || ""} /></Field>
+            {rawMaterialStocks.map((item) => <option key={item.id} value={item.id}>{item.code} - {item.name}</option>)}
+          </select></Field>
+          <Field label="Lot no (Girmek zorunludur)"><input className={inputClass} name="lotNo" defaultValue={item?.lotNo || ""} required /></Field>
+        </div>
+      </MobileFormSection>
+      <MobileFormSection title="Miktar ve Fiyat" icon={PackageCheck} tone="green">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field label="Gelen kg"><input className={inputClass} name="quantityKg" type="number" step="0.01" defaultValue={item?.receivedKg} required /></Field>
+          <Field label="Birim fiyat"><input className={inputClass} name="unitPrice" type="number" step="0.01" defaultValue={item?.unitPrice} /></Field>
+          <Field label="Para birimi"><select className={inputClass} name="currency" defaultValue={initialData?.currency || "TRY"}><option>TRY</option><option>USD</option><option>EUR</option></select></Field>
+        </div>
+      </MobileFormSection>
+      <MobileFormSection title="Açıklama" icon={SlidersHorizontal} tone="slate">
+        <Field label="Açıklama"><textarea className={inputClass} name="description" rows={3} defaultValue={initialData?.description || ""} /></Field>
+      </MobileFormSection>
       <FormButton loading={loading}>{initialData ? "Güncelle" : "Hammadde alışını kaydet"}</FormButton>
     </form>
   );
@@ -1123,15 +1152,16 @@ export function TransferForm({ initialData }: { initialData?: Transfer }) {
   }
 
   return (
-    <form className='grid gap-4' onSubmit={submit}>
-      <div className='grid gap-4 sm:grid-cols-2'>
-        <Field label='Tarih'><input className={inputClass} name='date' type='date' defaultValue={initialData?.date || new Date().toISOString().slice(0, 10)} required /></Field>
-        <Field label='Kaynak Depo'><select className={inputClass} name='fromWarehouseId' value={formState.fromWarehouseId} onChange={e => setFormState({...formState, fromWarehouseId: e.target.value})} required>{data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></Field>
-        <Field label='Hedef Depo'><select className={inputClass} name='toWarehouseId' defaultValue={initialData?.toWarehouseId || fd?.defaultSecondWarehouseId} required><option value="">Seçiniz</option>{data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></Field>
-      </div>
-      <div className='premium-card p-4 rounded-none bg-slate-50 border border-slate-100'>
-         <h3 className='text-xs font-bold uppercase text-slate-400 mb-3 tracking-wider'>Transfer Kalemleri</h3>
-         <div className='space-y-2'>
+    <form className='grid gap-6' onSubmit={submit}>
+      <MobileFormSection title='Kaynak ve Hedef Depo' icon={Truck} tone='blue'>
+        <div className='grid gap-4 sm:grid-cols-3'>
+          <Field label='Tarih'><input className={inputClass} name='date' type='date' defaultValue={initialData?.date || new Date().toISOString().slice(0, 10)} required /></Field>
+          <Field label='Kaynak Depo'><select className={inputClass} name='fromWarehouseId' value={formState.fromWarehouseId} onChange={e => setFormState({...formState, fromWarehouseId: e.target.value})} required>{data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></Field>
+          <Field label='Hedef Depo'><select className={inputClass} name='toWarehouseId' defaultValue={initialData?.toWarehouseId || fd?.defaultSecondWarehouseId} required><option value="">Seçiniz</option>{data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></Field>
+        </div>
+      </MobileFormSection>
+      <MobileFormSection title='Transfer Kalemleri' icon={Boxes} tone='purple'>
+        <div className='space-y-2'>
             {items.map((it, idx) => (
               <div key={idx} className='flex gap-3 items-center bg-white p-3 rounded-none shadow-sm border border-slate-100'>
                 <div className='flex-1'>
@@ -1174,8 +1204,10 @@ export function TransferForm({ initialData }: { initialData?: Transfer }) {
               </div>
             </div>
          </div>
-      </div>
-      <Field label='Açıklama'><textarea className={inputClass} name='description' defaultValue={initialData?.description} rows={2} /></Field>
+      </MobileFormSection>
+      <MobileFormSection title='Açıklama' icon={SlidersHorizontal} tone='slate'>
+        <Field label='Açıklama'><textarea className={inputClass} name='description' defaultValue={initialData?.description} rows={2} /></Field>
+      </MobileFormSection>
       <FormButton loading={loading}>{initialData ? 'Güncelle' : 'Transferi Başlat'}</FormButton>
     </form>
   );
@@ -1493,159 +1525,153 @@ export function RawProductionForm({ initialData }: { initialData?: RawProduction
 
   return (
     <form className={cn("grid gap-8 w-full", isWide ? "lg:grid-cols-2 xl:grid-cols-4" : "grid-cols-1")} onSubmit={submit}>
-      {/* 1. Kolon: Temel Üretim Bilgileri */}
-      <div className='space-y-6 min-w-0 overflow-hidden'>
-        <div className='flex items-center gap-3 border-b border-slate-50 pb-3'>
-          <div className='grid size-8 place-items-center rounded-none bg-blue-50 text-blue-600'>
-            <Factory className='size-4' />
+      {/* 1. Kolon: Üretim Temelleri & Teknik Bilgiler */}
+      <div className='space-y-8 min-w-0 overflow-hidden'>
+        <MobileFormSection title="Sipariş / Parti" icon={ShoppingCart} tone="blue">
+          <div className='grid gap-4'>
+            <Field label='Tarih'><input className={inputClass} name='date' type='date' defaultValue={initialData?.date || new Date().toISOString().slice(0, 10)} required /></Field>
+            <Field label='Sipariş'><OrderSelect value={orderId} onChange={setOrderId} required /></Field>
+            <Field label='Parti No (Manuel)'><input className={inputClass} value={partyNo} onChange={e => setPartyNo(e.target.value)} placeholder="Parti No yazınız..." required /></Field>
           </div>
-          <h3 className='text-sm font-bold text-slate-900'>Üretim Kaydı</h3>
-        </div>
-        
-        <div className='grid gap-4'>
-          <Field label='Tarih'><input className={inputClass} name='date' type='date' defaultValue={initialData?.date || new Date().toISOString().slice(0, 10)} required /></Field>
-          <Field label='Sipariş'><OrderSelect value={orderId} onChange={setOrderId} required /></Field>
-          <Field label='Parti No (Manuel)'><input className={inputClass} value={partyNo} onChange={e => setPartyNo(e.target.value)} placeholder="Parti No yazınız..." required /></Field>
-        <Field label='Fasoncu (Örmeci)'>
-          <select 
-            className={inputClass} 
-            name='knitterPartnerId' 
-            value={knitterPartnerId} 
-            onChange={e => setKnitterPartnerId(e.target.value)}
-            required
-          >
-            <option value="">Seçiniz</option>
-            {data.partners.filter(p => p.type === 'KNITTER').map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-        </Field>
-        <Field label='Ham Giriş Deposu'>
-          <select 
-            className={inputClass} 
-            name='warehouseId' 
-            value={warehouseId} 
-            onChange={e => setWarehouseId(e.target.value)}
-            required
-          >
-            <option value="">Seçiniz</option>
-            {data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-          </select>
-        </Field>
+        </MobileFormSection>
+
+        <MobileFormSection title="Fasoncu ve Depo" icon={WarehouseIcon} tone="amber">
+          <div className='grid gap-4'>
+            <Field label='Fasoncu (Örmeci)'>
+              <select 
+                className={inputClass} 
+                name='knitterPartnerId' 
+                value={knitterPartnerId} 
+                onChange={e => setKnitterPartnerId(e.target.value)}
+                required
+              >
+                <option value="">Seçiniz</option>
+                {data.partners.filter(p => p.type === 'KNITTER').map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </Field>
+            <Field label='Ham Giriş Deposu'>
+              <select 
+                className={inputClass} 
+                name='warehouseId' 
+                value={warehouseId} 
+                onChange={e => setWarehouseId(e.target.value)}
+                required
+              >
+                <option value="">Seçiniz</option>
+                {data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+              </select>
+            </Field>
+          </div>
+        </MobileFormSection>
+
+        <MobileFormSection title="Teknik Bilgiler" icon={SlidersHorizontal} tone="slate">
           <div className="grid grid-cols-2 gap-4">
             <Field label='Ham En'><input className={inputClass} type='number' value={rawWidth} onChange={e => setRawWidth(e.target.value)} required /></Field>
             <Field label='Ham Gr.'><input className={inputClass} type='number' value={rawGsm} onChange={e => setRawGsm(e.target.value)} required /></Field>
           </div>
+        </MobileFormSection>
+
+        <MobileFormSection title="Üretilen Ham" icon={PackageCheck} tone="green">
           <Field label='Üretilen Ham (Kg)'><input className={inputClass} type='number' value={producedRawKg} onChange={e => setProducedRawKg(e.target.value)} required /></Field>
-        </div>
+        </MobileFormSection>
       </div>
 
       {/* 2. Kolon: Tüketilen Kalemler Listesi */}
-      <div className='space-y-6 min-w-0 overflow-hidden'>
-        <div className='flex items-center gap-3 border-b border-slate-50 pb-3'>
-          <div className='grid size-8 place-items-center rounded-none bg-emerald-50 text-emerald-600'>
-            <Boxes className='size-4' />
-          </div>
-          <h3 className='text-sm font-bold text-slate-900'>Mevcut Tüketimler</h3>
-        </div>
-
-        <div className='premium-card p-4 rounded-none bg-slate-50 border border-slate-100 h-full max-h-[500px] overflow-y-auto custom-scrollbar space-y-3'>
-          {consumedItems.length === 0 ? (
-            <div className='flex flex-col items-center justify-center h-40 text-slate-400'>
-              <Boxes className='size-8 opacity-20 mb-2' />
-              <p className='text-xs font-medium'>Tüketim eklenmedi</p>
-            </div>
-          ) : (
-            consumedItems.map((item, idx) => (
-              <div key={idx} className='flex gap-3 items-center bg-white p-3 shadow-sm border border-slate-100'>
-                <div className='flex-1'>
-                  <div className='text-xs font-bold text-slate-900'>{getName(data.stockCards, item.stockId)}</div>
-                  <div className='text-[9px] font-bold text-slate-400 uppercase mt-0.5'>
-                    {getName(data.warehouses, item.warehouseId)} {item.lotNo ? `· ${item.lotNo}` : ''}
+      <div className='min-w-0 overflow-hidden'>
+        <MobileFormSection title="Mevcut Tüketimler" icon={Boxes} tone="green">
+          <div className='premium-card p-4 rounded-none bg-slate-50 border border-slate-100 h-full max-h-[600px] overflow-y-auto custom-scrollbar space-y-3'>
+            {consumedItems.length === 0 ? (
+              <div className='flex flex-col items-center justify-center h-40 text-slate-400'>
+                <Boxes className='size-8 opacity-20 mb-2' />
+                <p className='text-xs font-medium'>Tüketim eklenmedi</p>
+              </div>
+            ) : (
+              consumedItems.map((item, idx) => (
+                <div key={idx} className='flex gap-3 items-center bg-white p-3 shadow-sm border border-slate-100'>
+                  <div className='flex-1'>
+                    <div className='text-xs font-bold text-slate-900'>{getName(data.stockCards, item.stockId)}</div>
+                    <div className='text-[9px] font-bold text-slate-400 uppercase mt-0.5'>
+                      {getName(data.warehouses, item.warehouseId)} {item.lotNo ? `· ${item.lotNo}` : ''}
+                    </div>
+                  </div>
+                  <div className='text-right'>
+                    <div className='text-xs font-bold text-blue-600'>{formatKg(item.quantityKg)}</div>
+                    <button type='button' onClick={() => setConsumedItems(consumedItems.filter((_, i) => i !== idx))} className='text-[9px] font-bold text-rose-500 uppercase mt-1 hover:underline'>Sil</button>
                   </div>
                 </div>
-                <div className='text-right'>
-                  <div className='text-xs font-bold text-blue-600'>{formatKg(item.quantityKg)}</div>
-                  <button type='button' onClick={() => setConsumedItems(consumedItems.filter((_, i) => i !== idx))} className='text-[9px] font-bold text-rose-500 uppercase mt-1 hover:underline'>Sil</button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+              ))
+            )}
+          </div>
+        </MobileFormSection>
       </div>
 
       {/* 3. Kolon: Tüketim Ekle */}
-      <div className='space-y-6 min-w-0 overflow-hidden'>
-        <div className='flex items-center gap-3 border-b border-slate-50 pb-3'>
-          <div className='grid size-8 place-items-center rounded-none bg-amber-50 text-amber-600'>
-            <Plus className='size-4' />
-          </div>
-          <h3 className='text-sm font-bold text-slate-900'>Yeni Tüketim</h3>
-        </div>
+      <div className='min-w-0 overflow-hidden'>
+        <MobileFormSection title="Tüketim Ekle" icon={Plus} tone="amber">
+          <div className='p-5 bg-white border border-blue-100 shadow-sm space-y-4 overflow-hidden'>
+            <div className='grid gap-3'>
+              <Field label='Kaynak Depo'>
+                <select className={inputClass} value={tempConsumed.warehouseId} onChange={e => setTempConsumed({...tempConsumed, warehouseId: e.target.value})}>
+                  <option value=''>Depo Seçiniz</option>
+                  {data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                </select>
+              </Field>
+              <BalanceSelect 
+                warehouseId={tempConsumed.warehouseId} 
+                stockId={tempConsumed.stockId} 
+                lotNo={tempConsumed.lotNo} 
+                partyId={tempConsumed.partyId}
+                onChange={(val) => setTempConsumed({ ...tempConsumed, ...val })} 
+              />
+              <div className='flex gap-2 pt-2'>
+                <input className={cn(inputClass, "min-w-0 flex-1")} type='number' placeholder='Miktar kg' value={tempConsumed.quantityKg} onChange={e => setTempConsumed({...tempConsumed, quantityKg: e.target.value})} />
+                <button 
+                  type='button' 
+                  disabled={!tempConsumed.stockId || !tempConsumed.quantityKg || !tempConsumed.warehouseId}
+                  onClick={() => {
+                    const qty = Number(tempConsumed.quantityKg);
+                    const balance = data.warehouseBalances.find(b => 
+                      b.warehouseId === tempConsumed.warehouseId && 
+                      b.stockId === tempConsumed.stockId && 
+                      (tempConsumed.lotNo ? b.lotNo === tempConsumed.lotNo : true) &&
+                      (tempConsumed.partyId ? b.partyId === tempConsumed.partyId : true)
+                    );
+                    const currentInForm = consumedItems
+                      .filter(it => it.stockId === tempConsumed.stockId && it.warehouseId === tempConsumed.warehouseId && it.lotNo === tempConsumed.lotNo)
+                      .reduce((sum, it) => sum + it.quantityKg, 0);
+                    
+                    const available = (balance?.quantity || 0) - currentInForm;
 
-        <div className='p-5 bg-white border border-blue-100 shadow-sm space-y-4 overflow-hidden'>
-          <div className='grid gap-3'>
-            <Field label='Kaynak Depo'>
-              <select className={inputClass} value={tempConsumed.warehouseId} onChange={e => setTempConsumed({...tempConsumed, warehouseId: e.target.value})}>
-                <option value=''>Depo Seçiniz</option>
-                {data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-              </select>
-            </Field>
-            <BalanceSelect 
-              warehouseId={tempConsumed.warehouseId} 
-              stockId={tempConsumed.stockId} 
-              lotNo={tempConsumed.lotNo} 
-              partyId={tempConsumed.partyId}
-              onChange={(val) => setTempConsumed({ ...tempConsumed, ...val })} 
-            />
-            <div className='flex gap-2 pt-2'>
-              <input className={cn(inputClass, "min-w-0 flex-1")} type='number' placeholder='Miktar kg' value={tempConsumed.quantityKg} onChange={e => setTempConsumed({...tempConsumed, quantityKg: e.target.value})} />
-              <button 
-                type='button' 
-                disabled={!tempConsumed.stockId || !tempConsumed.quantityKg || !tempConsumed.warehouseId}
-                onClick={() => {
-                  const qty = Number(tempConsumed.quantityKg);
-                  const balance = data.warehouseBalances.find(b => 
-                    b.warehouseId === tempConsumed.warehouseId && 
-                    b.stockId === tempConsumed.stockId && 
-                    (tempConsumed.lotNo ? b.lotNo === tempConsumed.lotNo : true) &&
-                    (tempConsumed.partyId ? b.partyId === tempConsumed.partyId : true)
-                  );
-                  const currentInForm = consumedItems
-                    .filter(it => it.stockId === tempConsumed.stockId && it.warehouseId === tempConsumed.warehouseId && it.lotNo === tempConsumed.lotNo)
-                    .reduce((sum, it) => sum + it.quantityKg, 0);
-                  
-                  const available = (balance?.quantity || 0) - currentInForm;
+                    if (qty > available) {
+                      toast.error(`Yetersiz stok. Mevcut bakiye: ${available} kg`);
+                      return;
+                    }
 
-                  if (qty > available) {
-                    toast.error(`Yetersiz stok. Mevcut bakiye: ${available} kg`);
-                    return;
-                  }
-
-                  setConsumedItems([...consumedItems, { ...tempConsumed, quantityKg: qty }]);
-                  setTempConsumed({ stockId: '', warehouseId: tempConsumed.warehouseId, lotNo: '', partyId: '', quantityKg: '' });
-                }} 
-                className='px-6 bg-slate-900 text-white font-bold text-xs disabled:opacity-50 hover:bg-black transition-colors shrink-0'
-              >
-                Ekle
-              </button>
+                    setConsumedItems([...consumedItems, { ...tempConsumed, quantityKg: qty }]);
+                    setTempConsumed({ stockId: '', warehouseId: tempConsumed.warehouseId, lotNo: '', partyId: '', quantityKg: '' });
+                  }} 
+                  className='px-6 bg-slate-900 text-white font-bold text-xs disabled:opacity-50 hover:bg-black transition-colors shrink-0'
+                >
+                  Ekle
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </MobileFormSection>
       </div>
 
       {/* 4. Kolon: Notlar & Kayıt */}
-      <div className='space-y-6 min-w-0 overflow-hidden'>
-        <div className='flex items-center gap-3 border-b border-slate-50 pb-3'>
-          <div className='grid size-8 place-items-center rounded-none bg-slate-50 text-slate-600'>
-            <Layout className='size-4' />
+      <div className='min-w-0 overflow-hidden'>
+        <MobileFormSection title="Açıklama & Onay" icon={Layout} tone="slate">
+          <div className='space-y-4'>
+            <Field label='Üretim Notları'>
+              <textarea className={cn(inputClass, 'h-40 resize-none')} name='description' defaultValue={initialData?.description} placeholder='Notlar...' />
+            </Field>
+            <div className='pt-4'>
+              <FormButton loading={loading}>{initialData ? 'Güncelle' : 'Üretimi Kaydet'}</FormButton>
+            </div>
           </div>
-          <h3 className='text-sm font-bold text-slate-900'>Açıklama & Onay</h3>
-        </div>
-        <Field label='Üretim Notları'>
-          <textarea className={cn(inputClass, 'h-40 resize-none')} name='description' defaultValue={initialData?.description} placeholder='Notlar...' />
-        </Field>
-        <div className='pt-4'>
-          <FormButton loading={loading}>{initialData ? 'Güncelle' : 'Üretimi Kaydet'}</FormButton>
-        </div>
+        </MobileFormSection>
       </div>
     </form>
   );
@@ -1721,83 +1747,86 @@ export function DyehouseProductionForm({ initialData }: { initialData?: Dyehouse
 
   return (
     <form className={cn("grid gap-8", isWide ? "lg:grid-cols-2 xl:grid-cols-3" : "grid-cols-1")} onSubmit={submit}>
-      {/* 1. Kolon: Operasyon Temelleri */}
-      <div className='space-y-6 min-w-0'>
-        <div className='flex items-center gap-3 border-b border-slate-50 pb-3'>
-          <div className='grid size-8 place-items-center rounded-none bg-indigo-50 text-indigo-600'>
-            <Factory className='size-4' />
+      {/* 1. Kolon: Operasyon Temelleri & Boyahane */}
+      <div className='space-y-8 min-w-0'>
+        <MobileFormSection title="Parti / Sipariş" icon={Factory} tone="blue">
+          <div className='grid gap-4'>
+            <Field label='Tarih'><input className={inputClass} name='date' type='date' defaultValue={initialData?.date || new Date().toISOString().slice(0, 10)} required /></Field>
+            <Field label='Parti'><select className={inputClass} value={partyId} onChange={e => setPartyId(e.target.value)} required><option value=''>Seçiniz</option>{data.parties.map(p => <option key={p.id} value={p.id}>{p.partyNo}</option>)}</select></Field>
           </div>
-          <h3 className='text-sm font-bold text-slate-900'>Operasyon Bilgileri</h3>
-        </div>
-        <div className='grid gap-4'>
-          <Field label='Tarih'><input className={inputClass} name='date' type='date' defaultValue={initialData?.date || new Date().toISOString().slice(0, 10)} required /></Field>
-          <Field label='Parti'><select className={inputClass} value={partyId} onChange={e => setPartyId(e.target.value)} required><option value=''>Seçiniz</option>{data.parties.map(p => <option key={p.id} value={p.id}>{p.partyNo}</option>)}</select></Field>
-          <Field label='Boyahane'>
-            <select 
-              className={inputClass} 
-              name='dyehousePartnerId' 
-              value={dyehousePartnerId} 
-              onChange={e => setDyehousePartnerId(e.target.value)}
-              required
-            >
-              <option value="">Seçiniz</option>
-              {data.partners.filter(p => p.type === 'DYEHOUSE').map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-          </Field>
-        </div>
-      </div>
+        </MobileFormSection>
 
-      {/* 2. Kolon: Depo ve Giriş Miktarı */}
-      <div className='space-y-6 min-w-0'>
-        <div className='flex items-center gap-3 border-b border-slate-50 pb-3'>
-          <div className='grid size-8 place-items-center rounded-none bg-amber-50 text-amber-600'>
-            <Boxes className='size-4' />
+        <MobileFormSection title="Boyahane ve Depolar" icon={WarehouseIcon} tone="amber">
+          <div className='grid gap-4'>
+            <Field label='Boyahane'>
+              <select 
+                className={inputClass} 
+                name='dyehousePartnerId' 
+                value={dyehousePartnerId} 
+                onChange={e => setDyehousePartnerId(e.target.value)}
+                required
+              >
+                <option value="">Seçiniz</option>
+                {data.partners.filter(p => p.type === 'DYEHOUSE').map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </Field>
+            <Field label='Tüketilecek Ham Deposu'><select className={inputClass} value={inputWarehouseId} onChange={e => setInputWarehouseId(e.target.value)} required><option value=''>Seçiniz</option>{data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></Field>
+            <Field label='Mamül Giriş Deposu'><select className={inputClass} name='outputWarehouseId' defaultValue={initialData?.outputWarehouseId} required>{data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></Field>
           </div>
-          <h3 className='text-sm font-bold text-slate-900'>Depo & Giriş</h3>
-        </div>
-        <div className='grid gap-4'>
-          <Field label='Tüketilecek Ham Deposu'><select className={inputClass} value={inputWarehouseId} onChange={e => setInputWarehouseId(e.target.value)} required><option value=''>Seçiniz</option>{data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></Field>
-          <Field label='Mamül Giriş Deposu'><select className={inputClass} name='outputWarehouseId' defaultValue={initialData?.outputWarehouseId} required>{data.warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select></Field>
+        </MobileFormSection>
+
+        <MobileFormSection title="Tüketilecek Ham" icon={Boxes} tone="purple">
           <Field label='Tüketilecek Ham Kg'><input className={inputClass} type='number' value={inputRawKg} onChange={e => setInputRawKg(e.target.value)} required /></Field>
-        </div>
+        </MobileFormSection>
       </div>
 
-      {/* 3. Kolon: Teknik Sonuçlar ve Kayıt */}
-      <div className='space-y-6 min-w-0'>
-        <div className='flex items-center gap-3 border-b border-slate-50 pb-3'>
-          <div className='grid size-8 place-items-center rounded-none bg-emerald-50 text-emerald-600'>
-            <PackageCheck className='size-4' />
-          </div>
-          <h3 className='text-sm font-bold text-slate-900'>Sonuç & Onay</h3>
-        </div>
-        <div className='grid gap-4 sm:grid-cols-2'>
+      {/* 2. Kolon: Mamül Çıkışı & Teknik Bilgiler */}
+      <div className='space-y-8 min-w-0'>
+        <MobileFormSection title="Mamül Çıkışı" icon={PackageCheck} tone="green">
           <Field label='Dönen Mamül (Kg)'><input className={inputClass} name='finishedKg' type='number' defaultValue={initialData?.finishedKg} required /></Field>
-          <Field label='Finish En'><input className={inputClass} name='finishWidth' type='number' defaultValue={initialData?.finishWidth} required /></Field>
-          <Field label='Finish Gramaj'><input className={inputClass} name='finishGsm' type='number' defaultValue={initialData?.finishGsm} required /></Field>
-        </div>
-        <div className='space-y-3'>
-          <h4 className='text-xs font-bold text-slate-400 uppercase tracking-widest'>Uygulanan İşlemler</h4>
-          <div className='grid grid-cols-2 gap-2 p-3 bg-slate-50 border border-slate-100 rounded-none max-h-[120px] overflow-y-auto'>
-            {data.processTypes.map(pt => (
-              <label key={pt.id} className='flex items-center gap-2 cursor-pointer p-1 hover:bg-white transition-colors'>
-                <input 
-                  type='checkbox' 
-                  checked={selectedProcessIds.includes(pt.id)}
-                  onChange={e => {
-                    if (e.target.checked) setSelectedProcessIds([...selectedProcessIds, pt.id]);
-                    else setSelectedProcessIds(selectedProcessIds.filter(id => id !== pt.id));
-                  }} 
-                  className='size-4 rounded border-slate-300' 
-                />
-                <span className='text-[11px] font-semibold text-slate-700'>{pt.name}</span>
-              </label>
-            ))}
+        </MobileFormSection>
+
+        <MobileFormSection title="Teknik Bilgiler" icon={SlidersHorizontal} tone="slate">
+          <div className='grid gap-4 sm:grid-cols-2'>
+            <Field label='Finish En'><input className={inputClass} name='finishWidth' type='number' defaultValue={initialData?.finishWidth} required /></Field>
+            <Field label='Finish Gramaj'><input className={inputClass} name='finishGsm' type='number' defaultValue={initialData?.finishGsm} required /></Field>
           </div>
-        </div>
-        <Field label='Açıklama'><textarea className={cn(inputClass, "h-24 resize-none")} name='description' defaultValue={initialData?.description} placeholder='Boyahane notları...' /></Field>
-        <div className='pt-2'>
-          <FormButton loading={loading}>{initialData ? 'Güncelle' : 'Kaydet'}</FormButton>
-        </div>
+        </MobileFormSection>
+      </div>
+
+      {/* 3. Kolon: Boyahane İşlemleri & Onay */}
+      <div className='space-y-8 min-w-0'>
+        <MobileFormSection title="Boyahane İşlemleri" icon={SlidersHorizontal} tone="blue">
+          <div className='p-3 bg-slate-50 border border-slate-100 rounded-none max-h-[200px] overflow-y-auto'>
+            <div className='grid grid-cols-2 gap-2'>
+              {data.processTypes.map(pt => (
+                <label key={pt.id} className='flex items-center gap-2 cursor-pointer p-1 hover:bg-white transition-colors'>
+                  <input 
+                    type='checkbox' 
+                    checked={selectedProcessIds.includes(pt.id)}
+                    onChange={e => {
+                      if (e.target.checked) setSelectedProcessIds([...selectedProcessIds, pt.id]);
+                      else setSelectedProcessIds(selectedProcessIds.filter(id => id !== pt.id));
+                    }} 
+                    className='size-4 rounded border-slate-300' 
+                  />
+                  <span className='text-[11px] font-semibold text-slate-700'>{pt.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </MobileFormSection>
+
+        <MobileFormSection title="Açıklama & Onay" icon={Layout} tone="slate">
+          <div className='space-y-4'>
+            <Field label='Açıklama'>
+              <textarea className={cn(inputClass, "h-24 resize-none")} name='description' defaultValue={initialData?.description} placeholder='Boyahane notları...' />
+            </Field>
+            <div className='pt-2'>
+              <FormButton loading={loading}>{initialData ? 'Güncelle' : 'Kaydet'}</FormButton>
+            </div>
+          </div>
+        </MobileFormSection>
       </div>
     </form>
   );

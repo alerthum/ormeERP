@@ -14,12 +14,20 @@
     "reset:data": "tsx scripts/reset-data.ts",
     "realtime:setup": "tsx scripts/setup-realtime.ts",
     "fix:encoding": "tsx scripts/fix-db-encoding.ts",
-    "fix:purchase-items": "tsx scripts/fix-purchase-order-items.ts"
+    "fix:purchase-items": "tsx scripts/fix-purchase-order-items.ts",
+    "fix:schema": "tsx scripts/fix-schema-compatibility.ts",
+    "test:erp-flow": "tsx scripts/test-erp-flow.ts",
+    "smoke:test": "tsx scripts/smoke-test-ui-flow.ts",
+    "integrity:rebuild": "tsx scripts/rebuild-integrity.ts",
+    "cleanup:test-data": "tsx scripts/cleanup-test-data.ts",
+    "backup:db": "tsx src/scripts/backup-db.ts",
+    "reporting:rebuild": "tsx scripts/rebuild-reporting-aggregates.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "lucide-react": "^1.14.0",
     "next": "16.2.4",
