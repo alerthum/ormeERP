@@ -19,16 +19,66 @@ export function AuthPage() {
     const email = String(form.get("email") ?? "");
     const password = String(form.get("password") ?? "");
     const fullName = String(form.get("fullName") ?? "");
+    
+    // Determine redirect URL
+    const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
+    const redirectTo = `${siteUrl}/auth/callback`;
+
     try {
+      if (mode === "login" && !password) {
+        // MAGIC LINK / OTP LOGIN
+        const { error } = await supabase.auth.signInWithOtp({ 
+          email,
+          options: { emailRedirectTo: redirectTo }
+        });
+        if (error) throw error;
+        toast.success("Giriş bağlantısı e-posta adresinize gönderildi. Lütfen mailinizi kontrol edin.");
+        return;
+      }
+
       const result =
         mode === "login"
           ? await supabase.auth.signInWithPassword({ email, password })
-          : await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName } } });
+          : await supabase.auth.signUp({ 
+              email, 
+              password, 
+              options: { 
+                data: { full_name: fullName },
+                emailRedirectTo: redirectTo
+              } 
+            });
+      
       if (result.error) throw result.error;
-      toast.success(mode === "login" ? "Giriş yapıldı." : "Kullanıcı oluşturuldu. E-posta onayı gerekebilir.");
+      
+      if (mode === "signup") {
+        toast.success("Kullanıcı oluşturuldu. E-posta onayı gerekebilir.");
+      } else {
+        toast.success("Giriş yapıldı.");
+        window.location.href = "/dashboard";
+      }
+    } catch (error) {
+      let message = error instanceof Error ? error.message : "Auth işlemi tamamlanamadı.";
+      if (message.includes("Email not confirmed")) {
+        message = "Admin kullanıcısının e-postası Supabase Auth tarafında onaylı değil. npm run ensure:admin çalıştırın.";
+      }
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loginAsAdmin() {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: "alerthum@yahoo.com",
+        password: "123Qwe..",
+      });
+      if (error) throw new Error("Admin girişi başarısız. E-posta veya şifreyi kontrol edin.");
+      toast.success("Admin olarak giriş yapıldı.");
       window.location.href = "/dashboard";
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Auth işlemi tamamlanamadı.");
+      toast.error(error instanceof Error ? error.message : "Giriş yapılamadı.");
     } finally {
       setLoading(false);
     }
@@ -43,11 +93,25 @@ export function AuthPage() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-slate-950">Yokuş Örme ERP</h1>
-            <p className="text-sm text-slate-500">Supabase Auth giriş altyapısı</p>
+            <p className="text-sm text-slate-500">Güvenli giriş altyapısı</p>
           </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-2 rounded-2xl bg-slate-100 p-1 text-sm font-semibold">
+        <button 
+          onClick={loginAsAdmin}
+          disabled={loading}
+          className="mt-8 flex w-full items-center justify-center gap-3 rounded-2xl bg-slate-900 py-4 text-sm font-bold text-white shadow-xl shadow-slate-200 transition active:scale-[0.98] disabled:opacity-50"
+        >
+          <LogIn className="size-5" />
+          Admin ile giriş yap
+        </button>
+
+        <div className="relative my-8">
+          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
+          <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-3 font-bold text-slate-400">Veya</span></div>
+        </div>
+
+        <div className="grid grid-cols-2 rounded-2xl bg-slate-100 p-1 text-sm font-semibold">
           <button className={`rounded-xl py-2 ${mode === "login" ? "bg-white text-blue-700 shadow-sm" : "text-slate-500"}`} onClick={() => setMode("login")} type="button">Giriş</button>
           <button className={`rounded-xl py-2 ${mode === "signup" ? "bg-white text-blue-700 shadow-sm" : "text-slate-500"}`} onClick={() => setMode("signup")} type="button">Yeni kullanıcı</button>
         </div>
@@ -55,14 +119,12 @@ export function AuthPage() {
         <form className="mt-6 grid gap-4" onSubmit={submit}>
           {mode === "signup" ? <input className={inputClass} name="fullName" placeholder="Ad soyad" required /> : null}
           <input className={inputClass} name="email" placeholder="E-posta" type="email" required />
-          <input className={inputClass} minLength={6} name="password" placeholder="Şifre" type="password" required />
+          <input className={inputClass} minLength={6} name="password" placeholder={mode === "login" ? "Şifre (Boş bırakırsanız giriş linki gönderilir)" : "Şifre"} type="password" required={mode === "signup"} />
           <button className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-100 disabled:opacity-60" disabled={loading} type="submit">
             {mode === "login" ? <LogIn className="size-4" /> : <UserPlus className="size-4" />}
             {loading ? "İşleniyor..." : mode === "login" ? "Giriş yap" : "Kullanıcı oluştur"}
           </button>
         </form>
-
-        <Link className="mt-5 block text-center text-sm font-semibold text-blue-700" href="/dashboard">Dashboarda dön</Link>
       </div>
     </main>
   );

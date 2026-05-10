@@ -284,9 +284,15 @@ export function ErpDataProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const endpoint = getReadEndpoint(pathname);
+      const session = await supabase.auth.getSession();
+      const token = session.data.session?.access_token;
+      
       const response = await fetch(endpoint, { 
         cache: "no-store",
-        signal: abortControllerRef.current.signal 
+        signal: abortControllerRef.current.signal,
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
       });
       const result = (await response.json()) as ApiResponse;
       if (!response.ok || !result.ok || !result.data) {

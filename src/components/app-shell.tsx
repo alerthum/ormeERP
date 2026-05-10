@@ -29,6 +29,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ErpDataProvider, useErpData } from "@/components/erp-data-provider";
 import { getComputedNotifications } from "@/services/erp-service";
+import { supabase } from "@/lib/supabase";
 
 const navigationGroups = [
   {
@@ -319,13 +320,19 @@ export function AppShellContent({ children }: { children: React.ReactNode }) {
               </div>
             )}
 
-            <Link href="/login" className="flex items-center gap-2 rounded-none border border-transparent p-1 transition hover:bg-slate-50">
+            <button 
+              onClick={async () => {
+                await supabase.auth.signOut();
+                window.location.href = "/login";
+              }}
+              className="flex items-center gap-2 rounded-none border border-transparent p-1 transition hover:bg-slate-50"
+            >
               <div className="hidden text-right lg:block">
                 <p className="text-xs font-bold text-slate-950">ERP Admin</p>
                 <p className="text-[10px] font-medium text-slate-400">Yönetici</p>
               </div>
               <div className="grid size-10 place-items-center rounded-none bg-slate-950 text-xs font-bold text-white shadow-lg shadow-slate-200">YA</div>
-            </Link>
+            </button>
           </div>
         </div>
       </header>

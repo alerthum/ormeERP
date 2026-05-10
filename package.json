@@ -22,7 +22,8 @@
     "cleanup:test-data": "tsx scripts/cleanup-test-data.ts",
     "backup:db": "tsx src/scripts/backup-db.ts",
     "reporting:rebuild": "tsx scripts/rebuild-reporting-aggregates.ts",
-    "maintenance:full": "npm run cleanup:test-data && npm run integrity:rebuild && npm run reporting:rebuild && npm run build"
+    "maintenance:full": "npm run cleanup:test-data && npm run integrity:rebuild && npm run reporting:rebuild && npm run build",
+    "ensure:admin": "tsx scripts/ensure-admin-user.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.1",
