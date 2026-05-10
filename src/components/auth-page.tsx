@@ -70,11 +70,20 @@ export function AuthPage() {
   async function loginAsAdmin() {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error, data } = await supabase.auth.signInWithPassword({
         email: "alerthum@yahoo.com",
         password: "123Qwe..",
       });
-      if (error) throw new Error("Admin girişi başarısız. E-posta veya şifreyi kontrol edin.");
+      if (error) {
+        console.error("❌ ADMIN LOGIN FAILED:", {
+          host: typeof window !== "undefined" ? window.location.host : "unknown",
+          supabaseHost: new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "").host,
+          message: error.message,
+          status: error.status,
+          name: error.name
+        });
+        throw new Error("Admin girişi başarısız. Lütfen Vercel auth kurulumunu kontrol edin.");
+      }
       toast.success("Admin olarak giriş yapıldı.");
       window.location.href = "/dashboard";
     } catch (error) {

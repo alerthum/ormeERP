@@ -7,16 +7,25 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function getSiteUrl() {
-  let url =
-    process.env.NEXT_PUBLIC_SITE_URL ?? // Set this to your site URL in production
-    process.env.NEXT_PUBLIC_VERCEL_URL ?? // Automatically set by Vercel
-    "http://localhost:4400";
-  
-  // Make sure to include `https://` when not localhost
-  url = url.includes("http") ? url : `https://${url}`;
-  // Remove trailing slash
-  url = url.endsWith("/") ? url.slice(0, -1) : url;
-  return url;
+  // 1. Manual override (Highest priority)
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    let url = process.env.NEXT_PUBLIC_SITE_URL;
+    url = url.includes("http") ? url : `https://${url}`;
+    return url.endsWith("/") ? url.slice(0, -1) : url;
+  }
+
+  // 2. Dynamic Vercel Deployment URL (For branch previews)
+  if (process.env.NEXT_PUBLIC_VERCEL_URL) {
+    return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+  }
+
+  // 3. Browser-side detection
+  if (typeof window !== "undefined" && window.location.origin) {
+    return window.location.origin;
+  }
+
+  // 4. Final local fallback
+  return "http://localhost:4400";
 }
 
 export function formatKg(value: number) {
