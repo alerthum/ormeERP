@@ -493,7 +493,7 @@ export async function getReportsPageData(): Promise<ErpData> {
       ) t), '[]'::jsonb) as shipment_by_month,
 
       -- Limited details
-      coalesce((select jsonb_agg(to_jsonb(t) order by created_at desc limit 200) from parties t), '[]'::jsonb) as parties,
+      coalesce((select jsonb_agg(to_jsonb(t) order by t.created_at desc) from (select * from parties order by created_at desc limit 200) t), '[]'::jsonb) as parties,
       coalesce((select jsonb_agg(to_jsonb(t) order by id) from stock_cards t), '[]'::jsonb) as stock_cards,
       coalesce((select jsonb_agg(to_jsonb(t) order by id) from settings_fabric_types t), '[]'::jsonb) as fabric_types,
       coalesce((select jsonb_agg(to_jsonb(t) order by id) from settings_colors t), '[]'::jsonb) as colors,

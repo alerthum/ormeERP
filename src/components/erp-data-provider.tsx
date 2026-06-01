@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { emptyErpData } from "@/data/empty";
-import { supabase } from "@/lib/supabase";
+import { getSupabaseAccessToken, supabase } from "@/lib/supabase";
 import type { ErpData } from "@/types/erp";
 
 interface ApiResponse {
@@ -284,8 +284,7 @@ export function ErpDataProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const endpoint = getReadEndpoint(pathname);
-      const session = await supabase.auth.getSession();
-      const token = session.data.session?.access_token;
+      const token = await getSupabaseAccessToken();
       
       const response = await fetch(endpoint, { 
         cache: "no-store",

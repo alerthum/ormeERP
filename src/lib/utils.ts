@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { supabase } from "./supabase";
+import { getSupabaseAccessToken } from "./supabase";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -72,8 +72,7 @@ function requestSignal(ms = 8000) {
 }
 
 export async function postJson(endpoint: string, payload: any) {
-  const session = await supabase.auth.getSession();
-  const token = session.data.session?.access_token;
+  const token = await getSupabaseAccessToken();
   const response = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}) },
@@ -86,8 +85,7 @@ export async function postJson(endpoint: string, payload: any) {
 }
 
 export async function patchJson(endpoint: string, payload: any) {
-  const session = await supabase.auth.getSession();
-  const token = session.data.session?.access_token;
+  const token = await getSupabaseAccessToken();
   const response = await fetch(endpoint, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}) },
@@ -100,8 +98,7 @@ export async function patchJson(endpoint: string, payload: any) {
 }
 
 export async function apiDelete(endpoint: string) {
-  const session = await supabase.auth.getSession();
-  const token = session.data.session?.access_token;
+  const token = await getSupabaseAccessToken();
   const response = await fetch(endpoint, { 
     method: "DELETE", 
     headers: token ? { Authorization: `Bearer ${token}` } : undefined, 

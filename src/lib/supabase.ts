@@ -16,6 +16,36 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
+function isMissingRefreshTokenError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  const normalized = message.toLowerCase();
+  return normalized.includes("invalid refresh token") || normalized.includes("refresh token not found");
+}
+
+export async function getSupabaseAccessToken() {
+  try {
+    const { data, error } = await supabase.auth.getSession();
+
+    if (error) {
+      if (isMissingRefreshTokenError(error)) {
+        await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
+        return undefined;
+      }
+
+      throw error;
+    }
+
+    return data.session?.access_token;
+  } catch (error) {
+    if (isMissingRefreshTokenError(error)) {
+      await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
+      return undefined;
+    }
+
+    throw error;
+  }
+}
+
 export const storageBuckets = {
   documents: "erp-documents",
   photos: "erp-photos",
